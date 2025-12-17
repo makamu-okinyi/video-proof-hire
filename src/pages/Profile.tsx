@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Settings, Edit2, Share2, Grid3X3, Play, 
-  Eye, Heart, Bookmark, LogOut, ChevronRight,
+  Eye, Bookmark, LogOut, ChevronRight,
   BadgeCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { useAuth } from '@/context/AuthContext';
 import { mockVideos } from '@/data/mockData';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 type Tab = 'videos' | 'saved';
 
@@ -37,6 +38,32 @@ export default function Profile() {
     navigate('/');
   };
 
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast({
+      title: "Profile link copied!",
+      description: "Share your profile with employers",
+    });
+  };
+
+  const handleSettings = () => {
+    toast({
+      title: "Settings",
+      description: "Settings page coming soon",
+    });
+  };
+
+  const handleEditProfile = () => {
+    toast({
+      title: "Edit Profile",
+      description: "Profile editing coming soon",
+    });
+  };
+
+  const handleVideoClick = (videoId: string) => {
+    navigate(`/feed?video=${videoId}`);
+  };
+
   if (!user) {
     navigate('/');
     return null;
@@ -49,10 +76,10 @@ export default function Profile() {
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold">@{user.username || 'user'}</h1>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon-sm">
+            <Button variant="ghost" size="icon-sm" onClick={handleShare}>
               <Share2 className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon-sm">
+            <Button variant="ghost" size="icon-sm" onClick={handleSettings}>
               <Settings className="h-5 w-5" />
             </Button>
           </div>
@@ -117,6 +144,7 @@ export default function Profile() {
           variant="outline" 
           className="w-full mt-4"
           size="lg"
+          onClick={handleEditProfile}
         >
           <Edit2 className="h-4 w-4 mr-2" />
           Edit Profile
@@ -161,6 +189,7 @@ export default function Profile() {
               userVideos.map((video) => (
                 <div 
                   key={video.id}
+                  onClick={() => handleVideoClick(video.id)}
                   className="aspect-[9/16] relative bg-secondary rounded-lg overflow-hidden group cursor-pointer"
                 >
                   <img 
