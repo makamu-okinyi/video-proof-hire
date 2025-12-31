@@ -8,6 +8,7 @@ const navItems = [
   { icon: Briefcase, label: 'Jobs', path: '/jobs' },
   { icon: null, label: 'Create', path: '/create' },
   { icon: FileText, label: 'Articles', path: '/articles' },
+  { icon: Bell, label: 'Alerts', path: '/notifications' },
   { icon: User, label: 'Profile', path: '/profile' },
 ];
 
