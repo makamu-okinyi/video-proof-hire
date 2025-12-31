@@ -54,3 +54,16 @@ export interface Notification {
   createdAt: Date;
   actionUrl?: string;
 }
+
+export interface Article {
+  id: string;
+  author: User;
+  title: string;
+  content: string;
+  coverImage?: string;
+  tags: string[];
+  likes: number;
+  comments: number;
+  views: number;
+  createdAt: Date;
+}

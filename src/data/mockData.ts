@@ -1,4 +1,4 @@
-import { Video, Job, Notification, User } from '@/types';
+import { Video, Job, Notification, User, Article } from '@/types';
 
 export const mockUsers: User[] = [
   {
@@ -219,4 +219,42 @@ export const skillsList = [
   'Figma', 'UI/UX', 'Product Management', 'Data Science',
   'Machine Learning', 'AWS', 'Docker', 'GraphQL', 'SQL',
   'Swift', 'Kotlin', 'React Native', 'Vue.js', 'Angular',
+];
+
+export const mockArticles: Article[] = [
+  {
+    id: 'a1',
+    author: mockUsers[0],
+    title: 'How I Landed My Dream Job Using Video Portfolios',
+    content: 'Traditional CVs are becoming obsolete. Here\'s how I used short video demos to showcase my skills and land a senior developer role at a top tech company. The key is to show, not tell...',
+    coverImage: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop',
+    tags: ['Career', 'Tips', 'Video Portfolio'],
+    likes: 234,
+    comments: 45,
+    views: 1200,
+    createdAt: new Date('2024-12-14'),
+  },
+  {
+    id: 'a2',
+    author: mockUsers[1],
+    title: '5 Design Principles Every Developer Should Know',
+    content: 'As a developer, understanding basic design principles can dramatically improve the quality of your work. From typography to color theory, here are the essential concepts...',
+    coverImage: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=400&fit=crop',
+    tags: ['Design', 'Development', 'UI/UX'],
+    likes: 189,
+    comments: 28,
+    views: 890,
+    createdAt: new Date('2024-12-12'),
+  },
+  {
+    id: 'a3',
+    author: mockUsers[2],
+    title: 'From Intern to Product Manager: My Journey',
+    content: 'Three years ago, I started as an intern with zero product experience. Today, I lead a team of 8. Here\'s what I learned along the way and the mistakes I made...',
+    tags: ['Product Management', 'Career Growth', 'Leadership'],
+    likes: 456,
+    comments: 67,
+    views: 2300,
+    createdAt: new Date('2024-12-10'),
+  },
 ];
