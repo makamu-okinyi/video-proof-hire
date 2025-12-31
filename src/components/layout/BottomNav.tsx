@@ -18,7 +18,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/50 safe-area-pb">
-      <div className="flex items-center justify-around h-16 max-w-md mx-auto px-2">
+      <div className="flex items-center justify-between h-14 max-w-md mx-auto px-1">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           const isCreate = item.label === 'Create';
@@ -29,10 +29,10 @@ export function BottomNav() {
                 key={item.label}
                 variant="coral"
                 size="icon"
-                className="h-14 w-14 rounded-full shadow-lg -mt-6 pulse-glow"
+                className="h-10 w-10 rounded-full shadow-lg -mt-4 pulse-glow"
                 onClick={() => navigate(item.path)}
               >
-                <Plus className="h-6 w-6" />
+                <Plus className="h-5 w-5" />
               </Button>
             );
           }
@@ -44,14 +44,14 @@ export function BottomNav() {
               key={item.label}
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-200",
+                "flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg transition-all duration-200 min-w-0",
                 isActive 
                   ? "text-primary" 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Icon className={cn("h-5 w-5", isActive && "scale-110")} />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <Icon className={cn("h-4 w-4", isActive && "scale-110")} />
+              <span className="text-[9px] font-medium truncate">{item.label}</span>
             </button>
           );
         })}
