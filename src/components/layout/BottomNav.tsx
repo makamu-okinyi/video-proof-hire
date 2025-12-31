@@ -1,4 +1,4 @@
-import { Home, Briefcase, Bell, User, Plus } from 'lucide-react';
+import { Home, Briefcase, Bell, User, Plus, FileText } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ const navItems = [
   { icon: Home, label: 'Home', path: '/feed' },
   { icon: Briefcase, label: 'Jobs', path: '/jobs' },
   { icon: null, label: 'Create', path: '/create' },
-  { icon: Bell, label: 'Alerts', path: '/notifications' },
+  { icon: FileText, label: 'Articles', path: '/articles' },
   { icon: User, label: 'Profile', path: '/profile' },
 ];
 

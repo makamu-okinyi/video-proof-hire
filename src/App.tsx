@@ -10,6 +10,7 @@ import Jobs from "./pages/Jobs";
 import Create from "./pages/Create";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
+import Articles from "./pages/Articles";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/feed" element={<Feed />} />
             <Route path="/jobs" element={<Jobs />} />
+            <Route path="/articles" element={<Articles />} />
             <Route path="/create" element={<Create />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/profile" element={<Profile />} />
