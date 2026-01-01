@@ -106,7 +106,7 @@ export default function Articles() {
 
       {/* Compose Dialog */}
       <Dialog open={showCompose} onOpenChange={setShowCompose}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-lg max-h-[90vh] overflow-y-auto sm:max-w-lg mx-auto p-4 sm:p-6 rounded-t-xl sm:rounded-xl fixed bottom-0 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 left-0 right-0 sm:left-1/2 sm:-translate-x-1/2">
           <DialogHeader>
             <DialogTitle>Write Article</DialogTitle>
           </DialogHeader>
