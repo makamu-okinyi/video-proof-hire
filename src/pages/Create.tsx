@@ -1,17 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  X, Video, Upload, RotateCcw, Pause, Play, 
-  Check, ChevronDown, Globe, Users, Sparkles 
+  X, Video, Upload, RotateCcw, Play, 
+  Check, ChevronDown, Globe, Users, Sparkles,
+  Camera, AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { skillsList } from '@/data/mockData';
 import { cn } from '@/lib/utils';
+import { useCamera } from '@/hooks/useCamera';
+import { useFileUpload } from '@/hooks/useFileUpload';
+import { toast } from 'sonner';
 
 type Step = 'record' | 'preview' | 'details';
 type Visibility = 'public' | 'recruiters';
+type VideoSource = 'camera' | 'upload';
 
 const categories = [
   'Project Demo',
@@ -25,9 +30,35 @@ const categories = [
 export default function Create() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>('record');
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [hasRecording, setHasRecording] = useState(false);
+  const [videoSource, setVideoSource] = useState<VideoSource | null>(null);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
+  
+  // Camera hook
+  const {
+    videoRef,
+    isStreaming,
+    isRecording,
+    recordingTime,
+    recordedUrl,
+    recordedBlob,
+    error: cameraError,
+    startStream,
+    stopStream,
+    flipCamera,
+    startRecording,
+    stopRecording,
+    resetRecording,
+  } = useCamera({ maxDuration: 120 });
+
+  // File upload hook
+  const {
+    inputRef: fileInputRef,
+    handleFileChange,
+    fileUrl: uploadedUrl,
+    error: uploadError,
+    openFilePicker,
+    clearFile,
+  } = useFileUpload({ accept: 'video/*', maxSizeMB: 100 });
   
   // Details
   const [caption, setCaption] = useState('');
@@ -36,6 +67,37 @@ export default function Create() {
   const [visibility, setVisibility] = useState<Visibility>('public');
   const [showSkillPicker, setShowSkillPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+
+  // Start camera when component mounts
+  useEffect(() => {
+    if (step === 'record' && !uploadedUrl) {
+      startStream();
+    }
+    return () => {
+      if (step !== 'record') {
+        stopStream();
+      }
+    };
+  }, [step]);
+
+  // Handle uploaded video - go to preview
+  useEffect(() => {
+    if (uploadedUrl) {
+      setVideoSource('upload');
+      stopStream();
+      setStep('preview');
+    }
+  }, [uploadedUrl]);
+
+  // Show errors
+  useEffect(() => {
+    if (cameraError) {
+      toast.error(cameraError);
+    }
+    if (uploadError) {
+      toast.error(uploadError);
+    }
+  }, [cameraError, uploadError]);
 
   const toggleSkill = (skill: string) => {
     if (selectedSkills.includes(skill)) {
@@ -46,24 +108,12 @@ export default function Create() {
   };
 
   const handleStartRecording = () => {
-    setIsRecording(true);
-    // Simulate recording timer
-    const interval = setInterval(() => {
-      setRecordingTime(prev => {
-        if (prev >= 120) {
-          clearInterval(interval);
-          setIsRecording(false);
-          setHasRecording(true);
-          return 120;
-        }
-        return prev + 1;
-      });
-    }, 1000);
+    startRecording();
   };
 
   const handleStopRecording = () => {
-    setIsRecording(false);
-    setHasRecording(true);
+    stopRecording();
+    setVideoSource('camera');
     setStep('preview');
   };
 
@@ -73,15 +123,71 @@ export default function Create() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleRetake = () => {
+    resetRecording();
+    clearFile();
+    setVideoSource(null);
+    setStep('record');
+    startStream();
+  };
+
   const handlePost = () => {
-    // In production, this would upload the video
+    // In production, this would upload the video to storage
+    toast.success('Video posted successfully!');
     navigate('/feed');
   };
 
+  const currentVideoUrl = videoSource === 'upload' ? uploadedUrl : recordedUrl;
+
   const renderRecord = () => (
     <div className="h-screen bg-surface-darker flex flex-col">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="video/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
       {/* Camera Preview Area */}
-      <div className="flex-1 relative bg-gradient-to-b from-surface-dark to-surface-darker flex items-center justify-center">
+      <div className="flex-1 relative bg-surface-dark overflow-hidden">
+        {/* Live camera feed */}
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={cn(
+            "absolute inset-0 w-full h-full object-cover",
+            !isStreaming && "hidden"
+          )}
+        />
+
+        {/* Loading/Error state */}
+        {!isStreaming && (
+          <div className="absolute inset-0 flex items-center justify-center bg-surface-darker">
+            {cameraError ? (
+              <div className="text-center space-y-4 px-6">
+                <div className="h-16 w-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto">
+                  <AlertCircle className="h-8 w-8 text-destructive" />
+                </div>
+                <p className="text-background/80 text-sm max-w-xs">{cameraError}</p>
+                <Button variant="outline" size="sm" onClick={startStream}>
+                  Try Again
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center space-y-4">
+                <div className="h-16 w-16 rounded-full bg-background/10 flex items-center justify-center mx-auto animate-pulse">
+                  <Camera className="h-8 w-8 text-background/60" />
+                </div>
+                <p className="text-background/60 text-sm">Starting camera...</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Close Button */}
         <button 
           onClick={() => navigate(-1)}
@@ -100,24 +206,22 @@ export default function Create() {
         )}
 
         {/* Flip Camera */}
-        <button className="absolute top-4 right-4 z-20 h-10 w-10 rounded-full bg-background/10 backdrop-blur-sm flex items-center justify-center">
+        <button 
+          onClick={flipCamera}
+          className="absolute top-4 right-4 z-20 h-10 w-10 rounded-full bg-background/10 backdrop-blur-sm flex items-center justify-center"
+        >
           <RotateCcw className="h-5 w-5 text-background" />
         </button>
-
-        {/* Camera Placeholder */}
-        <div className="text-center space-y-4">
-          <div className="h-24 w-24 rounded-full bg-background/10 backdrop-blur-sm flex items-center justify-center mx-auto">
-            <Video className="h-12 w-12 text-background/60" />
-          </div>
-          <p className="text-background/60 text-sm">Camera preview will appear here</p>
-        </div>
       </div>
 
       {/* Controls */}
       <div className="bg-surface-darker px-6 py-8 safe-area-pb">
         <div className="flex items-center justify-around">
           {/* Upload */}
-          <button className="flex flex-col items-center gap-2">
+          <button 
+            onClick={openFilePicker}
+            className="flex flex-col items-center gap-2"
+          >
             <div className="h-12 w-12 rounded-xl bg-background/10 flex items-center justify-center">
               <Upload className="h-5 w-5 text-background" />
             </div>
@@ -127,9 +231,11 @@ export default function Create() {
           {/* Record Button */}
           <button 
             onClick={isRecording ? handleStopRecording : handleStartRecording}
+            disabled={!isStreaming}
             className={cn(
               "h-20 w-20 rounded-full border-4 border-background flex items-center justify-center transition-all",
-              isRecording ? "bg-destructive" : "bg-coral"
+              isRecording ? "bg-destructive" : "bg-coral",
+              !isStreaming && "opacity-50"
             )}
           >
             {isRecording ? (
@@ -140,7 +246,7 @@ export default function Create() {
           </button>
 
           {/* Effects */}
-          <button className="flex flex-col items-center gap-2">
+          <button className="flex flex-col items-center gap-2 opacity-50">
             <div className="h-12 w-12 rounded-xl bg-background/10 flex items-center justify-center">
               <Sparkles className="h-5 w-5 text-background" />
             </div>
@@ -158,24 +264,45 @@ export default function Create() {
   const renderPreview = () => (
     <div className="h-screen bg-surface-darker flex flex-col">
       {/* Video Preview */}
-      <div className="flex-1 relative bg-gradient-to-b from-surface-dark to-surface-darker">
+      <div className="flex-1 relative bg-surface-dark overflow-hidden">
+        {/* Actual video playback */}
+        {currentVideoUrl && (
+          <video
+            ref={previewVideoRef}
+            src={currentVideoUrl}
+            className="absolute inset-0 w-full h-full object-cover"
+            playsInline
+            loop
+            onClick={(e) => {
+              const video = e.currentTarget;
+              if (video.paused) {
+                video.play();
+              } else {
+                video.pause();
+              }
+            }}
+          />
+        )}
+
         <button 
-          onClick={() => { setStep('record'); setHasRecording(false); setRecordingTime(0); }}
+          onClick={handleRetake}
           className="absolute top-4 left-4 z-20 h-10 w-10 rounded-full bg-background/10 backdrop-blur-sm flex items-center justify-center"
         >
           <X className="h-5 w-5 text-background" />
         </button>
 
-        {/* Play Button */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <button className="h-20 w-20 rounded-full bg-background/20 backdrop-blur-sm flex items-center justify-center">
+        {/* Play Button Overlay (shown when paused) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="h-20 w-20 rounded-full bg-background/20 backdrop-blur-sm flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
             <Play className="h-10 w-10 text-background ml-1" fill="white" />
-          </button>
+          </div>
         </div>
 
         {/* Duration */}
         <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-full bg-background/10 backdrop-blur-sm">
-          <span className="text-background text-sm font-mono">{formatTime(recordingTime)}</span>
+          <span className="text-background text-sm font-mono">
+            {videoSource === 'camera' ? formatTime(recordingTime) : 'Uploaded'}
+          </span>
         </div>
       </div>
 
@@ -186,7 +313,7 @@ export default function Create() {
             variant="outline" 
             size="lg"
             className="flex-1 border-background/20 text-background hover:bg-background/10"
-            onClick={() => { setStep('record'); setHasRecording(false); setRecordingTime(0); }}
+            onClick={handleRetake}
           >
             <RotateCcw className="h-4 w-4 mr-2" />
             Retake
