@@ -1,38 +1,24 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Settings, Edit2, Share2, Grid3X3, Play, 
+  Settings, Edit2, Share2, 
   Eye, Bookmark, LogOut, ChevronRight,
-  BadgeCheck, Lock, Globe, X
+  BadgeCheck, Lock, Globe, Play
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { useAuth } from '@/context/AuthContext';
-import { mockVideos, skillsList } from '@/data/mockData';
+import { mockVideos } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 
 type Tab = 'private' | 'public' | 'saved';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, logout, updateProfile } = useAuth();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('public');
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  
-  // Edit form state
-  const [editUsername, setEditUsername] = useState(user?.username || '');
-  const [editBio, setEditBio] = useState(user?.bio || '');
-  const [editSkills, setEditSkills] = useState<string[]>(user?.skills || []);
 
   const userVideos = mockVideos.filter(v => v.userId === '1');
   const publicVideos = userVideos.filter(v => v.visibility === 'public');
@@ -68,34 +54,6 @@ export default function Profile() {
       title: "Settings",
       description: "Settings page coming soon",
     });
-  };
-
-  const handleEditProfile = () => {
-    setEditUsername(user?.username || '');
-    setEditBio(user?.bio || '');
-    setEditSkills(user?.skills || []);
-    setShowEditDialog(true);
-  };
-
-  const handleSaveProfile = () => {
-    updateProfile({
-      username: editUsername,
-      bio: editBio,
-      skills: editSkills,
-    });
-    setShowEditDialog(false);
-    toast({
-      title: "Profile updated!",
-      description: "Your changes have been saved",
-    });
-  };
-
-  const handleSkillToggle = (skill: string) => {
-    if (editSkills.includes(skill)) {
-      setEditSkills(editSkills.filter(s => s !== skill));
-    } else if (editSkills.length < 6) {
-      setEditSkills([...editSkills, skill]);
-    }
   };
 
   const handleVideoClick = (videoId: string) => {
@@ -230,7 +188,7 @@ export default function Profile() {
           variant="outline" 
           className="w-full mt-4"
           size="lg"
-          onClick={handleEditProfile}
+          onClick={() => navigate('/profile/edit')}
         >
           <Edit2 className="h-4 w-4 mr-2" />
           Edit Profile
@@ -314,101 +272,6 @@ export default function Profile() {
           <ChevronRight className="h-5 w-5" />
         </button>
       </div>
-
-      {/* Edit Profile Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="w-full max-w-lg max-h-[85vh] overflow-y-auto sm:max-w-lg mx-auto p-4 sm:p-6 rounded-t-xl sm:rounded-xl fixed bottom-0 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 left-0 right-0 sm:left-1/2 sm:-translate-x-1/2">
-          <DialogHeader>
-            <DialogTitle>Edit Profile</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 pt-4">
-            {/* Avatar Preview */}
-            <div className="flex justify-center">
-              <div className="relative">
-                <img 
-                  src={user.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'} 
-                  alt={user.username}
-                  className="h-20 w-20 rounded-full object-cover border-2 border-border"
-                />
-                <Button 
-                  variant="secondary" 
-                  size="icon-sm" 
-                  className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full"
-                  onClick={() => toast({ title: "Coming soon", description: "Avatar upload will be available soon" })}
-                >
-                  <Edit2 className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Username */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Username</label>
-              <Input
-                placeholder="Your username"
-                value={editUsername}
-                onChange={(e) => setEditUsername(e.target.value)}
-              />
-            </div>
-            
-            {/* Bio */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Bio</label>
-              <Textarea
-                placeholder="Tell employers about yourself..."
-                value={editBio}
-                onChange={(e) => setEditBio(e.target.value)}
-                className="min-h-[100px] resize-none"
-                maxLength={200}
-              />
-              <p className="text-xs text-muted-foreground text-right">
-                {editBio.length}/200
-              </p>
-            </div>
-
-            {/* Skills */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Skills (up to 6)</label>
-              <div className="flex flex-wrap gap-2">
-                {editSkills.map((skill) => (
-                  <Badge 
-                    key={skill} 
-                    variant="default" 
-                    className="cursor-pointer gap-1"
-                    onClick={() => handleSkillToggle(skill)}
-                  >
-                    {skill}
-                    <X className="h-3 w-3" />
-                  </Badge>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2 pt-2">
-                {skillsList.filter(s => !editSkills.includes(s)).slice(0, 12).map((skill) => (
-                  <Badge
-                    key={skill}
-                    variant="outline"
-                    className="cursor-pointer"
-                    onClick={() => handleSkillToggle(skill)}
-                  >
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2 pt-4 border-t border-border">
-              <Button variant="outline" className="flex-1" onClick={() => setShowEditDialog(false)}>
-                Cancel
-              </Button>
-              <Button variant="coral" className="flex-1" onClick={handleSaveProfile}>
-                Save Changes
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <BottomNav />
     </div>
