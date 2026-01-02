@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit2, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,20 @@ import { toast } from '@/hooks/use-toast';
 
 export default function EditProfile() {
   const navigate = useNavigate();
-  const { user, updateProfile } = useAuth();
+  const { user, profile, updateProfile } = useAuth();
   
-  const [editUsername, setEditUsername] = useState(user?.username || '');
-  const [editBio, setEditBio] = useState(user?.bio || '');
-  const [editSkills, setEditSkills] = useState<string[]>(user?.skills || []);
+  const [editUsername, setEditUsername] = useState(profile?.username || '');
+  const [editBio, setEditBio] = useState(profile?.bio || '');
+  const [editSkills, setEditSkills] = useState<string[]>(profile?.skills || []);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setEditUsername(profile.username || '');
+      setEditBio(profile.bio || '');
+      setEditSkills(profile.skills || []);
+    }
+  }, [profile]);
 
   const handleSkillToggle = (skill: string) => {
     if (editSkills.includes(skill)) {
@@ -25,17 +34,28 @@ export default function EditProfile() {
     }
   };
 
-  const handleSaveProfile = () => {
-    updateProfile({
-      username: editUsername,
-      bio: editBio,
-      skills: editSkills,
-    });
-    toast({
-      title: "Profile updated!",
-      description: "Your changes have been saved",
-    });
-    navigate('/profile');
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      await updateProfile({
+        username: editUsername,
+        bio: editBio,
+        skills: editSkills,
+      });
+      toast({
+        title: "Profile updated!",
+        description: "Your changes have been saved",
+      });
+      navigate('/profile');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!user) {
@@ -54,9 +74,9 @@ export default function EditProfile() {
             </Button>
             <h1 className="text-lg font-semibold">Edit Profile</h1>
           </div>
-          <Button variant="coral" size="sm" onClick={handleSaveProfile}>
+          <Button variant="coral" size="sm" onClick={handleSaveProfile} disabled={isSaving}>
             <Check className="h-4 w-4 mr-2" />
-            Save
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </div>
       </header>
@@ -67,8 +87,8 @@ export default function EditProfile() {
         <div className="flex justify-center">
           <div className="relative">
             <img 
-              src={user.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'} 
-              alt={user.username}
+              src={profile?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'} 
+              alt={profile?.username || 'User'}
               className="h-24 w-24 rounded-full object-cover border-2 border-border"
             />
             <Button 

@@ -17,7 +17,7 @@ type Tab = 'private' | 'public' | 'saved';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('public');
 
   const userVideos = mockVideos.filter(v => v.userId === '1');
@@ -36,8 +36,8 @@ export default function Profile() {
     return num.toString();
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -118,7 +118,7 @@ export default function Profile() {
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg px-4 py-3">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold">@{user.username || 'user'}</h1>
+          <h1 className="text-lg font-semibold">@{profile?.username || 'user'}</h1>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon-sm" onClick={handleShare}>
               <Share2 className="h-5 w-5" />
@@ -136,11 +136,11 @@ export default function Profile() {
           {/* Avatar */}
           <div className="relative">
             <img 
-              src={user.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'} 
-              alt={user.username}
+              src={profile?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'} 
+              alt={profile?.username || 'User'}
               className="h-20 w-20 rounded-full object-cover border-2 border-coral"
             />
-            {user.isVerified && (
+            {profile?.is_verified && (
               <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-coral flex items-center justify-center border-2 border-background">
                 <BadgeCheck className="h-4 w-4 text-background" />
               </div>
@@ -166,16 +166,16 @@ export default function Profile() {
 
         {/* Bio */}
         <div className="mt-4 space-y-2">
-          <p className="font-medium">{user.username || 'Your Name'}</p>
+          <p className="font-medium">{profile?.username || 'Your Name'}</p>
           <p className="text-sm text-muted-foreground">
-            {user.bio || 'Add a bio to tell employers about yourself'}
+            {profile?.bio || 'Add a bio to tell employers about yourself'}
           </p>
         </div>
 
         {/* Skills */}
-        {user.skills.length > 0 && (
+        {profile?.skills && profile.skills.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
-            {user.skills.map((skill) => (
+            {profile.skills.map((skill) => (
               <Badge key={skill} variant="secondary" className="text-xs">
                 {skill}
               </Badge>
