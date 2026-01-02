@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/AuthContext';
-import { UserType, SkillCategory } from '@/types';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 type Step = 'welcome' | 'login' | 'signup' | 'userType' | 'onboarding';
+type UserType = 'talent' | 'employer';
+type SkillCategory = 'tech' | 'design' | 'business' | 'other';
 
 const skillCategories: { value: SkillCategory; label: string; icon: string }[] = [
   { value: 'tech', label: 'Technology', icon: '💻' },
@@ -28,21 +30,38 @@ export default function Auth() {
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, signup, updateProfile } = useAuth();
+  const { login, signup, updateProfile, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate('/feed');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   const handleAuth = async () => {
     setLoading(true);
     try {
       if (isLogin) {
-        await login(email, password);
-        navigate('/feed');
+        const { error } = await login(email, password);
+        if (error) {
+          toast.error(error.message || 'Login failed');
+        } else {
+          navigate('/feed');
+        }
       } else {
-        await signup(email, password, userType);
-        setStep('userType');
+        const { error } = await signup(email, password);
+        if (error) {
+          toast.error(error.message || 'Signup failed');
+        } else {
+          toast.success('Account created! You can now log in.');
+          setStep('userType');
+        }
       }
     } catch (error) {
       console.error('Auth error:', error);
+      toast.error('An error occurred');
     }
     setLoading(false);
   };
@@ -52,14 +71,23 @@ export default function Auth() {
     setStep('onboarding');
   };
 
-  const handleOnboardingComplete = () => {
-    updateProfile({
+  const handleOnboardingComplete = async () => {
+    await updateProfile({
       username,
-      skillCategory: selectedCategory || 'other',
+      skill_category: selectedCategory || 'other',
       bio,
+      user_type: userType,
     });
     navigate('/feed');
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   const renderWelcome = () => (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 animate-fade-in">

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   X, Video, Upload, RotateCcw, Play, 
   Check, ChevronDown, Globe, Users, Sparkles,
-  Camera, AlertCircle
+  Camera, AlertCircle, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,9 @@ import { skillsList } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { useCamera } from '@/hooks/useCamera';
 import { useFileUpload } from '@/hooks/useFileUpload';
+import { useVideoUpload } from '@/hooks/useVideoUpload';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 type Step = 'record' | 'preview' | 'details';
@@ -29,9 +32,11 @@ const categories = [
 
 export default function Create() {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [step, setStep] = useState<Step>('record');
   const [videoSource, setVideoSource] = useState<VideoSource | null>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
+  const [isPosting, setIsPosting] = useState(false);
   
   // Camera hook
   const {
@@ -55,10 +60,14 @@ export default function Create() {
     inputRef: fileInputRef,
     handleFileChange,
     fileUrl: uploadedUrl,
+    file: uploadedFile,
     error: uploadError,
     openFilePicker,
     clearFile,
   } = useFileUpload({ accept: 'video/*', maxSizeMB: 100 });
+
+  // Video upload hook
+  const { uploading, uploadVideo } = useVideoUpload();
   
   // Details
   const [caption, setCaption] = useState('');
@@ -67,6 +76,14 @@ export default function Create() {
   const [visibility, setVisibility] = useState<Visibility>('public');
   const [showSkillPicker, setShowSkillPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast.error('Please log in to create videos');
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   // Start camera when component mounts
   useEffect(() => {
@@ -131,10 +148,57 @@ export default function Create() {
     startStream();
   };
 
-  const handlePost = () => {
-    // In production, this would upload the video to storage
-    toast.success('Video posted successfully!');
-    navigate('/feed');
+  const handlePost = async () => {
+    if (!user) {
+      toast.error('Please log in to post videos');
+      return;
+    }
+
+    setIsPosting(true);
+    try {
+      // Get the video blob
+      let videoBlob: Blob | null = null;
+      
+      if (videoSource === 'camera' && recordedBlob) {
+        videoBlob = recordedBlob;
+      } else if (videoSource === 'upload' && uploadedFile) {
+        videoBlob = uploadedFile;
+      }
+
+      if (!videoBlob) {
+        toast.error('No video to upload');
+        return;
+      }
+
+      // Upload video to storage
+      const videoUrl = await uploadVideo(videoBlob, user.id);
+      
+      if (!videoUrl) {
+        toast.error('Failed to upload video');
+        return;
+      }
+
+      // Save video record to database
+      const { error } = await supabase.from('videos').insert({
+        user_id: user.id,
+        title: caption,
+        description: caption,
+        video_url: videoUrl,
+        thumbnail_url: null, // Could generate thumbnail in future
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Video posted successfully!');
+      navigate('/feed');
+    } catch (error) {
+      console.error('Error posting video:', error);
+      toast.error('Failed to post video');
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   const currentVideoUrl = videoSource === 'upload' ? uploadedUrl : recordedUrl;
@@ -344,9 +408,16 @@ export default function Create() {
             variant="coral" 
             size="sm"
             onClick={handlePost}
-            disabled={!caption}
+            disabled={!caption || isPosting || uploading}
           >
-            Post
+            {isPosting || uploading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Posting...
+              </>
+            ) : (
+              'Post'
+            )}
           </Button>
         </div>
       </div>

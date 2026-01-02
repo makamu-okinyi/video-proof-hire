@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          avatar: string | null
+          bio: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_verified: boolean
+          skill_category: string
+          skills: string[] | null
+          updated_at: string
+          user_type: string
+          username: string | null
+        }
+        Insert: {
+          avatar?: string | null
+          bio?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          is_verified?: boolean
+          skill_category?: string
+          skills?: string[] | null
+          updated_at?: string
+          user_type?: string
+          username?: string | null
+        }
+        Update: {
+          avatar?: string | null
+          bio?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_verified?: boolean
+          skill_category?: string
+          skills?: string[] | null
+          updated_at?: string
+          user_type?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       videos: {
         Row: {
           created_at: string
@@ -51,7 +93,15 @@ export type Database = {
           video_url?: string
           views?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "videos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
