@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Settings, Edit2, Share2, 
@@ -9,9 +9,21 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { useAuth } from '@/context/AuthContext';
-import { mockVideos } from '@/data/mockData';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+
+interface UserVideo {
+  id: string;
+  video_url: string;
+  thumbnail_url: string | null;
+  title: string | null;
+  description: string | null;
+  views: number;
+  likes: number;
+  visibility: 'public' | 'recruiters';
+  created_at: string;
+}
 
 type Tab = 'private' | 'public' | 'saved';
 
@@ -19,14 +31,48 @@ export default function Profile() {
   const navigate = useNavigate();
   const { user, profile, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('public');
+  const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const userVideos = mockVideos.filter(v => v.userId === '1');
+  useEffect(() => {
+    if (user?.id) {
+      fetchUserVideos();
+    }
+  }, [user?.id]);
+
+  const fetchUserVideos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('id, video_url, thumbnail_url, title, description, views, likes, created_at')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching videos:', error);
+        return;
+      }
+
+      // For now, treat all user videos as public (visibility field not in DB yet)
+      const videos: UserVideo[] = (data || []).map(v => ({
+        ...v,
+        visibility: 'public' as const
+      }));
+
+      setUserVideos(videos);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const publicVideos = userVideos.filter(v => v.visibility === 'public');
   const privateVideos = userVideos.filter(v => v.visibility === 'recruiters');
   
   const stats = {
-    views: userVideos.reduce((acc, v) => acc + v.views, 0),
-    likes: userVideos.reduce((acc, v) => acc + v.likes, 0),
+    views: userVideos.reduce((acc, v) => acc + (v.views || 0), 0),
+    likes: userVideos.reduce((acc, v) => acc + (v.likes || 0), 0),
     videos: userVideos.length,
   };
 
@@ -65,7 +111,15 @@ export default function Profile() {
     return null;
   }
 
-  const renderVideoGrid = (videos: typeof userVideos, emptyMessage: string, emptyIcon: React.ReactNode) => {
+  const renderVideoGrid = (videos: UserVideo[], emptyMessage: string, emptyIcon: React.ReactNode) => {
+    if (loading) {
+      return (
+        <div className="py-16 text-center">
+          <p className="text-muted-foreground animate-pulse">Loading videos...</p>
+        </div>
+      );
+    }
+
     if (videos.length > 0) {
       return (
         <div className="grid grid-cols-3 gap-1">
@@ -75,17 +129,27 @@ export default function Profile() {
               onClick={() => handleVideoClick(video.id)}
               className="aspect-[9/16] relative bg-secondary rounded-lg overflow-hidden group cursor-pointer"
             >
-              <img 
-                src={video.thumbnailUrl} 
-                alt={video.caption}
-                className="w-full h-full object-cover"
-              />
+              {video.thumbnail_url ? (
+                <img 
+                  src={video.thumbnail_url} 
+                  alt={video.title || 'Video'}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <video 
+                  src={video.video_url}
+                  className="w-full h-full object-cover"
+                  muted
+                  playsInline
+                  preload="metadata"
+                />
+              )}
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <Play className="h-8 w-8 text-background" fill="white" />
               </div>
               <div className="absolute bottom-2 left-2 flex items-center gap-1 text-background text-xs">
                 <Eye className="h-3 w-3" />
-                {formatNumber(video.views)}
+                {formatNumber(video.views || 0)}
               </div>
               {video.visibility === 'recruiters' && (
                 <div className="absolute top-2 right-2">
