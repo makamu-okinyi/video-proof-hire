@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, Bookmark, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { Video } from '@/types';
 import { cn } from '@/lib/utils';
@@ -11,11 +11,58 @@ interface VideoCardProps {
 }
 
 export function VideoCard({ video, isActive = false }: VideoCardProps) {
-  const [isPlaying, setIsPlaying] = useState(isActive);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [likes, setLikes] = useState(video.likes);
+  const [showPlayButton, setShowPlayButton] = useState(true);
+
+  // Auto-play when video becomes active
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isActive) {
+        videoRef.current.play().then(() => {
+          setIsPlaying(true);
+          setShowPlayButton(false);
+        }).catch(() => {
+          setIsPlaying(false);
+          setShowPlayButton(true);
+        });
+      } else {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+        setIsPlaying(false);
+        setShowPlayButton(true);
+      }
+    }
+  }, [isActive]);
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+        setShowPlayButton(true);
+      } else {
+        videoRef.current.play().then(() => {
+          setIsPlaying(true);
+          setShowPlayButton(false);
+        }).catch(() => {
+          setIsPlaying(false);
+          setShowPlayButton(true);
+        });
+      }
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -30,20 +77,26 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
 
   return (
     <div className="relative w-full h-full bg-surface-darker overflow-hidden">
-      {/* Video Background */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${video.thumbnailUrl})` }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-      </div>
+      {/* Video Player */}
+      <video
+        ref={videoRef}
+        src={video.videoUrl}
+        className="absolute inset-0 w-full h-full object-cover"
+        loop
+        muted={isMuted}
+        playsInline
+        poster={video.thumbnailUrl}
+      />
+      
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent pointer-events-none" />
 
       {/* Play/Pause Overlay */}
       <button 
         className="absolute inset-0 flex items-center justify-center z-10"
-        onClick={() => setIsPlaying(!isPlaying)}
+        onClick={togglePlay}
       >
-        {!isPlaying && (
+        {showPlayButton && !isPlaying && (
           <div className="h-20 w-20 rounded-full bg-background/20 backdrop-blur-sm flex items-center justify-center animate-scale-up">
             <Play className="h-10 w-10 text-background ml-1" fill="white" />
           </div>
@@ -161,7 +214,7 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
       {/* Volume Control */}
       <button 
         className="absolute top-4 right-4 z-20 h-9 w-9 rounded-full bg-background/10 backdrop-blur-sm flex items-center justify-center"
-        onClick={() => setIsMuted(!isMuted)}
+        onClick={toggleMute}
       >
         {isMuted ? (
           <VolumeX className="h-4 w-4 text-background" />
