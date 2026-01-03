@@ -14,6 +14,230 @@ export type Database = {
   }
   public: {
     Tables: {
+      challenge_submissions: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          id: string
+          status: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          id?: string
+          status?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          status?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_submissions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_submissions_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          created_at: string
+          deadline: string | null
+          description: string
+          employer_id: string
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          participants_count: number
+          prize_amount: number | null
+          prize_description: string | null
+          skills_tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deadline?: string | null
+          description: string
+          employer_id: string
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          participants_count?: number
+          prize_amount?: number | null
+          prize_description?: string | null
+          skills_tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deadline?: string | null
+          description?: string
+          employer_id?: string
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          participants_count?: number
+          prize_amount?: number | null
+          prize_description?: string | null
+          skills_tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenges_employer_id_fkey"
+            columns: ["employer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_applications: {
+        Row: {
+          applicant_id: string
+          cover_message: string | null
+          created_at: string
+          id: string
+          job_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          applicant_id: string
+          cover_message?: string | null
+          created_at?: string
+          id?: string
+          job_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          applicant_id?: string
+          cover_message?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_applicant_id_fkey"
+            columns: ["applicant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_postings: {
+        Row: {
+          application_deadline: string | null
+          applications_count: number
+          benefits: string[] | null
+          company_logo: string | null
+          company_name: string | null
+          created_at: string
+          description: string
+          employer_id: string
+          experience_level: string | null
+          id: string
+          is_active: boolean
+          job_type: string
+          location: string | null
+          salary_max: number | null
+          salary_min: number | null
+          skills_required: string[] | null
+          title: string
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          application_deadline?: string | null
+          applications_count?: number
+          benefits?: string[] | null
+          company_logo?: string | null
+          company_name?: string | null
+          created_at?: string
+          description: string
+          employer_id: string
+          experience_level?: string | null
+          id?: string
+          is_active?: boolean
+          job_type?: string
+          location?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          skills_required?: string[] | null
+          title: string
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          application_deadline?: string | null
+          applications_count?: number
+          benefits?: string[] | null
+          company_logo?: string | null
+          company_name?: string | null
+          created_at?: string
+          description?: string
+          employer_id?: string
+          experience_level?: string | null
+          id?: string
+          is_active?: boolean
+          job_type?: string
+          location?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          skills_required?: string[] | null
+          title?: string
+          updated_at?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_postings_employer_id_fkey"
+            columns: ["employer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar: string | null

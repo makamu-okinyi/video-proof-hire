@@ -13,6 +13,11 @@ import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import Articles from "./pages/Articles";
 import WriteArticle from "./pages/WriteArticle";
+import EmployerDashboard from "./pages/EmployerDashboard";
+import CreateJob from "./pages/CreateJob";
+import CreateChallenge from "./pages/CreateChallenge";
+import JobApplicants from "./pages/JobApplicants";
+import ChallengeSubmissions from "./pages/ChallengeSubmissions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +39,14 @@ const App = () => (
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/edit" element={<EditProfile />} />
+            {/* Employer Routes */}
+            <Route path="/employer" element={<EmployerDashboard />} />
+            <Route path="/employer/jobs/create" element={<CreateJob />} />
+            <Route path="/employer/jobs/:jobId/edit" element={<CreateJob />} />
+            <Route path="/employer/jobs/:jobId/applicants" element={<JobApplicants />} />
+            <Route path="/employer/challenges/create" element={<CreateChallenge />} />
+            <Route path="/employer/challenges/:challengeId/edit" element={<CreateChallenge />} />
+            <Route path="/employer/challenges/:challengeId/submissions" element={<ChallengeSubmissions />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
