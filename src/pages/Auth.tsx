@@ -30,15 +30,20 @@ export default function Auth() {
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, signup, updateProfile, isAuthenticated, isLoading } = useAuth();
+  const { login, signup, updateProfile, isAuthenticated, isLoading, profile } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      navigate('/feed');
+    if (!isLoading && isAuthenticated && profile) {
+      // Redirect based on user type
+      if (profile.user_type === 'employer') {
+        navigate('/employer');
+      } else {
+        navigate('/feed');
+      }
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, profile, navigate]);
 
   const handleAuth = async () => {
     setLoading(true);
@@ -78,7 +83,12 @@ export default function Auth() {
       bio,
       user_type: userType,
     });
-    navigate('/feed');
+    // Redirect based on user type
+    if (userType === 'employer') {
+      navigate('/employer');
+    } else {
+      navigate('/feed');
+    }
   };
 
   if (isLoading) {
@@ -286,48 +296,60 @@ export default function Auth() {
       <div className="flex-1 flex flex-col max-w-sm mx-auto w-full">
         <div className="space-y-2 mb-8">
           <h2 className="text-3xl font-bold">Set up your profile</h2>
-          <p className="text-muted-foreground">Help employers discover you</p>
+          <p className="text-muted-foreground">
+            {userType === 'employer' 
+              ? 'Tell candidates about your company'
+              : 'Help employers discover you'}
+          </p>
         </div>
 
         <div className="space-y-6 flex-1">
-          {/* Username */}
+          {/* Username / Company Name */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Username (optional)</label>
+            <label className="text-sm font-medium">
+              {userType === 'employer' ? 'Company Name' : 'Username'} (optional)
+            </label>
             <Input
-              placeholder="@username"
+              placeholder={userType === 'employer' ? 'Acme Inc.' : '@username'}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="h-14 text-base"
             />
           </div>
 
-          {/* Skill Category */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium">What's your field?</label>
-            <div className="grid grid-cols-2 gap-3">
-              {skillCategories.map((cat) => (
-                <button
-                  key={cat.value}
-                  onClick={() => setSelectedCategory(cat.value)}
-                  className={cn(
-                    "p-4 rounded-xl border-2 text-left transition-all duration-200",
-                    selectedCategory === cat.value
-                      ? "border-coral bg-coral/5"
-                      : "border-border hover:border-coral/50"
-                  )}
-                >
-                  <span className="text-2xl">{cat.icon}</span>
-                  <p className="text-sm font-medium mt-2">{cat.label}</p>
-                </button>
-              ))}
+          {/* Skill Category - Only for talent */}
+          {userType === 'talent' && (
+            <div className="space-y-3">
+              <label className="text-sm font-medium">What's your field?</label>
+              <div className="grid grid-cols-2 gap-3">
+                {skillCategories.map((cat) => (
+                  <button
+                    key={cat.value}
+                    onClick={() => setSelectedCategory(cat.value)}
+                    className={cn(
+                      "p-4 rounded-xl border-2 text-left transition-all duration-200",
+                      selectedCategory === cat.value
+                        ? "border-coral bg-coral/5"
+                        : "border-border hover:border-coral/50"
+                    )}
+                  >
+                    <span className="text-2xl">{cat.icon}</span>
+                    <p className="text-sm font-medium mt-2">{cat.label}</p>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Bio */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Short bio (optional)</label>
+            <label className="text-sm font-medium">
+              {userType === 'employer' ? 'Company description' : 'Short bio'} (optional)
+            </label>
             <Input
-              placeholder="Tell employers about yourself..."
+              placeholder={userType === 'employer' 
+                ? 'What does your company do?'
+                : 'Tell employers about yourself...'}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               className="h-14 text-base"
