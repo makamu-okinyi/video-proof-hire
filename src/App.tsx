@@ -7,6 +7,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import Index from "./pages/Index";
 import Feed from "./pages/Feed";
 import Jobs from "./pages/Jobs";
+import Challenges from "./pages/Challenges";
 import Create from "./pages/Create";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
@@ -18,6 +19,7 @@ import CreateJob from "./pages/CreateJob";
 import CreateChallenge from "./pages/CreateChallenge";
 import JobApplicants from "./pages/JobApplicants";
 import ChallengeSubmissions from "./pages/ChallengeSubmissions";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,8 +33,10 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="/feed" element={<Feed />} />
             <Route path="/jobs" element={<Jobs />} />
+            <Route path="/challenges" element={<Challenges />} />
             <Route path="/articles" element={<Articles />} />
             <Route path="/articles/write" element={<WriteArticle />} />
             <Route path="/create" element={<Create />} />
