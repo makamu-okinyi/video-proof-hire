@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Play, Eye, MessageCircle, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ChevronLeft, Play, Eye, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { StartConversationButton } from '@/components/messaging/StartConversationButton';
 
 interface Applicant {
   id: string;
@@ -254,11 +255,10 @@ export default function JobApplicants() {
               )}
 
               {/* Actions */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="flex-1"
                   onClick={() => updateStatus(applicant.id, 'shortlisted')}
                   disabled={applicant.status === 'shortlisted'}
                 >
@@ -268,13 +268,19 @@ export default function JobApplicants() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="flex-1"
                   onClick={() => updateStatus(applicant.id, 'reviewed')}
                   disabled={applicant.status === 'reviewed'}
                 >
                   <Clock className="h-4 w-4 mr-1" />
-                  Mark Reviewed
+                  Reviewed
                 </Button>
+                {applicant.status === 'shortlisted' && user && (
+                  <StartConversationButton
+                    candidateId={applicant.applicant.id}
+                    employerId={user.id}
+                    jobApplicationId={applicant.id}
+                  />
+                )}
                 <Button 
                   variant="ghost" 
                   size="sm"
