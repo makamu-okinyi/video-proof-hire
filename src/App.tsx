@@ -20,6 +20,7 @@ import CreateChallenge from "./pages/CreateChallenge";
 import JobApplicants from "./pages/JobApplicants";
 import ChallengeSubmissions from "./pages/ChallengeSubmissions";
 import Auth from "./pages/Auth";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/edit" element={<EditProfile />} />
+            <Route path="/messages" element={<Messages />} />
             {/* Employer Routes */}
             <Route path="/employer" element={<EmployerDashboard />} />
             <Route path="/employer/jobs/create" element={<CreateJob />} />
