@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Play, Eye, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ChevronLeft, Play, Eye, CheckCircle, XCircle, Clock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { StartConversationButton } from '@/components/messaging/StartConversationButton';
-
 interface Applicant {
   id: string;
   status: string;
@@ -190,11 +189,15 @@ export default function JobApplicants() {
                   <img 
                     src={applicant.applicant.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'}
                     alt={applicant.applicant.username || 'User'}
-                    className="h-12 w-12 rounded-full object-cover"
+                    className="h-12 w-12 rounded-full object-cover cursor-pointer"
+                    onClick={() => navigate(`/user/${applicant.applicant.id}`)}
                   />
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">
+                      <h3 
+                        className="font-semibold cursor-pointer hover:underline"
+                        onClick={() => navigate(`/user/${applicant.applicant.id}`)}
+                      >
                         @{applicant.applicant.username || 'user'}
                       </h3>
                       {applicant.applicant.is_verified && (
@@ -206,9 +209,19 @@ export default function JobApplicants() {
                     </p>
                   </div>
                 </div>
-                <Badge className={getStatusColor(applicant.status)}>
-                  {applicant.status}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => navigate(`/user/${applicant.applicant.id}`)}
+                  >
+                    <User className="h-4 w-4 mr-1" />
+                    View Profile
+                  </Button>
+                  <Badge className={getStatusColor(applicant.status)}>
+                    {applicant.status}
+                  </Badge>
+                </div>
               </div>
 
               {/* Skills */}
