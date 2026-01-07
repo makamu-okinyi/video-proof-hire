@@ -9,6 +9,7 @@ interface Conversation {
   job_application_id: string | null;
   created_at: string;
   updated_at: string;
+  other_user_id: string;
   other_user: {
     username: string | null;
     avatar: string | null;

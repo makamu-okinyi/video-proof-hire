@@ -13,6 +13,7 @@ interface Conversation {
   job_application_id: string | null;
   created_at: string;
   updated_at: string;
+  other_user_id: string;
   other_user: {
     username: string | null;
     avatar: string | null;
@@ -73,6 +74,7 @@ export default function Messages() {
 
         return {
           ...convo,
+          other_user_id: otherUserId,
           other_user: profileResult.data || { username: null, avatar: null },
           last_message: messagesResult.data?.[0],
           unread_count: unreadResult.count || 0
@@ -114,6 +116,7 @@ export default function Messages() {
               <MessageThread
                 conversationId={selectedConversation.id}
                 currentUserId={user.id}
+                otherUserId={selectedConversation.other_user_id}
                 otherUser={selectedConversation.other_user}
               />
             </div>

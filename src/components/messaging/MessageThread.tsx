@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 interface Message {
   id: string;
@@ -18,13 +19,14 @@ interface Message {
 interface MessageThreadProps {
   conversationId: string;
   currentUserId: string;
+  otherUserId: string;
   otherUser: {
     username: string | null;
     avatar: string | null;
   };
 }
 
-export function MessageThread({ conversationId, currentUserId, otherUser }: MessageThreadProps) {
+export function MessageThread({ conversationId, currentUserId, otherUserId, otherUser }: MessageThreadProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -88,18 +90,34 @@ export function MessageThread({ conversationId, currentUserId, otherUser }: Mess
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const { profile } = useAuth();
+
   const handleSend = async () => {
     if (!newMessage.trim() || sending) return;
 
     setSending(true);
+    const messageContent = newMessage.trim();
+    
     const { error } = await supabase.from('messages').insert({
       conversation_id: conversationId,
       sender_id: currentUserId,
-      content: newMessage.trim(),
+      content: messageContent,
     });
 
     if (!error) {
       setNewMessage("");
+      
+      // Send email notification (fire and forget)
+      supabase.functions.invoke('send-notification', {
+        body: {
+          type: 'new_message',
+          recipientId: otherUserId,
+          data: {
+            senderName: profile?.username || 'Someone',
+            messagePreview: messageContent.substring(0, 100),
+          },
+        },
+      }).catch(console.error);
     }
     setSending(false);
   };
