@@ -100,7 +100,7 @@ export default function JobApplicants() {
     }
   };
 
-  const updateStatus = async (applicationId: string, status: string) => {
+  const updateStatus = async (applicationId: string, status: string, applicantId: string) => {
     const { error } = await supabase
       .from('job_applications')
       .update({ status })
@@ -111,6 +111,19 @@ export default function JobApplicants() {
         a.id === applicationId ? { ...a, status } : a
       ));
       toast.success(`Application ${status}`);
+      
+      // Send email notification for status change (fire and forget)
+      supabase.functions.invoke('send-notification', {
+        body: {
+          type: 'application_status',
+          recipientId: applicantId,
+          data: {
+            jobTitle: job?.title,
+            companyName: job?.company_name,
+            status,
+          },
+        },
+      }).catch(console.error);
     } else {
       toast.error('Failed to update status');
     }
@@ -259,7 +272,7 @@ export default function JobApplicants() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => updateStatus(applicant.id, 'shortlisted')}
+                  onClick={() => updateStatus(applicant.id, 'shortlisted', applicant.applicant.id)}
                   disabled={applicant.status === 'shortlisted'}
                 >
                   <CheckCircle className="h-4 w-4 mr-1" />
@@ -268,7 +281,7 @@ export default function JobApplicants() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => updateStatus(applicant.id, 'reviewed')}
+                  onClick={() => updateStatus(applicant.id, 'reviewed', applicant.applicant.id)}
                   disabled={applicant.status === 'reviewed'}
                 >
                   <Clock className="h-4 w-4 mr-1" />
@@ -284,7 +297,7 @@ export default function JobApplicants() {
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => updateStatus(applicant.id, 'rejected')}
+                  onClick={() => updateStatus(applicant.id, 'rejected', applicant.applicant.id)}
                   disabled={applicant.status === 'rejected'}
                   className="text-destructive hover:text-destructive"
                 >
