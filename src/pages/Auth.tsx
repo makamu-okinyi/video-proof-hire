@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,12 +42,13 @@ export default function Auth() {
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, signup, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
+  const { login, signup, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (except on /auth where we allow account switching)
   useEffect(() => {
-    if (!isLoading && isAuthenticated && profile) {
+    if (!isLoading && isAuthenticated && profile && location.pathname !== '/auth') {
       // Redirect based on user type
       if (profile.user_type === 'employer') {
         navigate('/employer');
@@ -55,7 +56,7 @@ export default function Auth() {
         navigate('/feed');
       }
     }
-  }, [isAuthenticated, isLoading, profile, navigate]);
+  }, [isAuthenticated, isLoading, profile, navigate, location.pathname]);
 
   const handleAuth = async () => {
     // Validate email
@@ -170,6 +171,71 @@ export default function Auth() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  // Allow users to open /auth even if they're already signed in (so they can sign out / switch accounts)
+  if (location.pathname === '/auth' && isAuthenticated) {
+    if (!profile) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="animate-pulse text-muted-foreground">Loading your account...</div>
+        </div>
+      );
+    }
+
+    const destination = profile.user_type === 'employer' ? '/employer' : '/feed';
+
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight">You’re already signed in</h1>
+            <p className="text-muted-foreground">
+              Continue as {profile.username || profile.email || 'your account'}.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <Button
+              variant="hero"
+              size="xl"
+              className="w-full"
+              onClick={() => navigate(destination)}
+            >
+              Continue
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full"
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await logout();
+                  toast.success('Signed out');
+                  setStep('welcome');
+                  setEmail('');
+                  setPassword('');
+                } catch {
+                  toast.error('Sign out failed. Please try again.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+            >
+              Sign out
+            </Button>
+          </div>
+
+          <p className="text-center text-xs text-muted-foreground">
+            To sign in with a different account, sign out first.
+          </p>
+        </div>
       </div>
     );
   }
