@@ -6,6 +6,18 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { z } from 'zod';
+
+// Validation schemas
+const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
+const passwordSchema = z.string()
+  .min(8, { message: "Password must be at least 8 characters" })
+  .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+  .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
+  .regex(/[0-9]/, { message: "Password must contain at least one number" });
+const usernameSchema = z.string().trim().max(50, { message: "Username must be less than 50 characters" }).optional();
+const bioSchema = z.string().trim().max(500, { message: "Bio must be less than 500 characters" }).optional();
 
 type Step = 'welcome' | 'login' | 'signup' | 'userType' | 'onboarding';
 type UserType = 'talent' | 'employer';
@@ -30,7 +42,7 @@ export default function Auth() {
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, signup, updateProfile, isAuthenticated, isLoading, profile } = useAuth();
+  const { login, signup, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
@@ -46,27 +58,52 @@ export default function Auth() {
   }, [isAuthenticated, isLoading, profile, navigate]);
 
   const handleAuth = async () => {
+    // Validate email
+    const emailResult = emailSchema.safeParse(email);
+    if (!emailResult.success) {
+      toast.error(emailResult.error.errors[0].message);
+      return;
+    }
+
+    // Validate password (only for signup)
+    if (!isLogin) {
+      const passwordResult = passwordSchema.safeParse(password);
+      if (!passwordResult.success) {
+        toast.error(passwordResult.error.errors[0].message);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       if (isLogin) {
         const { error } = await login(email, password);
         if (error) {
-          toast.error(error.message || 'Login failed');
-        } else {
-          navigate('/feed');
+          // User-friendly error messages
+          if (error.message.includes('Invalid login credentials')) {
+            toast.error('Invalid email or password');
+          } else if (error.message.includes('Email not confirmed')) {
+            toast.error('Please check your email to confirm your account');
+          } else {
+            toast.error('Login failed. Please try again.');
+          }
         }
+        // Navigation handled by useEffect when profile loads
       } else {
         const { error } = await signup(email, password);
         if (error) {
-          toast.error(error.message || 'Signup failed');
+          if (error.message.includes('already registered')) {
+            toast.error('An account with this email already exists');
+          } else {
+            toast.error('Signup failed. Please try again.');
+          }
         } else {
-          toast.success('Account created! You can now log in.');
+          toast.success('Account created!');
           setStep('userType');
         }
       }
     } catch (error) {
-      console.error('Auth error:', error);
-      toast.error('An error occurred');
+      toast.error('An unexpected error occurred');
     }
     setLoading(false);
   };
@@ -77,18 +114,56 @@ export default function Auth() {
   };
 
   const handleOnboardingComplete = async () => {
-    await updateProfile({
-      username,
-      skill_category: selectedCategory || 'other',
-      bio,
-      user_type: userType,
-    });
-    // Redirect based on user type
-    if (userType === 'employer') {
-      navigate('/employer');
-    } else {
-      navigate('/feed');
+    // Validate inputs
+    if (username) {
+      const usernameResult = usernameSchema.safeParse(username);
+      if (!usernameResult.success) {
+        toast.error(usernameResult.error.errors[0].message);
+        return;
+      }
     }
+
+    if (bio) {
+      const bioResult = bioSchema.safeParse(bio);
+      if (!bioResult.success) {
+        toast.error(bioResult.error.errors[0].message);
+        return;
+      }
+    }
+
+    setLoading(true);
+    try {
+      // Use the secure database function to update role
+      const { error: roleError } = await supabase.rpc('update_user_role', {
+        new_role: userType
+      });
+
+      if (roleError) {
+        toast.error('Failed to set account type');
+        setLoading(false);
+        return;
+      }
+
+      // Update profile info
+      await updateProfile({
+        username: username || null,
+        skill_category: selectedCategory || 'other',
+        bio: bio || null,
+      });
+
+      // Refresh to get updated profile
+      await refreshProfile();
+
+      // Redirect based on user type
+      if (userType === 'employer') {
+        navigate('/employer');
+      } else {
+        navigate('/feed');
+      }
+    } catch (error) {
+      toast.error('Failed to complete setup');
+    }
+    setLoading(false);
   };
 
   if (isLoading) {
@@ -363,9 +438,10 @@ export default function Auth() {
           size="xl" 
           className="w-full mt-8"
           onClick={handleOnboardingComplete}
+          disabled={loading}
         >
-          Complete Setup
-          <ArrowRight className="h-5 w-5 ml-2" />
+          {loading ? 'Setting up...' : 'Complete Setup'}
+          {!loading && <ArrowRight className="h-5 w-5 ml-2" />}
         </Button>
       </div>
     </div>
