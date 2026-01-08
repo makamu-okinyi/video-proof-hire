@@ -16,6 +16,10 @@ interface Profile {
   updated_at: string;
 }
 
+interface UserRole {
+  role: 'talent' | 'employer';
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -38,14 +42,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
+    // Fetch profile
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
 
-    if (!error && data) {
-      setProfile(data as Profile);
+    // Fetch role from secure user_roles table
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!profileError && profileData) {
+      // Use role from user_roles table if available, otherwise fallback to profile.user_type
+      const userType = (roleData as UserRole)?.role || profileData.user_type;
+      setProfile({ ...profileData, user_type: userType } as Profile);
     }
   };
 
