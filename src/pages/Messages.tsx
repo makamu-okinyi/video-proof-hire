@@ -53,13 +53,13 @@ export default function Messages() {
       return;
     }
 
-    // Fetch other user profiles and last messages
+    // Fetch other user profiles and last messages using secure RPC (excludes email)
     const enrichedConversations = await Promise.all(
       convos.map(async (convo) => {
         const otherUserId = convo.employer_id === user.id ? convo.candidate_id : convo.employer_id;
         
         const [profileResult, messagesResult, unreadResult] = await Promise.all([
-          supabase.from('profiles').select('username, avatar').eq('id', otherUserId).single(),
+          supabase.rpc('get_public_profile', { profile_id: otherUserId }),
           supabase.from('messages')
             .select('content, created_at, is_read, sender_id')
             .eq('conversation_id', convo.id)
@@ -72,10 +72,11 @@ export default function Messages() {
             .neq('sender_id', user.id)
         ]);
 
+        const profileData = profileResult.data?.[0];
         return {
           ...convo,
           other_user_id: otherUserId,
-          other_user: profileResult.data || { username: null, avatar: null },
+          other_user: profileData ? { username: profileData.username, avatar: profileData.avatar } : { username: null, avatar: null },
           last_message: messagesResult.data?.[0],
           unread_count: unreadResult.count || 0
         };

@@ -59,15 +59,12 @@ export default function Feed() {
       }
 
       if (data && data.length > 0) {
-        // Fetch profiles for video users
-        const userIds = [...new Set(data.map(v => v.user_id))];
+        // Fetch profiles using secure RPC function (excludes email)
         const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, username, avatar, is_verified, skills, skill_category')
-          .in('id', userIds);
+          .rpc('get_all_public_profiles');
 
         const profileMap = new Map<string, DbProfile>();
-        profiles?.forEach(p => profileMap.set(p.id, p as DbProfile));
+        profiles?.forEach((p: DbProfile) => profileMap.set(p.id, p));
 
         // Transform database videos to Video type
         const transformedVideos: Video[] = (data as DbVideo[]).map(v => {
