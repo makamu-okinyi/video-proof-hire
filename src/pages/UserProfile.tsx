@@ -43,20 +43,17 @@ export default function UserProfile() {
 
   const fetchUserData = async () => {
     try {
-      // Fetch profile
+      // Fetch profile using secure RPC function (excludes email)
       const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, username, avatar, bio, skills, skill_category, is_verified')
-        .eq('id', userId)
-        .maybeSingle();
+        .rpc('get_public_profile', { profile_id: userId });
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
         return;
       }
 
-      if (profileData) {
-        setProfile(profileData);
+      if (profileData && profileData.length > 0) {
+        setProfile(profileData[0]);
       }
 
       // Fetch videos

@@ -55,13 +55,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "challenge_submissions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "challenge_submissions_video_id_fkey"
             columns: ["video_id"]
             isOneToOne: false
@@ -122,13 +115,6 @@ export type Database = {
             columns: ["employer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "challenges_employer_id_fkey"
-            columns: ["employer_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -202,13 +188,6 @@ export type Database = {
             columns: ["applicant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_applications_applicant_id_fkey"
-            columns: ["applicant_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -290,13 +269,6 @@ export type Database = {
             columns: ["employer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_postings_employer_id_fkey"
-            columns: ["employer_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -444,55 +416,41 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "videos_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
     }
     Views: {
-      public_profiles: {
-        Row: {
-          avatar: string | null
-          bio: string | null
-          created_at: string | null
-          id: string | null
-          is_verified: boolean | null
-          skill_category: string | null
-          skills: string[] | null
-          user_type: string | null
-          username: string | null
-        }
-        Insert: {
-          avatar?: string | null
-          bio?: string | null
-          created_at?: string | null
-          id?: string | null
-          is_verified?: boolean | null
-          skill_category?: string | null
-          skills?: string[] | null
-          user_type?: string | null
-          username?: string | null
-        }
-        Update: {
-          avatar?: string | null
-          bio?: string | null
-          created_at?: string | null
-          id?: string | null
-          is_verified?: boolean | null
-          skill_category?: string | null
-          skills?: string[] | null
-          user_type?: string | null
-          username?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      get_all_public_profiles: {
+        Args: never
+        Returns: {
+          avatar: string
+          bio: string
+          created_at: string
+          id: string
+          is_verified: boolean
+          skill_category: string
+          skills: string[]
+          user_type: string
+          username: string
+        }[]
+      }
+      get_public_profile: {
+        Args: { profile_id: string }
+        Returns: {
+          avatar: string
+          bio: string
+          created_at: string
+          id: string
+          is_verified: boolean
+          skill_category: string
+          skills: string[]
+          user_type: string
+          username: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
