@@ -100,7 +100,8 @@ export default function Auth() {
           }
         } else {
           toast.success('Account created!');
-          setStep('userType');
+          // Skip userType selection since it's already chosen on welcome screen
+          setStep('onboarding');
         }
       }
     } catch (error) {
@@ -257,17 +258,43 @@ export default function Auth() {
           </div>
         </div>
 
-        {/* CTAs */}
+        {/* Role Selection */}
         <div className="space-y-3 pt-4">
+          <p className="text-center text-sm text-muted-foreground mb-4">I am a...</p>
+          
+          {/* Student/Applicant Option */}
           <Button 
             variant="hero" 
             size="xl" 
             className="w-full"
-            onClick={() => { setIsLogin(false); setStep('login'); }}
+            onClick={() => { setUserType('talent'); setIsLogin(false); setStep('login'); }}
           >
-            Get Started
+            <User className="h-5 w-5 mr-2" />
+            Student / Applicant
             <ArrowRight className="h-5 w-5 ml-2" />
           </Button>
+          
+          {/* Employer Option */}
+          <Button 
+            variant="outline" 
+            size="xl" 
+            className="w-full"
+            onClick={() => { setUserType('employer'); setIsLogin(false); setStep('login'); }}
+          >
+            <Briefcase className="h-5 w-5 mr-2" />
+            Employer / Recruiter
+            <ArrowRight className="h-5 w-5 ml-2" />
+          </Button>
+          
+          <div className="relative py-4">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">or</span>
+            </div>
+          </div>
+          
           <Button 
             variant="ghost" 
             size="lg" 
@@ -294,9 +321,15 @@ export default function Auth() {
 
       <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
         <div className="space-y-2 mb-8">
-          <h2 className="text-3xl font-bold">{isLogin ? 'Welcome back' : 'Create account'}</h2>
+          <h2 className="text-3xl font-bold">
+            {isLogin ? 'Welcome back' : userType === 'employer' ? 'Create employer account' : 'Create applicant account'}
+          </h2>
           <p className="text-muted-foreground">
-            {isLogin ? 'Sign in to continue to Donjo' : 'Start building your video portfolio'}
+            {isLogin 
+              ? 'Sign in to continue to Donjo' 
+              : userType === 'employer'
+                ? 'Start discovering and hiring verified talent'
+                : 'Start building your video portfolio'}
           </p>
         </div>
 
