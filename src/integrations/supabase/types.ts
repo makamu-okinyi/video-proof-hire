@@ -61,6 +61,13 @@ export type Database = {
             referencedRelation: "videos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "challenge_submissions_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       challenges: {
@@ -420,7 +427,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      videos_public: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string | null
+          likes: number | null
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string | null
+          video_url: string | null
+          views: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          likes?: number | null
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+          views?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          likes?: number | null
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+          views?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_all_public_profiles: {
@@ -449,6 +491,38 @@ export type Database = {
           skills: string[]
           user_type: string
           username: string
+        }[]
+      }
+      get_public_videos: {
+        Args: never
+        Returns: {
+          created_at: string
+          creator_avatar: string
+          creator_id: string
+          creator_is_verified: boolean
+          creator_skill_category: string
+          creator_skills: string[]
+          creator_username: string
+          description: string
+          id: string
+          likes: number
+          thumbnail_url: string
+          title: string
+          video_url: string
+          views: number
+        }[]
+      }
+      get_user_public_videos: {
+        Args: { target_user_id: string }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          likes: number
+          thumbnail_url: string
+          title: string
+          video_url: string
+          views: number
         }[]
       }
       get_user_role: {
