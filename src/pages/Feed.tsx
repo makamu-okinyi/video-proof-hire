@@ -5,9 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Video } from '@/types';
 import { mockVideos } from '@/data/mockData';
 
-interface DbVideo {
+interface PublicVideo {
   id: string;
-  user_id: string;
   title: string | null;
   description: string | null;
   video_url: string;
@@ -15,15 +14,12 @@ interface DbVideo {
   views: number;
   likes: number;
   created_at: string;
-}
-
-interface DbProfile {
-  id: string;
-  username: string | null;
-  avatar: string | null;
-  is_verified: boolean;
-  skills: string[];
-  skill_category: string;
+  creator_id: string;
+  creator_username: string | null;
+  creator_avatar: string | null;
+  creator_is_verified: boolean;
+  creator_skills: string[] | null;
+  creator_skill_category: string | null;
 }
 
 export default function Feed() {
@@ -38,20 +34,9 @@ export default function Feed() {
 
   const fetchVideos = async () => {
     try {
+      // Use secure RPC function that doesn't expose raw user_id
       const { data, error } = await supabase
-        .from('videos')
-        .select(`
-          id,
-          user_id,
-          title,
-          description,
-          video_url,
-          thumbnail_url,
-          views,
-          likes,
-          created_at
-        `)
-        .order('created_at', { ascending: false });
+        .rpc('get_public_videos');
 
       if (error) {
         console.error('Error fetching videos:', error);
@@ -59,34 +44,26 @@ export default function Feed() {
       }
 
       if (data && data.length > 0) {
-        // Fetch profiles using secure RPC function (excludes email)
-        const { data: profiles } = await supabase
-          .rpc('get_all_public_profiles');
-
-        const profileMap = new Map<string, DbProfile>();
-        profiles?.forEach((p: DbProfile) => profileMap.set(p.id, p));
-
         // Transform database videos to Video type
-        const transformedVideos: Video[] = (data as DbVideo[]).map(v => {
-          const profile = profileMap.get(v.user_id);
+        const transformedVideos: Video[] = (data as PublicVideo[]).map(v => {
           return {
             id: v.id,
-            userId: v.user_id,
+            userId: v.creator_id,
             user: {
-              id: v.user_id,
-              username: profile?.username || 'User',
+              id: v.creator_id,
+              username: v.creator_username || 'User',
               email: '',
               userType: 'talent' as const,
-              avatar: profile?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-              skills: profile?.skills || [],
-              skillCategory: (profile?.skill_category || 'other') as 'tech' | 'design' | 'business' | 'other',
-              isVerified: profile?.is_verified || false,
+              avatar: v.creator_avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+              skills: v.creator_skills || [],
+              skillCategory: (v.creator_skill_category || 'other') as 'tech' | 'design' | 'business' | 'other',
+              isVerified: v.creator_is_verified || false,
               createdAt: new Date(),
             },
             videoUrl: v.video_url,
             thumbnailUrl: v.thumbnail_url || v.video_url,
             caption: v.title || v.description || '',
-            skills: profile?.skills || [],
+            skills: v.creator_skills || [],
             category: 'Project Demo',
             visibility: 'public' as const,
             likes: v.likes,

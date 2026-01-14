@@ -56,12 +56,9 @@ export default function UserProfile() {
         setProfile(profileData[0]);
       }
 
-      // Fetch videos
+      // Fetch videos using secure RPC function (doesn't expose user_id directly)
       const { data: videosData, error: videosError } = await supabase
-        .from('videos')
-        .select('id, video_url, thumbnail_url, title, description, views, likes, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .rpc('get_user_public_videos', { target_user_id: userId });
 
       if (videosError) {
         console.error('Error fetching videos:', videosError);
