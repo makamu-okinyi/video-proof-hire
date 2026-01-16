@@ -77,16 +77,13 @@ export default function JobApplicants() {
         // Fetch videos for each applicant
         const applicantsWithVideos: Applicant[] = await Promise.all(
           applications.map(async (app: any) => {
+            // Use RPC function to access public videos (respects RLS via SECURITY DEFINER)
             const { data: videos } = await supabase
-              .from('videos')
-              .select('id, title, thumbnail_url, video_url, views')
-              .eq('user_id', app.applicant.id)
-              .order('created_at', { ascending: false })
-              .limit(6);
+              .rpc('get_user_public_videos', { target_user_id: app.applicant.id });
 
             return {
               ...app,
-              videos: videos || [],
+              videos: (videos || []).slice(0, 6),
             };
           })
         );
