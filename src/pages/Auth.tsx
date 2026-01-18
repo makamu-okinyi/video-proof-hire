@@ -125,18 +125,28 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      // Start OAuth flow - SDK may return a url to redirect the user to.
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth`,
         },
       });
+
       if (error) {
         toast.error('Google sign-in failed. Please try again.');
         setGoogleLoading(false);
+        return;
       }
-      // Note: We don't set googleLoading to false on success because the page will redirect
-    } catch (error) {
+
+      // If SDK returns a url, redirect the browser there. Some SDK builds give you the url to send the user to.
+      if ((data as any)?.url) {
+        window.location.assign((data as any).url);
+        return;
+      }
+
+      // Otherwise, SDK may handle the redirect automatically. Keep loading state until the redirect or auth state change happens.
+    } catch (err) {
       toast.error('An unexpected error occurred');
       setGoogleLoading(false);
     }
