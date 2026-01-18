@@ -43,32 +43,34 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const { login, signup, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
+  const { login, signup, signInWithOAuth, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Check if profile needs completion (for Google OAuth users)
-  const profileNeedsCompletion = profile && !profile.username && !profile.bio;
+  const profileNeedsCompletion = profile && !profile.username && !profile.user_type;
 
-  // Handle Google OAuth return - check if user needs to complete profile
+  // Track if user just logged in (to trigger redirect)
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+
+  // Handle authentication state changes and redirects
   useEffect(() => {
     if (!isLoading && isAuthenticated && profile) {
       // If user has incomplete profile (new Google OAuth user), show onboarding
-      if (profileNeedsCompletion && location.pathname === '/auth') {
+      if (profileNeedsCompletion) {
         setStep('userType');
         return;
       }
       
-      // Otherwise redirect to appropriate page (except on /auth where we allow account switching)
-      if (location.pathname !== '/auth') {
-        if (profile.user_type === 'employer') {
-          navigate('/employer');
-        } else {
-          navigate('/feed');
-        }
+      // Redirect to appropriate page based on user type
+      // This handles: login, Google OAuth return for existing users
+      if (justLoggedIn || location.search.includes('code=') || location.hash.includes('access_token')) {
+        const destination = profile.user_type === 'employer' ? '/employer' : '/feed';
+        navigate(destination, { replace: true });
+        setJustLoggedIn(false);
       }
     }
-  }, [isAuthenticated, isLoading, profile, navigate, location.pathname, profileNeedsCompletion]);
+  }, [isAuthenticated, isLoading, profile, navigate, location.search, location.hash, profileNeedsCompletion, justLoggedIn]);
 
   const handleAuth = async () => {
     // Validate email
@@ -100,8 +102,11 @@ export default function Auth() {
           } else {
             toast.error('Login failed. Please try again.');
           }
+        } else {
+          // Successfully logged in - trigger redirect via useEffect
+          setJustLoggedIn(true);
+          toast.success('Welcome back!');
         }
-        // Navigation handled by useEffect when profile loads
       } else {
         const { error } = await signup(email, password);
         if (error) {
@@ -125,28 +130,24 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      // Start OAuth flow - SDK may return a url to redirect the user to.
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth`,
-        },
-      });
+      const { error, url } = await signInWithOAuth('google', `${window.location.origin}/auth`);
 
       if (error) {
+        console.error('Google sign-in error:', error);
         toast.error('Google sign-in failed. Please try again.');
         setGoogleLoading(false);
         return;
       }
 
-      // If SDK returns a url, redirect the browser there. Some SDK builds give you the url to send the user to.
-      if ((data as any)?.url) {
-        window.location.assign((data as any).url);
+      // If we got a URL, redirect to it (this is the OAuth provider's login page)
+      if (url) {
+        window.location.href = url;
         return;
       }
 
-      // Otherwise, SDK may handle the redirect automatically. Keep loading state until the redirect or auth state change happens.
+      // Keep loading state until redirect happens
     } catch (err) {
+      console.error('Google sign-in unexpected error:', err);
       toast.error('An unexpected error occurred');
       setGoogleLoading(false);
     }
@@ -219,7 +220,7 @@ export default function Auth() {
   }
 
   // Allow users to open /auth even if they're already signed in (so they can sign out / switch accounts)
-  if (location.pathname === '/auth' && isAuthenticated) {
+  if (location.pathname === '/auth' && isAuthenticated && !justLoggedIn) {
     if (!profile) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-background">
@@ -230,7 +231,7 @@ export default function Auth() {
 
     // If profile needs completion (new Google OAuth user), show onboarding flow
     // Let the step rendering handle it - don't show "already signed in" screen
-    if (!profileNeedsCompletion) {
+    if (!profileNeedsCompletion && step === 'welcome') {
       const destination = profile.user_type === 'employer' ? '/employer' : '/feed';
 
       return (
