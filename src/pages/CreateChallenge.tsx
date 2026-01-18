@@ -9,6 +9,15 @@ import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { z } from 'zod';
+
+// Input validation schema
+const challengeSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
+  description: z.string().trim().min(10, "Description must be at least 10 characters").max(10000, "Description must be less than 10,000 characters"),
+  prize_description: z.string().max(500, "Prize description must be less than 500 characters").optional().nullable(),
+  skills_tags: z.array(z.string().max(50, "Skill must be less than 50 characters")).max(20, "Maximum 20 skill tags allowed"),
+});
 
 export default function CreateChallenge() {
   const navigate = useNavigate();
@@ -23,10 +32,20 @@ export default function CreateChallenge() {
   const [skillInput, setSkillInput] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const addSkill = () => {
-    if (skillInput.trim() && !skills.includes(skillInput.trim())) {
-      setSkills([...skills, skillInput.trim()]);
+    const trimmedSkill = skillInput.trim();
+    if (trimmedSkill && !skills.includes(trimmedSkill)) {
+      if (trimmedSkill.length > 50) {
+        toast.error('Skill must be less than 50 characters');
+        return;
+      }
+      if (skills.length >= 20) {
+        toast.error('Maximum 20 skill tags allowed');
+        return;
+      }
+      setSkills([...skills, trimmedSkill]);
       setSkillInput('');
     }
   };
@@ -36,22 +55,38 @@ export default function CreateChallenge() {
   };
 
   const handleSubmit = async () => {
-    if (!title.trim() || !description.trim()) {
-      toast.error('Please fill in title and description');
+    // Validate inputs with zod
+    const validation = challengeSchema.safeParse({
+      title: title.trim(),
+      description: description.trim(),
+      prize_description: prizeDescription.trim() || null,
+      skills_tags: skills,
+    });
+
+    if (!validation.success) {
+      const fieldErrors: Record<string, string> = {};
+      validation.error.errors.forEach(err => {
+        const field = err.path[0] as string;
+        fieldErrors[field] = err.message;
+      });
+      setErrors(fieldErrors);
+      toast.error(validation.error.errors[0].message);
       return;
     }
 
+    setErrors({});
     setLoading(true);
+
     try {
       const { error } = await supabase.from('challenges').insert({
         employer_id: user?.id,
-        title: title.trim(),
-        description: description.trim(),
-        prize_description: prizeDescription.trim() || null,
+        title: validation.data.title,
+        description: validation.data.description,
+        prize_description: validation.data.prize_description,
         prize_amount: prizeAmount ? parseInt(prizeAmount) : null,
         deadline: deadline || null,
         is_featured: isFeatured,
-        skills_tags: skills,
+        skills_tags: validation.data.skills_tags,
       });
 
       if (error) throw error;
@@ -99,22 +134,31 @@ export default function CreateChallenge() {
         {/* Basic Info */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Challenge Title *</label>
+            <label className="text-sm font-medium">Challenge Title * <span className="text-muted-foreground text-xs">(max 200 chars)</span></label>
             <Input
               placeholder="e.g. Build a React Component Challenge"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              maxLength={200}
+              className={errors.title ? 'border-destructive' : ''}
             />
+            {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Description *</label>
+            <label className="text-sm font-medium">Description * <span className="text-muted-foreground text-xs">(max 10,000 chars)</span></label>
             <Textarea
               placeholder="Describe the challenge, what participants need to create, and judging criteria..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={5}
+              maxLength={10000}
+              className={errors.description ? 'border-destructive' : ''}
             />
+            <div className="flex justify-between">
+              {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
+              <p className="text-xs text-muted-foreground ml-auto">{description.length}/10,000</p>
+            </div>
           </div>
         </div>
 
@@ -133,26 +177,29 @@ export default function CreateChallenge() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Prize Description</label>
+            <label className="text-sm font-medium">Prize Description <span className="text-muted-foreground text-xs">(max 500 chars)</span></label>
             <Input
               placeholder="e.g. Cash prize + interview opportunity"
               value={prizeDescription}
               onChange={(e) => setPrizeDescription(e.target.value)}
+              maxLength={500}
             />
+            <p className="text-xs text-muted-foreground">{prizeDescription.length}/500</p>
           </div>
         </div>
 
         {/* Skills Tags */}
         <div className="space-y-3">
-          <label className="text-sm font-medium">Skill Tags</label>
+          <label className="text-sm font-medium">Skill Tags <span className="text-muted-foreground text-xs">(max 20 tags, 50 chars each)</span></label>
           <div className="flex gap-2">
             <Input
               placeholder="Add a skill tag"
               value={skillInput}
               onChange={(e) => setSkillInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+              maxLength={50}
             />
-            <Button variant="outline" size="icon" onClick={addSkill}>
+            <Button variant="outline" size="icon" onClick={addSkill} disabled={skills.length >= 20}>
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -168,6 +215,7 @@ export default function CreateChallenge() {
               ))}
             </div>
           )}
+          <p className="text-xs text-muted-foreground">{skills.length}/20 skill tags</p>
         </div>
 
         {/* Deadline */}

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import {
   Select,
   SelectContent,
@@ -15,6 +16,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+
+// Input validation schema
+const jobSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
+  description: z.string().trim().min(10, "Description must be at least 10 characters").max(10000, "Description must be less than 10,000 characters"),
+  location: z.string().max(200, "Location must be less than 200 characters").optional().nullable(),
+  company_name: z.string().max(200, "Company name must be less than 200 characters").optional().nullable(),
+  company_logo: z.string().max(500, "Logo URL must be less than 500 characters").optional().nullable(),
+  skills_required: z.array(z.string().max(50, "Skill must be less than 50 characters")).max(20, "Maximum 20 skills allowed"),
+  benefits: z.array(z.string().max(100, "Benefit must be less than 100 characters")).max(20, "Maximum 20 benefits allowed"),
+});
 
 const jobTypes = [
   { value: 'full-time', label: 'Full-time' },
@@ -49,10 +61,20 @@ export default function CreateJob() {
   const [benefits, setBenefits] = useState<string[]>([]);
   const [deadline, setDeadline] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const addSkill = () => {
-    if (skillInput.trim() && !skills.includes(skillInput.trim())) {
-      setSkills([...skills, skillInput.trim()]);
+    const trimmedSkill = skillInput.trim();
+    if (trimmedSkill && !skills.includes(trimmedSkill)) {
+      if (trimmedSkill.length > 50) {
+        toast.error('Skill must be less than 50 characters');
+        return;
+      }
+      if (skills.length >= 20) {
+        toast.error('Maximum 20 skills allowed');
+        return;
+      }
+      setSkills([...skills, trimmedSkill]);
       setSkillInput('');
     }
   };
@@ -62,8 +84,17 @@ export default function CreateJob() {
   };
 
   const addBenefit = () => {
-    if (benefitInput.trim() && !benefits.includes(benefitInput.trim())) {
-      setBenefits([...benefits, benefitInput.trim()]);
+    const trimmedBenefit = benefitInput.trim();
+    if (trimmedBenefit && !benefits.includes(trimmedBenefit)) {
+      if (trimmedBenefit.length > 100) {
+        toast.error('Benefit must be less than 100 characters');
+        return;
+      }
+      if (benefits.length >= 20) {
+        toast.error('Maximum 20 benefits allowed');
+        return;
+      }
+      setBenefits([...benefits, trimmedBenefit]);
       setBenefitInput('');
     }
   };
@@ -73,26 +104,45 @@ export default function CreateJob() {
   };
 
   const handleSubmit = async () => {
-    if (!title.trim() || !description.trim()) {
-      toast.error('Please fill in title and description');
+    // Validate inputs with zod
+    const validation = jobSchema.safeParse({
+      title: title.trim(),
+      description: description.trim(),
+      location: location.trim() || null,
+      company_name: companyName.trim() || null,
+      company_logo: companyLogo.trim() || null,
+      skills_required: skills,
+      benefits: benefits,
+    });
+
+    if (!validation.success) {
+      const fieldErrors: Record<string, string> = {};
+      validation.error.errors.forEach(err => {
+        const field = err.path[0] as string;
+        fieldErrors[field] = err.message;
+      });
+      setErrors(fieldErrors);
+      toast.error(validation.error.errors[0].message);
       return;
     }
 
+    setErrors({});
     setLoading(true);
+
     try {
       const { error } = await supabase.from('job_postings').insert({
         employer_id: user?.id,
-        title: title.trim(),
-        description: description.trim(),
-        location: location.trim() || null,
+        title: validation.data.title,
+        description: validation.data.description,
+        location: validation.data.location,
         salary_min: salaryMin ? parseInt(salaryMin) : null,
         salary_max: salaryMax ? parseInt(salaryMax) : null,
         job_type: jobType,
         experience_level: experienceLevel,
-        company_name: companyName.trim() || null,
-        company_logo: companyLogo.trim() || null,
-        skills_required: skills,
-        benefits: benefits,
+        company_name: validation.data.company_name,
+        company_logo: validation.data.company_logo,
+        skills_required: validation.data.skills_required,
+        benefits: validation.data.benefits,
         application_deadline: deadline || null,
       });
 
@@ -141,22 +191,31 @@ export default function CreateJob() {
         {/* Basic Info */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Job Title *</label>
+            <label className="text-sm font-medium">Job Title * <span className="text-muted-foreground text-xs">(max 200 chars)</span></label>
             <Input
               placeholder="e.g. Senior Frontend Developer"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              maxLength={200}
+              className={errors.title ? 'border-destructive' : ''}
             />
+            {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Description *</label>
+            <label className="text-sm font-medium">Description * <span className="text-muted-foreground text-xs">(max 10,000 chars)</span></label>
             <Textarea
               placeholder="Describe the role, responsibilities, and what you're looking for..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={5}
+              maxLength={10000}
+              className={errors.description ? 'border-destructive' : ''}
             />
+            <div className="flex justify-between">
+              {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
+              <p className="text-xs text-muted-foreground ml-auto">{description.length}/10,000</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -194,11 +253,12 @@ export default function CreateJob() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Location</label>
+            <label className="text-sm font-medium">Location <span className="text-muted-foreground text-xs">(max 200 chars)</span></label>
             <Input
               placeholder="e.g. Remote, New York, NY"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              maxLength={200}
             />
           </div>
 
@@ -229,35 +289,38 @@ export default function CreateJob() {
           <h2 className="font-semibold">Company Info</h2>
           
           <div className="space-y-2">
-            <label className="text-sm font-medium">Company Name</label>
+            <label className="text-sm font-medium">Company Name <span className="text-muted-foreground text-xs">(max 200 chars)</span></label>
             <Input
               placeholder="Your company name"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
+              maxLength={200}
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Company Logo URL</label>
+            <label className="text-sm font-medium">Company Logo URL <span className="text-muted-foreground text-xs">(max 500 chars)</span></label>
             <Input
               placeholder="https://example.com/logo.png"
               value={companyLogo}
               onChange={(e) => setCompanyLogo(e.target.value)}
+              maxLength={500}
             />
           </div>
         </div>
 
         {/* Skills */}
         <div className="space-y-3">
-          <label className="text-sm font-medium">Required Skills</label>
+          <label className="text-sm font-medium">Required Skills <span className="text-muted-foreground text-xs">(max 20 skills, 50 chars each)</span></label>
           <div className="flex gap-2">
             <Input
               placeholder="Add a skill"
               value={skillInput}
               onChange={(e) => setSkillInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+              maxLength={50}
             />
-            <Button variant="outline" size="icon" onClick={addSkill}>
+            <Button variant="outline" size="icon" onClick={addSkill} disabled={skills.length >= 20}>
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -273,19 +336,21 @@ export default function CreateJob() {
               ))}
             </div>
           )}
+          <p className="text-xs text-muted-foreground">{skills.length}/20 skills</p>
         </div>
 
         {/* Benefits */}
         <div className="space-y-3">
-          <label className="text-sm font-medium">Benefits</label>
+          <label className="text-sm font-medium">Benefits <span className="text-muted-foreground text-xs">(max 20 benefits, 100 chars each)</span></label>
           <div className="flex gap-2">
             <Input
               placeholder="Add a benefit"
               value={benefitInput}
               onChange={(e) => setBenefitInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addBenefit())}
+              maxLength={100}
             />
-            <Button variant="outline" size="icon" onClick={addBenefit}>
+            <Button variant="outline" size="icon" onClick={addBenefit} disabled={benefits.length >= 20}>
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -301,6 +366,7 @@ export default function CreateJob() {
               ))}
             </div>
           )}
+          <p className="text-xs text-muted-foreground">{benefits.length}/20 benefits</p>
         </div>
 
         {/* Deadline */}

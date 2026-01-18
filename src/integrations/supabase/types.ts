@@ -568,7 +568,7 @@ export type Database = {
         }[]
       }
       get_public_videos: {
-        Args: never
+        Args: { page_offset?: number; page_size?: number }
         Returns: {
           created_at: string
           creator_avatar: string
