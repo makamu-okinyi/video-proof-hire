@@ -47,17 +47,28 @@ export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Redirect if already authenticated (except on /auth where we allow account switching)
+  // Check if profile needs completion (for Google OAuth users)
+  const profileNeedsCompletion = profile && !profile.username && !profile.bio;
+
+  // Handle Google OAuth return - check if user needs to complete profile
   useEffect(() => {
-    if (!isLoading && isAuthenticated && profile && location.pathname !== '/auth') {
-      // Redirect based on user type
-      if (profile.user_type === 'employer') {
-        navigate('/employer');
-      } else {
-        navigate('/feed');
+    if (!isLoading && isAuthenticated && profile) {
+      // If user has incomplete profile (new Google OAuth user), show onboarding
+      if (profileNeedsCompletion && location.pathname === '/auth') {
+        setStep('userType');
+        return;
+      }
+      
+      // Otherwise redirect to appropriate page (except on /auth where we allow account switching)
+      if (location.pathname !== '/auth') {
+        if (profile.user_type === 'employer') {
+          navigate('/employer');
+        } else {
+          navigate('/feed');
+        }
       }
     }
-  }, [isAuthenticated, isLoading, profile, navigate, location.pathname]);
+  }, [isAuthenticated, isLoading, profile, navigate, location.pathname, profileNeedsCompletion]);
 
   const handleAuth = async () => {
     // Validate email
@@ -207,59 +218,63 @@ export default function Auth() {
       );
     }
 
-    const destination = profile.user_type === 'employer' ? '/employer' : '/feed';
+    // If profile needs completion (new Google OAuth user), show onboarding flow
+    // Let the step rendering handle it - don't show "already signed in" screen
+    if (!profileNeedsCompletion) {
+      const destination = profile.user_type === 'employer' ? '/employer' : '/feed';
 
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-sm space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">You’re already signed in</h1>
-            <p className="text-muted-foreground">
-              Continue as {profile.username || profile.email || 'your account'}.
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
+          <div className="w-full max-w-sm space-y-6">
+            <div className="text-center space-y-2">
+              <h1 className="text-3xl font-bold tracking-tight">You're already signed in</h1>
+              <p className="text-muted-foreground">
+                Continue as {profile.username || profile.email || 'your account'}.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <Button
+                variant="hero"
+                size="xl"
+                className="w-full"
+                onClick={() => navigate(destination)}
+              >
+                Continue
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Button>
+
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full"
+                disabled={loading}
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    await logout();
+                    toast.success('Signed out');
+                    setStep('welcome');
+                    setEmail('');
+                    setPassword('');
+                  } catch {
+                    toast.error('Sign out failed. Please try again.');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                Sign out
+              </Button>
+            </div>
+
+            <p className="text-center text-xs text-muted-foreground">
+              To sign in with a different account, sign out first.
             </p>
           </div>
-
-          <div className="space-y-3">
-            <Button
-              variant="hero"
-              size="xl"
-              className="w-full"
-              onClick={() => navigate(destination)}
-            >
-              Continue
-              <ArrowRight className="h-5 w-5 ml-2" />
-            </Button>
-
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full"
-              disabled={loading}
-              onClick={async () => {
-                setLoading(true);
-                try {
-                  await logout();
-                  toast.success('Signed out');
-                  setStep('welcome');
-                  setEmail('');
-                  setPassword('');
-                } catch {
-                  toast.error('Sign out failed. Please try again.');
-                } finally {
-                  setLoading(false);
-                }
-              }}
-            >
-              Sign out
-            </Button>
-          </div>
-
-          <p className="text-center text-xs text-muted-foreground">
-            To sign in with a different account, sign out first.
-          </p>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   const renderWelcome = () => (
