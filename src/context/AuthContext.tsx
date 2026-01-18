@@ -1,12 +1,13 @@
 import React, { createContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from '@/integrations/supabase/client';
-import type { Session, User } from '@supabase/supabase-js';
+import type { Session, User, Provider } from '@supabase/supabase-js';
 
 interface Profile {
   id: string;
   email: string | null;
   username?: string | null;
   user_type?: string;
+  skill_category?: string;
   is_verified?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -24,6 +25,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ error: Error | null }>;
   signup: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithOAuth: (provider: Provider, redirectTo?: string) => Promise<{ error: Error | null; url?: string | null }>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -57,50 +59,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
+      
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        // Use setTimeout to avoid Supabase deadlock issues
         setTimeout(() => {
           fetchProfile(session.user.id);
         }, 0);
       } else {
         setProfile(null);
       }
+
+      // Handle OAuth callback - clean up URL after successful sign in
+      if (event === 'SIGNED_IN' && typeof window !== 'undefined') {
+        const url = window.location.href;
+        if (url.includes('#access_token') || url.includes('?code=')) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
     });
 
+    // Get initial session
     const handleInitialSession = async () => {
       try {
-        const url = typeof window !== 'undefined' ? window.location.href : '';
-        const hasOAuthParams =
-          url.includes('access_token') ||
-          url.includes('refresh_token') ||
-          url.includes('provider_token') ||
-          url.includes('error_description');
+        // Check for OAuth callback in URL hash (implicit flow) or code (PKCE flow)
+        const hashParams = window.location.hash;
+        const searchParams = window.location.search;
+        const hasOAuthCallback = hashParams.includes('access_token') || searchParams.includes('code=');
 
-        if (hasOAuthParams && (supabase.auth as any).getSessionFromUrl) {
-          const { data, error } = await (supabase.auth as any).getSessionFromUrl({ storeSession: true });
-          if (!error && data?.session) {
-            const session = data.session;
-            setSession(session);
-            setUser(session.user ?? null);
-            if (session.user) {
-              await fetchProfile(session.user.id);
-            }
-          }
+        if (hasOAuthCallback) {
+          // Let Supabase handle the OAuth callback automatically via detectSessionInUrl
+          // Just wait a moment for it to process
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
 
-          if (typeof window !== 'undefined') {
-            window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
-          }
-        } else {
-          const { data: sessData } = await supabase.auth.getSession();
-          const currentSession = sessData.session;
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
-          if (currentSession?.user) {
-            await fetchProfile(currentSession.user.id);
-          }
+        // Get the current session (will be set if OAuth callback was processed)
+        const { data: sessData, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+
+        const currentSession = sessData?.session;
+        setSession(currentSession ?? null);
+        setUser(currentSession?.user ?? null);
+        
+        if (currentSession?.user) {
+          await fetchProfile(currentSession.user.id);
         }
       } catch (err) {
         console.error('Error getting initial session:', err);
@@ -125,6 +135,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
+  const signInWithOAuth = async (provider: Provider, redirectTo?: string) => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: redirectTo || `${window.location.origin}/auth`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+    return { error, url: data?.url };
+  };
+
   const logout = async () => {
     await supabase.auth.signOut();
     setProfile(null);
@@ -139,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshProfile = async () => { if (user) await fetchProfile(user.id); };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, isAuthenticated: !!session, isLoading, login, signup, logout, updateProfile, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, isAuthenticated: !!session, isLoading, login, signup, signInWithOAuth, logout, updateProfile, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
