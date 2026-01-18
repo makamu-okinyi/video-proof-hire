@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { VideoCard } from '@/components/video/VideoCard';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,67 +22,95 @@ interface PublicVideo {
   creator_skill_category: string | null;
 }
 
+const PAGE_SIZE = 20;
+
 export default function Feed() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [videos, setVideos] = useState<Video[]>(mockVideos);
+  const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchVideos();
-  }, []);
+  const transformVideo = (v: PublicVideo): Video => ({
+    id: v.id,
+    userId: v.creator_id,
+    user: {
+      id: v.creator_id,
+      username: v.creator_username || 'User',
+      email: '',
+      userType: 'talent' as const,
+      avatar: v.creator_avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      skills: v.creator_skills || [],
+      skillCategory: (v.creator_skill_category || 'other') as 'tech' | 'design' | 'business' | 'other',
+      isVerified: v.creator_is_verified || false,
+      createdAt: new Date(),
+    },
+    videoUrl: v.video_url,
+    thumbnailUrl: v.thumbnail_url || v.video_url,
+    caption: v.title || v.description || '',
+    skills: v.creator_skills || [],
+    category: 'Project Demo',
+    visibility: 'public' as const,
+    likes: v.likes,
+    comments: 0,
+    views: v.views,
+    createdAt: new Date(v.created_at),
+  });
 
-  const fetchVideos = async () => {
+  const fetchVideos = useCallback(async (pageNum: number, isInitial: boolean = false) => {
     try {
-      // Use secure RPC function that doesn't expose raw user_id
+      if (isInitial) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
       const { data, error } = await supabase
-        .rpc('get_public_videos');
+        .rpc('get_public_videos', {
+          page_size: PAGE_SIZE,
+          page_offset: pageNum * PAGE_SIZE
+        });
 
       if (error) {
         console.error('Error fetching videos:', error);
         return;
       }
 
-      if (data && data.length > 0) {
-        // Transform database videos to Video type
-        const transformedVideos: Video[] = (data as PublicVideo[]).map(v => {
-          return {
-            id: v.id,
-            userId: v.creator_id,
-            user: {
-              id: v.creator_id,
-              username: v.creator_username || 'User',
-              email: '',
-              userType: 'talent' as const,
-              avatar: v.creator_avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-              skills: v.creator_skills || [],
-              skillCategory: (v.creator_skill_category || 'other') as 'tech' | 'design' | 'business' | 'other',
-              isVerified: v.creator_is_verified || false,
-              createdAt: new Date(),
-            },
-            videoUrl: v.video_url,
-            thumbnailUrl: v.thumbnail_url || v.video_url,
-            caption: v.title || v.description || '',
-            skills: v.creator_skills || [],
-            category: 'Project Demo',
-            visibility: 'public' as const,
-            likes: v.likes,
-            comments: 0,
-            views: v.views,
-            createdAt: new Date(v.created_at),
-          };
-        });
+      if (data) {
+        const transformedVideos = (data as PublicVideo[]).map(transformVideo);
+        
+        // Check if we have more videos to load
+        if (transformedVideos.length < PAGE_SIZE) {
+          setHasMore(false);
+        }
 
-        // Combine with mock videos for demo
-        setVideos([...transformedVideos, ...mockVideos]);
+        if (isInitial) {
+          // For initial load, add mock videos after real videos
+          setVideos([...transformedVideos, ...mockVideos]);
+        } else {
+          // For subsequent loads, append new videos before mock videos
+          setVideos(prev => {
+            // Remove mock videos, add new real videos, then add mock videos back
+            const realVideos = prev.filter(v => !mockVideos.some(m => m.id === v.id));
+            return [...realVideos, ...transformedVideos, ...mockVideos];
+          });
+        }
       }
     } catch (error) {
       console.error('Error:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, []);
 
+  useEffect(() => {
+    fetchVideos(0, true);
+  }, [fetchVideos]);
+
+  // Handle scroll for active video tracking and infinite scroll
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -91,14 +119,25 @@ export default function Feed() {
       const scrollTop = container.scrollTop;
       const videoHeight = window.innerHeight;
       const newIndex = Math.round(scrollTop / videoHeight);
+      
       if (newIndex !== activeIndex && newIndex >= 0 && newIndex < videos.length) {
         setActiveIndex(newIndex);
+      }
+
+      // Load more when approaching the end (3 videos before the last)
+      const scrollBottom = container.scrollHeight - scrollTop - container.clientHeight;
+      const loadMoreThreshold = videoHeight * 3;
+      
+      if (scrollBottom < loadMoreThreshold && hasMore && !loadingMore && !loading) {
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchVideos(nextPage, false);
       }
     };
 
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [activeIndex, videos.length]);
+  }, [activeIndex, videos.length, hasMore, loadingMore, loading, page, fetchVideos]);
 
   if (loading) {
     return (
@@ -123,6 +162,13 @@ export default function Feed() {
             <VideoCard video={video} isActive={index === activeIndex} />
           </div>
         ))}
+        
+        {/* Loading more indicator */}
+        {loadingMore && (
+          <div className="h-20 flex items-center justify-center">
+            <div className="text-background/60 animate-pulse">Loading more...</div>
+          </div>
+        )}
       </div>
 
       {/* Logo */}
