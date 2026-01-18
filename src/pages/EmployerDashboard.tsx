@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Briefcase, Trophy, Users, Eye, 
-  ChevronRight, MoreHorizontal, Edit2, Trash2
+  ChevronRight, MoreHorizontal, Edit2, Trash2, LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BottomNav } from '@/components/layout/BottomNav';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -45,7 +44,7 @@ type Tab = 'jobs' | 'challenges';
 
 export default function EmployerDashboard() {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('jobs');
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -121,7 +120,7 @@ export default function EmployerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-8">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg px-4 py-4 border-b border-border">
         <div className="flex items-center justify-between">
@@ -328,7 +327,22 @@ export default function EmployerDashboard() {
         )}
       </div>
 
-      <BottomNav />
+      {/* Logout Section */}
+      <div className="px-4 py-6 border-t border-border mt-8">
+        <button 
+          onClick={async () => {
+            await logout();
+            navigate('/auth');
+          }}
+          className="w-full flex items-center justify-between py-3 text-destructive hover:bg-destructive/5 rounded-xl px-4 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <LogOut className="h-5 w-5" />
+            <span>Log out</span>
+          </div>
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
     </div>
   );
 }
