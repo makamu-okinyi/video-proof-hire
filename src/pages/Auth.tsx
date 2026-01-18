@@ -43,7 +43,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const { login, signup, signInWithOAuth, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
+  const { user, login, signup, signInWithOAuth, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -52,6 +52,17 @@ export default function Auth() {
 
   // Track if user just logged in (to trigger redirect)
   const [justLoggedIn, setJustLoggedIn] = useState(false);
+
+  // Prefill username from Google OAuth user metadata
+  useEffect(() => {
+    if (user && profileNeedsCompletion && !username) {
+      // Get name from Google OAuth metadata
+      const googleName = user.user_metadata?.full_name || user.user_metadata?.name || '';
+      if (googleName) {
+        setUsername(googleName);
+      }
+    }
+  }, [user, profileNeedsCompletion, username]);
 
   // Handle authentication state changes and redirects
   useEffect(() => {
