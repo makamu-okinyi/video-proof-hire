@@ -280,7 +280,7 @@ export default function Auth() {
             <div className="text-center space-y-2">
               <h1 className="text-3xl font-bold tracking-tight">You're already signed in</h1>
               <p className="text-muted-foreground">
-                Continue as {profile.username || profile.email || 'your account'}.
+                Continue as {profile.username || user?.email || 'your account'}.
               </p>
             </div>
 
