@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { VideoCard } from '@/components/video/VideoCard';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { supabase } from '@/integrations/supabase/client';
 import { Video } from '@/types';
 import { mockVideos } from '@/data/mockData';
-
+import { useAuth } from '@/context/AuthContext';
 interface PublicVideo {
   id: string;
   title: string | null;
@@ -25,6 +26,16 @@ interface PublicVideo {
 const PAGE_SIZE = 20;
 
 export default function Feed() {
+  const navigate = useNavigate();
+  const { profile, isLoading } = useAuth();
+
+  // Redirect employers to their dashboard
+  useEffect(() => {
+    if (!isLoading && profile?.user_type === 'employer') {
+      navigate('/employer', { replace: true });
+    }
+  }, [profile, isLoading, navigate]);
+
   const [activeIndex, setActiveIndex] = useState(0);
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
