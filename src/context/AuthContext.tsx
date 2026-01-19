@@ -11,6 +11,9 @@ interface Profile {
   is_verified?: boolean;
   created_at?: string;
   updated_at?: string;
+  bio?: string | null;
+  skills?: string[] | null;
+  avatar?: string | null;
 }
 
 interface UserRole {
