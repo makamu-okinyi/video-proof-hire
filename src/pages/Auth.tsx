@@ -20,7 +20,7 @@ const passwordSchema = z.string()
 const usernameSchema = z.string().trim().max(50, { message: "Username must be less than 50 characters" }).optional();
 const bioSchema = z.string().trim().max(500, { message: "Bio must be less than 500 characters" }).optional();
 
-type Step = 'welcome' | 'login' | 'signup' | 'userType' | 'onboarding';
+type Step = 'welcome' | 'login' | 'signup' | 'userType' | 'onboarding' | 'forgotPassword';
 type UserType = 'talent' | 'employer';
 type SkillCategory = 'tech' | 'design' | 'business' | 'other';
 
@@ -43,6 +43,8 @@ export default function Auth() {
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   const { user, login, signup, signInWithOAuth, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
   const navigate = useNavigate();
@@ -163,6 +165,32 @@ export default function Auth() {
       toast.error('An unexpected error occurred');
       setGoogleLoading(false);
     }
+  };
+
+  const handleForgotPassword = async () => {
+    // Validate email
+    const emailResult = emailSchema.safeParse(resetEmail);
+    if (!emailResult.success) {
+      toast.error(emailResult.error.errors[0].message);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        toast.error('Failed to send reset email. Please try again.');
+      } else {
+        setResetEmailSent(true);
+        toast.success('Password reset email sent!');
+      }
+    } catch (error) {
+      toast.error('An unexpected error occurred');
+    }
+    setLoading(false);
   };
 
   const handleUserTypeSelect = (type: UserType) => {
@@ -426,6 +454,20 @@ export default function Auth() {
             </div>
             {/* Password strength indicator - only show during signup */}
             {!isLogin && <PasswordStrengthIndicator password={password} />}
+            {/* Forgot password link - only show during login */}
+            {isLogin && (
+              <button
+                type="button"
+                onClick={() => {
+                  setResetEmail(email);
+                  setResetEmailSent(false);
+                  setStep('forgotPassword');
+                }}
+                className="text-sm text-muted-foreground hover:text-coral transition-colors"
+              >
+                Forgot password?
+              </button>
+            )}
           </div>
 
           {/* Submit */}
@@ -498,9 +540,104 @@ export default function Auth() {
     </div>
   );
 
+  const renderForgotPassword = () => (
+    <div className="flex flex-col min-h-screen px-6 py-8 animate-fade-in">
+      {/* Back Button */}
+      <button 
+        onClick={() => {
+          setStep('login');
+          setResetEmailSent(false);
+        }}
+        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
+      >
+        <ChevronLeft className="h-5 w-5" />
+        <span>Back to login</span>
+      </button>
+
+      <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
+        {resetEmailSent ? (
+          // Success state
+          <div className="space-y-6 text-center animate-fade-in">
+            <div className="flex justify-center">
+              <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                <Mail className="h-8 w-8 text-green-500" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">Check your email</h2>
+              <p className="text-muted-foreground">
+                We've sent a password reset link to{' '}
+                <span className="font-medium text-foreground">{resetEmail}</span>
+              </p>
+            </div>
+            <div className="space-y-3 pt-4">
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  setResetEmailSent(false);
+                  setResetEmail('');
+                }}
+              >
+                Try a different email
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                Didn't receive the email?{' '}
+                <button
+                  onClick={handleForgotPassword}
+                  disabled={loading}
+                  className="text-coral hover:underline font-medium"
+                >
+                  {loading ? 'Sending...' : 'Resend'}
+                </button>
+              </p>
+            </div>
+          </div>
+        ) : (
+          // Form state
+          <>
+            <div className="space-y-2 mb-8">
+              <h2 className="text-3xl font-bold">Forgot password?</h2>
+              <p className="text-muted-foreground">
+                Enter your email address and we'll send you a link to reset your password.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Email */}
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  type="email"
+                  placeholder="Email address"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="pl-12 h-14 text-base"
+                />
+              </div>
+
+              {/* Submit */}
+              <Button 
+                variant="hero" 
+                size="xl" 
+                className="w-full mt-2"
+                onClick={handleForgotPassword}
+                disabled={loading || !resetEmail}
+              >
+                {loading ? 'Sending...' : 'Send Reset Link'}
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
   const renderUserType = () => (
     <div className="flex flex-col min-h-screen px-6 py-8 animate-fade-in">
-      <button 
+      <button
         onClick={() => setStep('login')}
         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
       >
@@ -664,6 +801,7 @@ export default function Auth() {
       )}
       {step === 'welcome' && renderWelcome()}
       {step === 'login' && renderLoginSignup()}
+      {step === 'forgotPassword' && renderForgotPassword()}
       {step === 'userType' && renderUserType()}
       {step === 'onboarding' && renderOnboarding()}
     </div>
