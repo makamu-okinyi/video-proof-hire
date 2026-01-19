@@ -47,6 +47,14 @@ export default function Jobs() {
   const [userApplications, setUserApplications] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'jobs' | 'challenges'>('jobs');
+  const { profile, isLoading: authLoading } = useAuth();
+
+  // Redirect employers to their dashboard
+  useEffect(() => {
+    if (!authLoading && profile?.user_type === 'employer') {
+      navigate('/employer', { replace: true });
+    }
+  }, [profile, authLoading, navigate]);
 
   useEffect(() => {
     fetchJobs();
