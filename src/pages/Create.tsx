@@ -32,7 +32,7 @@ const categories = [
 
 export default function Create() {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, profile, isLoading: authLoading } = useAuth();
   const [step, setStep] = useState<Step>('record');
   const [videoSource, setVideoSource] = useState<VideoSource | null>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
@@ -77,13 +77,17 @@ export default function Create() {
   const [showSkillPicker, setShowSkillPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated or if employer
   useEffect(() => {
     if (!isAuthenticated) {
       toast.error('Please log in to create videos');
       navigate('/');
     }
-  }, [isAuthenticated, navigate]);
+    // Redirect employers to create job page
+    if (!authLoading && profile?.user_type === 'employer') {
+      navigate('/employer/jobs/create', { replace: true });
+    }
+  }, [isAuthenticated, profile, authLoading, navigate]);
 
   // Start camera when component mounts
   useEffect(() => {
