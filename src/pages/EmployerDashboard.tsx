@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Briefcase, Trophy, Users, Eye, 
-  ChevronRight, MoreHorizontal, Edit2, Trash2, LogOut
+  ChevronRight, MoreHorizontal, Edit2, Trash2, LogOut, Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -124,18 +124,40 @@ export default function EmployerDashboard() {
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg px-4 py-4 border-b border-border">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">Employer Dashboard</h1>
-            <p className="text-sm text-muted-foreground">{profile?.username || 'Company'}</p>
+          <div className="flex items-center gap-3">
+            {profile?.avatar ? (
+              <img 
+                src={profile.avatar} 
+                alt="Company logo" 
+                className="h-10 w-10 rounded-xl object-cover"
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center">
+                <Briefcase className="h-5 w-5 text-muted-foreground" />
+              </div>
+            )}
+            <div>
+              <h1 className="text-lg font-bold">{profile?.username || 'Company'}</h1>
+              <p className="text-xs text-muted-foreground">Employer Dashboard</p>
+            </div>
           </div>
-          <Button 
-            variant="coral" 
-            size="sm"
-            onClick={() => navigate(activeTab === 'jobs' ? '/employer/jobs/create' : '/employer/challenges/create')}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            New {activeTab === 'jobs' ? 'Job' : 'Challenge'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate('/employer/settings')}
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+            <Button 
+              variant="coral" 
+              size="sm"
+              onClick={() => navigate(activeTab === 'jobs' ? '/employer/jobs/create' : '/employer/challenges/create')}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              New {activeTab === 'jobs' ? 'Job' : 'Challenge'}
+            </Button>
+          </div>
         </div>
       </div>
 
