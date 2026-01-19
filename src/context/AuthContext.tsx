@@ -4,7 +4,6 @@ import type { Session, User, Provider } from '@supabase/supabase-js';
 
 interface Profile {
   id: string;
-  email: string | null;
   username?: string | null;
   user_type?: string;
   skill_category?: string;
