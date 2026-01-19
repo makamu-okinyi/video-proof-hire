@@ -20,6 +20,7 @@ import CreateChallenge from "./pages/CreateChallenge";
 import JobApplicants from "./pages/JobApplicants";
 import ChallengeSubmissions from "./pages/ChallengeSubmissions";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import Messages from "./pages/Messages";
 import UserProfile from "./pages/UserProfile";
 import NotFound from "./pages/NotFound";
@@ -36,6 +37,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/feed" element={<Feed />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/challenges" element={<Challenges />} />
