@@ -408,6 +408,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_private: boolean
           likes: number
           thumbnail_url: string | null
           title: string | null
@@ -420,6 +421,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_private?: boolean
           likes?: number
           thumbnail_url?: string | null
           title?: string | null
@@ -432,6 +434,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_private?: boolean
           likes?: number
           thumbnail_url?: string | null
           title?: string | null
@@ -574,6 +577,19 @@ export type Database = {
           creator_skill_category: string
           creator_skills: string[]
           creator_username: string
+          description: string
+          id: string
+          likes: number
+          thumbnail_url: string
+          title: string
+          video_url: string
+          views: number
+        }[]
+      }
+      get_user_private_videos: {
+        Args: { target_user_id: string }
+        Returns: {
+          created_at: string
           description: string
           id: string
           likes: number
