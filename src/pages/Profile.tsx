@@ -21,7 +21,7 @@ interface UserVideo {
   description: string | null;
   views: number;
   likes: number;
-  visibility: 'public' | 'recruiters';
+  is_private: boolean;
   created_at: string;
 }
 
@@ -44,7 +44,7 @@ export default function Profile() {
     try {
       const { data, error } = await supabase
         .from('videos')
-        .select('id, video_url, thumbnail_url, title, description, views, likes, created_at')
+        .select('id, video_url, thumbnail_url, title, description, views, likes, is_private, created_at')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
@@ -53,13 +53,7 @@ export default function Profile() {
         return;
       }
 
-      // For now, treat all user videos as public (visibility field not in DB yet)
-      const videos: UserVideo[] = (data || []).map(v => ({
-        ...v,
-        visibility: 'public' as const
-      }));
-
-      setUserVideos(videos);
+      setUserVideos((data || []) as UserVideo[]);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -67,8 +61,8 @@ export default function Profile() {
     }
   };
 
-  const publicVideos = userVideos.filter(v => v.visibility === 'public');
-  const privateVideos = userVideos.filter(v => v.visibility === 'recruiters');
+  const publicVideos = userVideos.filter(v => !v.is_private);
+  const privateVideos = userVideos.filter(v => v.is_private);
   
   const stats = {
     views: userVideos.reduce((acc, v) => acc + (v.views || 0), 0),
@@ -151,7 +145,7 @@ export default function Profile() {
                 <Eye className="h-3 w-3" />
                 {formatNumber(video.views || 0)}
               </div>
-              {video.visibility === 'recruiters' && (
+              {video.is_private && (
                 <div className="absolute top-2 right-2">
                   <Lock className="h-3 w-3 text-background" />
                 </div>
