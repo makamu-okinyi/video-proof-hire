@@ -183,15 +183,11 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get recipient's email from profiles
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("email, username")
-      .eq("id", recipientId)
-      .single();
+    // Get recipient's email from auth.users (emails are no longer stored in profiles)
+    const { data: recipientUserData, error: recipientUserError } = await supabase.auth.admin.getUserById(recipientId);
 
-    if (profileError || !profile?.email) {
-      console.error("Failed to get recipient email:", profileError);
+    if (recipientUserError || !recipientUserData?.user?.email) {
+      console.error("Failed to get recipient email:", recipientUserError);
       return new Response(
         JSON.stringify({ error: "Recipient email not found" }),
         {
@@ -200,6 +196,15 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+
+    const recipientEmail = recipientUserData.user.email;
+
+    // Get recipient's username from profiles (for personalization)
+    const { data: recipientProfile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", recipientId)
+      .single();
 
     // Fetch sender's username from database instead of trusting client input
     const { data: senderProfile } = await supabase
@@ -210,7 +215,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     let subject: string;
     let htmlContent: string;
-    const recipientName = escapeHtml(profile.username || "there");
+    const recipientName = escapeHtml(recipientProfile?.username || "there");
     // Use database username for sender, fallback to escaped client input or "Someone"
     const safeSenderName = escapeHtml(senderProfile?.username || data.senderName || "Someone");
     const safeMessagePreview = escapeHtml(data.messagePreview || "...");
@@ -256,7 +261,7 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     }
 
-    console.log(`Sending email to ${profile.email}`);
+    console.log(`Sending email to ${recipientEmail}`);
 
     // Send email using Resend API
     const emailResponse = await fetch("https://api.resend.com/emails", {
@@ -267,7 +272,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "SkillTok <onboarding@resend.dev>",
-        to: [profile.email],
+        to: [recipientEmail],
         subject,
         html: htmlContent,
       }),
