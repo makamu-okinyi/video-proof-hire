@@ -348,7 +348,6 @@ export type Database = {
           avatar: string | null
           bio: string | null
           created_at: string
-          email: string | null
           id: string
           is_verified: boolean
           skill_category: string
@@ -361,7 +360,6 @@ export type Database = {
           avatar?: string | null
           bio?: string | null
           created_at?: string
-          email?: string | null
           id: string
           is_verified?: boolean
           skill_category?: string
@@ -374,7 +372,6 @@ export type Database = {
           avatar?: string | null
           bio?: string | null
           created_at?: string
-          email?: string | null
           id?: string
           is_verified?: boolean
           skill_category?: string
