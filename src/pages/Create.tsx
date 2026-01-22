@@ -189,6 +189,7 @@ export default function Create() {
         description: caption,
         video_url: videoUrl,
         thumbnail_url: null, // Could generate thumbnail in future
+        is_private: visibility === 'recruiters', // Recruiters-only videos are private
       });
 
       if (error) {
