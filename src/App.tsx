@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { PWAUpdatePrompt } from "@/components/pwa/PWAUpdatePrompt";
 import Index from "./pages/Index";
 import Feed from "./pages/Feed";
 import Jobs from "./pages/Jobs";
@@ -34,6 +35,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <PWAUpdatePrompt />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
