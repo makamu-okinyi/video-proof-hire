@@ -108,13 +108,18 @@ export default function Auth() {
       if (isLogin) {
         const { error } = await login(email, password);
         if (error) {
-          // User-friendly error messages
-          if (error.message.includes('Invalid login credentials')) {
+          // User-friendly error messages based on error type
+          const errorMsg = error.message?.toLowerCase() || '';
+          if (errorMsg.includes('invalid login credentials') || errorMsg.includes('invalid_credentials')) {
             toast.error('Invalid email or password');
-          } else if (error.message.includes('Email not confirmed')) {
+          } else if (errorMsg.includes('email not confirmed')) {
             toast.error('Please check your email to confirm your account');
+          } else if (errorMsg.includes('too many requests') || errorMsg.includes('rate limit')) {
+            toast.error('Too many attempts. Please wait a moment and try again.');
+          } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
+            toast.error('Network error. Please check your connection.');
           } else {
-            toast.error('Login failed. Please try again.');
+            toast.error(error.message || 'Login failed. Please try again.');
           }
         } else {
           // Successfully logged in - trigger redirect via useEffect
@@ -124,13 +129,23 @@ export default function Auth() {
       } else {
         const { error } = await signup(email, password);
         if (error) {
-          if (error.message.includes('already registered')) {
-            toast.error('An account with this email already exists');
+          // Handle various signup errors including 422
+          const errorMsg = error.message?.toLowerCase() || '';
+          if (errorMsg.includes('already registered') || errorMsg.includes('already exists')) {
+            toast.error('An account with this email already exists. Try logging in instead.');
+          } else if (errorMsg.includes('password') && errorMsg.includes('weak')) {
+            toast.error('Password is too weak. Use at least 8 characters with uppercase, lowercase, and numbers.');
+          } else if (errorMsg.includes('invalid email') || errorMsg.includes('email')) {
+            toast.error('Please enter a valid email address.');
+          } else if (errorMsg.includes('rate limit') || errorMsg.includes('too many')) {
+            toast.error('Too many signup attempts. Please wait and try again.');
+          } else if (errorMsg.includes('422') || errorMsg.includes('unprocessable')) {
+            toast.error('Unable to create account. Please check your email and password format.');
           } else {
-            toast.error('Signup failed. Please try again.');
+            toast.error(error.message || 'Signup failed. Please try again.');
           }
         } else {
-          toast.success('Account created!');
+          toast.success('Account created! Check your email to verify.');
           // Skip userType selection since it's already chosen on welcome screen
           setStep('onboarding');
         }
