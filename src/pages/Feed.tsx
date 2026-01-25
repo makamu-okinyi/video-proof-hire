@@ -5,8 +5,26 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { supabase } from '@/integrations/supabase/client';
 import { Video } from '@/types';
 import { useAuth } from '@/context/AuthContext';
-import { Video as VideoIcon, Plus } from 'lucide-react';
+import { Video as VideoIcon, Plus, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+const skillCategories = [
+  { value: 'all', label: 'All', icon: '🌟' },
+  { value: 'coding', label: 'Coding', icon: '💻' },
+  { value: 'electrical', label: 'Electrical', icon: '⚡' },
+  { value: 'carpentry', label: 'Carpentry', icon: '🪚' },
+  { value: 'plumbing', label: 'Plumbing', icon: '🔧' },
+  { value: 'welding', label: 'Welding', icon: '🔥' },
+  { value: 'design', label: 'Design', icon: '🎨' },
+  { value: 'marketing', label: 'Marketing', icon: '📈' },
+  { value: 'healthcare', label: 'Healthcare', icon: '🏥' },
+  { value: 'construction', label: 'Construction', icon: '🏗️' },
+  { value: 'automotive', label: 'Automotive', icon: '🚗' },
+  { value: 'culinary', label: 'Culinary', icon: '👨‍🍳' },
+  { value: 'other', label: 'Other', icon: '📦' },
+];
+
 interface PublicVideo {
   id: string;
   title: string | null;
@@ -45,6 +63,8 @@ export default function Feed() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const transformVideo = (v: PublicVideo): Video => ({
@@ -73,7 +93,7 @@ export default function Feed() {
     createdAt: new Date(v.created_at),
   });
 
-  const fetchVideos = useCallback(async (pageNum: number, isInitial: boolean = false) => {
+  const fetchVideos = useCallback(async (pageNum: number, isInitial: boolean = false, category: string = selectedCategory) => {
     try {
       if (isInitial) {
         setLoading(true);
@@ -81,10 +101,13 @@ export default function Feed() {
         setLoadingMore(true);
       }
 
+      const categoryFilter = category === 'all' ? null : category;
+
       const { data, error } = await supabase
         .rpc('get_public_videos', {
           page_size: PAGE_SIZE,
-          page_offset: pageNum * PAGE_SIZE
+          page_offset: pageNum * PAGE_SIZE,
+          category_filter: categoryFilter
         });
 
       if (error) {
@@ -129,11 +152,22 @@ export default function Feed() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, []);
+  }, [selectedCategory]);
 
   useEffect(() => {
     fetchVideos(0, true);
   }, [fetchVideos]);
+
+  // Refetch when category changes
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setPage(0);
+    setHasMore(true);
+    setVideos([]);
+    setActiveIndex(0);
+    fetchVideos(0, true, category);
+    setShowCategoryFilter(false);
+  };
 
   // Handle scroll for active video tracking and infinite scroll
   useEffect(() => {
@@ -200,6 +234,62 @@ export default function Feed() {
 
   return (
     <div className="h-screen w-screen bg-surface-darker overflow-hidden">
+      {/* Category Filter Button */}
+      <button
+        onClick={() => setShowCategoryFilter(true)}
+        className={cn(
+          "fixed top-4 right-4 z-30 h-10 px-4 rounded-full backdrop-blur-sm flex items-center gap-2 transition-colors",
+          selectedCategory !== 'all' 
+            ? "bg-coral text-background" 
+            : "bg-background/20 text-background"
+        )}
+      >
+        <Filter className="h-4 w-4" />
+        <span className="text-sm font-medium">
+          {selectedCategory === 'all' 
+            ? 'Filter' 
+            : skillCategories.find(c => c.value === selectedCategory)?.label}
+        </span>
+      </button>
+
+      {/* Category Filter Modal */}
+      {showCategoryFilter && (
+        <div className="fixed inset-0 z-50">
+          <div 
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowCategoryFilter(false)}
+          />
+          <div className="absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl p-4 pb-8 animate-slide-up safe-area-pb">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-lg">Filter by Trade</h2>
+              <button 
+                onClick={() => setShowCategoryFilter(false)}
+                className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {skillCategories.map((cat) => (
+                <button
+                  key={cat.value}
+                  onClick={() => handleCategoryChange(cat.value)}
+                  className={cn(
+                    "flex flex-col items-center gap-1 p-3 rounded-xl transition-colors",
+                    selectedCategory === cat.value 
+                      ? "bg-coral text-background" 
+                      : "bg-secondary hover:bg-secondary/80"
+                  )}
+                >
+                  <span className="text-2xl">{cat.icon}</span>
+                  <span className="text-xs font-medium">{cat.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Video Feed */}
       <div 
         ref={containerRef}
