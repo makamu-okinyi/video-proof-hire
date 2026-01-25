@@ -1,4 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="80" fill="#0a0a0a"/>
-  <text x="256" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="280" font-weight="bold" fill="#FF6B6B" text-anchor="middle">D</text>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left rounded bar -->
+  <path d="M140 160 C140 140, 155 125, 175 125 L175 125 C195 125, 210 140, 210 160 L210 352 C210 372, 195 387, 175 387 L175 387 C155 387, 140 372, 140 352 Z" fill="black"/>
+  
+  <!-- Play triangle (outlined) -->
+  <path d="M200 256 L300 320 L300 192 Z" fill="none" stroke="black" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Top right bar -->
+  <path d="M290 145 L370 200" stroke="black" stroke-width="32" stroke-linecap="round"/>
+  
+  <!-- Bottom right bar -->
+  <path d="M290 367 L370 312" stroke="black" stroke-width="32" stroke-linecap="round"/>
 </svg>
