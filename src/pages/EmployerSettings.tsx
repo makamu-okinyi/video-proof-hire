@@ -1,228 +1,164 @@
-import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building2, Upload, Camera, Check, Loader2 } from 'lucide-react';
+import { 
+  ArrowLeft, Building2, User, Shield, ChevronRight,
+  Globe, Bell, Users, Palette, LogOut
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 export default function EmployerSettings() {
   const navigate = useNavigate();
-  const { user, profile, updateProfile, refreshProfile } = useAuth();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { profile, logout } = useAuth();
 
-  const [companyName, setCompanyName] = useState(profile?.username || '');
-  const [companyDescription, setCompanyDescription] = useState(profile?.bio || '');
-  const [companyLogo, setCompanyLogo] = useState(profile?.avatar || '');
-  const [isSaving, setIsSaving] = useState(false);
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-
-  useEffect(() => {
-    if (profile) {
-      setCompanyName(profile.username || '');
-      setCompanyDescription(profile.bio || '');
-      setCompanyLogo(profile.avatar || '');
-    }
-  }, [profile]);
-
-  // Redirect if not an employer
-  useEffect(() => {
-    if (profile && profile.user_type !== 'employer') {
-      navigate('/feed');
-    }
-  }, [profile, navigate]);
-
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image must be less than 2MB');
-      return;
-    }
-
-    setIsUploadingLogo(true);
-    try {
-      // Create a unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}-logo-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('videos')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('videos')
-        .getPublicUrl(filePath);
-
-      setCompanyLogo(publicUrl);
-      toast.success('Logo uploaded successfully');
-    } catch (error) {
-      console.error('Error uploading logo:', error);
-      toast.error('Failed to upload logo');
-    } finally {
-      setIsUploadingLogo(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await updateProfile({
-        username: companyName || null,
-        bio: companyDescription || null,
-        avatar: companyLogo || null,
-      });
-      
-      await refreshProfile();
-      toast.success('Company profile updated!');
-      navigate('/employer');
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      toast.error('Failed to save changes');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  if (!user || profile?.user_type !== 'employer') {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
+  const settingsGroups = [
+    {
+      title: 'Company',
+      items: [
+        {
+          icon: Building2,
+          label: 'Company Profile',
+          description: 'Logo, branding, about us',
+          href: '/employer/settings/company',
+          iconColor: 'text-coral',
+          bgColor: 'bg-coral/10',
+        },
+        {
+          icon: Globe,
+          label: 'Online Presence',
+          description: 'Website, social links, culture video',
+          href: '/employer/settings/company',
+          iconColor: 'text-blue-500',
+          bgColor: 'bg-blue-500/10',
+        },
+        {
+          icon: Palette,
+          label: 'Perks & Benefits',
+          description: 'What you offer employees',
+          href: '/employer/settings/company',
+          iconColor: 'text-purple-500',
+          bgColor: 'bg-purple-500/10',
+        },
+      ],
+    },
+    {
+      title: 'Account',
+      items: [
+        {
+          icon: User,
+          label: 'Personal Info',
+          description: 'Name, email, avatar',
+          href: '/employer/settings/account',
+          iconColor: 'text-green-500',
+          bgColor: 'bg-green-500/10',
+        },
+        {
+          icon: Bell,
+          label: 'Notifications',
+          description: 'Alerts and email preferences',
+          href: '/employer/settings/account',
+          iconColor: 'text-amber-500',
+          bgColor: 'bg-amber-500/10',
+        },
+        {
+          icon: Shield,
+          label: 'Security',
+          description: 'Password, 2FA settings',
+          href: '/employer/settings/account',
+          iconColor: 'text-red-500',
+          bgColor: 'bg-red-500/10',
+        },
+        {
+          icon: Users,
+          label: 'Team Access',
+          description: 'Manage team members',
+          href: '/employer/settings/account',
+          iconColor: 'text-indigo-500',
+          bgColor: 'bg-indigo-500/10',
+        },
+      ],
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-8">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50 px-4 py-3">
-        <div className="flex items-center justify-between max-w-lg mx-auto">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/employer')}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-lg font-semibold">Company Settings</h1>
+      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
+        <div className="flex items-center gap-3 max-w-2xl mx-auto">
+          <Button variant="ghost" size="icon-sm" onClick={() => navigate('/employer')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-lg font-semibold">Settings</h1>
+        </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto p-4 space-y-6">
+        {/* Profile Preview */}
+        <div className="bg-gradient-to-br from-coral/10 to-coral/5 rounded-2xl p-4 flex items-center gap-4">
+          {profile?.avatar ? (
+            <img 
+              src={profile.avatar} 
+              alt="Company" 
+              className="h-16 w-16 rounded-xl object-cover"
+            />
+          ) : (
+            <div className="h-16 w-16 rounded-xl bg-coral/20 flex items-center justify-center">
+              <Building2 className="h-8 w-8 text-coral" />
+            </div>
+          )}
+          <div className="flex-1">
+            <h2 className="font-semibold text-lg">{profile?.username || 'Company Name'}</h2>
+            <p className="text-sm text-muted-foreground">Employer Account</p>
           </div>
-          <Button variant="coral" size="sm" onClick={handleSave} disabled={isSaving}>
-            {isSaving ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Check className="h-4 w-4 mr-2" />
-            )}
-            {isSaving ? 'Saving...' : 'Save'}
+          <Button variant="coral" size="sm" onClick={() => navigate('/employer/settings/company')}>
+            Edit
           </Button>
         </div>
-      </header>
 
-      {/* Content */}
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-8">
-        {/* Company Logo */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium">Company Logo</label>
-          <div className="flex items-center gap-6">
-            <div className="relative">
-              {companyLogo ? (
-                <img
-                  src={companyLogo}
-                  alt="Company logo"
-                  className="h-24 w-24 rounded-2xl object-cover border-2 border-border"
-                />
-              ) : (
-                <div className="h-24 w-24 rounded-2xl bg-secondary flex items-center justify-center border-2 border-dashed border-border">
-                  <Building2 className="h-10 w-10 text-muted-foreground" />
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleLogoUpload}
-              />
-            </div>
-            <div className="space-y-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploadingLogo}
-              >
-                {isUploadingLogo ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4 mr-2" />
-                )}
-                {isUploadingLogo ? 'Uploading...' : 'Upload Logo'}
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                JPG, PNG or GIF. Max 2MB.
-              </p>
+        {/* Settings Groups */}
+        {settingsGroups.map((group) => (
+          <div key={group.title}>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3 px-1">
+              {group.title}
+            </h2>
+            <div className="bg-secondary rounded-2xl divide-y divide-border">
+              {group.items.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => navigate(item.href)}
+                  className="w-full flex items-center gap-4 p-4 hover:bg-background/50 transition-colors first:rounded-t-2xl last:rounded-b-2xl"
+                >
+                  <div className={`h-10 w-10 rounded-xl ${item.bgColor} flex items-center justify-center`}>
+                    <item.icon className={`h-5 w-5 ${item.iconColor}`} />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-medium">{item.label}</p>
+                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </button>
+              ))}
             </div>
           </div>
-        </div>
+        ))}
 
-        {/* Company Name */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Company Name</label>
-          <Input
-            placeholder="Enter your company name"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-            className="h-12"
-          />
-          <p className="text-xs text-muted-foreground">
-            This will be displayed on your job postings and profile.
-          </p>
-        </div>
-
-        {/* Company Description */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Company Description</label>
-          <Textarea
-            placeholder="Tell candidates about your company, culture, and what makes you unique..."
-            value={companyDescription}
-            onChange={(e) => setCompanyDescription(e.target.value)}
-            className="min-h-[150px] resize-none"
-            maxLength={500}
-          />
-          <div className="flex justify-between">
-            <p className="text-xs text-muted-foreground">
-              This appears on your company profile.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {companyDescription.length}/500
-            </p>
+        {/* Logout */}
+        <button 
+          onClick={async () => {
+            await logout();
+            navigate('/auth');
+          }}
+          className="w-full flex items-center gap-4 p-4 bg-destructive/5 hover:bg-destructive/10 rounded-2xl transition-colors"
+        >
+          <div className="h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+            <LogOut className="h-5 w-5 text-destructive" />
           </div>
-        </div>
-
-        {/* Info Section */}
-        <div className="bg-secondary rounded-xl p-4 space-y-2">
-          <h3 className="font-medium text-sm">💡 Tips for a great company profile</h3>
-          <ul className="text-xs text-muted-foreground space-y-1">
-            <li>• Use a clear, recognizable logo</li>
-            <li>• Keep your company name consistent across platforms</li>
-            <li>• Highlight your company culture and values</li>
-            <li>• Mention any notable achievements or perks</li>
-          </ul>
-        </div>
-      </main>
+          <div className="flex-1 text-left">
+            <p className="font-medium text-destructive">Log Out</p>
+            <p className="text-sm text-muted-foreground">Sign out of your account</p>
+          </div>
+          <ChevronRight className="h-5 w-5 text-destructive/50" />
+        </button>
+      </div>
     </div>
   );
 }

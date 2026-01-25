@@ -17,6 +17,8 @@ import Articles from "./pages/Articles";
 import WriteArticle from "./pages/WriteArticle";
 import EmployerDashboard from "./pages/EmployerDashboard";
 import EmployerSettings from "./pages/EmployerSettings";
+import CompanyProfileSettings from "./pages/CompanyProfileSettings";
+import AccountSettings from "./pages/AccountSettings";
 import MyShortlist from "./pages/MyShortlist";
 import CreateJob from "./pages/CreateJob";
 import CreateChallenge from "./pages/CreateChallenge";
@@ -56,6 +58,8 @@ const App = () => (
             {/* Employer Routes */}
             <Route path="/employer" element={<EmployerDashboard />} />
             <Route path="/employer/settings" element={<EmployerSettings />} />
+            <Route path="/employer/settings/company" element={<CompanyProfileSettings />} />
+            <Route path="/employer/settings/account" element={<AccountSettings />} />
             <Route path="/employer/shortlist" element={<MyShortlist />} />
             <Route path="/employer/jobs/create" element={<CreateJob />} />
             <Route path="/employer/jobs/:jobId/edit" element={<CreateJob />} />
