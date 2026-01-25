@@ -28,7 +28,7 @@ interface CommentsSheetProps {
 }
 
 export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange }: CommentsSheetProps) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, profile } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -44,12 +44,50 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
   const fetchComments = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_video_comments', { target_video_id: videoId });
+      // Try RPC first, fallback to direct query
+      let commentsData: Comment[] = [];
       
-      if (error) throw error;
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_video_comments', { target_video_id: videoId });
       
-      setComments((data || []) as Comment[]);
-      onCommentsCountChange?.(data?.length || 0);
+      if (rpcError) {
+        // Fallback: direct query with join
+        const { data: directData, error: directError } = await supabase
+          .from('video_comments')
+          .select(`
+            id,
+            content,
+            likes_count,
+            created_at,
+            user_id,
+            parent_id,
+            profiles!video_comments_user_id_fkey (
+              username,
+              avatar,
+              is_verified
+            )
+          `)
+          .eq('video_id', videoId)
+          .order('created_at', { ascending: false });
+
+        if (!directError && directData) {
+          commentsData = directData.map((c: any) => ({
+            id: c.id,
+            content: c.content,
+            likes_count: c.likes_count,
+            created_at: c.created_at,
+            user_id: c.user_id,
+            username: c.profiles?.username,
+            avatar: c.profiles?.avatar,
+            is_verified: c.profiles?.is_verified || false,
+            parent_id: c.parent_id,
+          }));
+        }
+      } else {
+        commentsData = (rpcData || []) as Comment[];
+      }
+      
+      setComments(commentsData);
+      onCommentsCountChange?.(commentsData.length);
     } catch (error) {
       console.error('Error fetching comments:', error);
     } finally {
@@ -60,7 +98,7 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user) {
       toast.error('Please sign in to comment');
       return;
     }
@@ -69,13 +107,26 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
 
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.rpc('add_video_comment', {
+      // Try RPC first, fallback to direct insert
+      const { error: rpcError } = await supabase.rpc('add_video_comment', {
         target_video_id: videoId,
         comment_content: newComment.trim(),
         comment_parent_id: null,
       });
 
-      if (error) throw error;
+      if (rpcError) {
+        // Fallback: direct insert
+        const { error: insertError } = await supabase
+          .from('video_comments')
+          .insert({
+            video_id: videoId,
+            user_id: user.id,
+            content: newComment.trim(),
+            parent_id: null,
+          });
+
+        if (insertError) throw insertError;
+      }
 
       setNewComment('');
       fetchComments(); // Refresh comments
@@ -193,7 +244,7 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
           <div className="flex items-center gap-3">
             {user && (
               <img
-                src={user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'}
+                src={profile?.avatar || user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'}
                 alt="You"
                 className="h-8 w-8 rounded-full object-cover"
               />

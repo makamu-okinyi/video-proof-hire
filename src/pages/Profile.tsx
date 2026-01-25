@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Settings, Edit2, Share2, 
   Eye, Bookmark, LogOut, ChevronRight,
-  BadgeCheck, Lock, Globe, Play
+  BadgeCheck, Lock, Globe, Play, RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,6 +56,18 @@ export default function Profile() {
     }
   }, [user?.id]);
 
+  // Refresh stats when page becomes visible (user returns to profile)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user?.id) {
+        fetchUserVideos();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user?.id]);
+
   useEffect(() => {
     if (activeTab === 'saved' && user?.id && savedVideos.length === 0) {
       fetchSavedVideos();
@@ -80,6 +92,16 @@ export default function Profile() {
       console.error('Error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Manual refresh function
+  const refreshStats = () => {
+    if (user?.id) {
+      fetchUserVideos();
+      if (activeTab === 'saved') {
+        fetchSavedVideos();
+      }
     }
   };
 
@@ -218,6 +240,9 @@ export default function Profile() {
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold">@{profile?.username || 'user'}</h1>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon-sm" onClick={refreshStats} title="Refresh stats">
+              <RefreshCw className="h-5 w-5" />
+            </Button>
             <Button variant="ghost" size="icon-sm" onClick={handleShare}>
               <Share2 className="h-5 w-5" />
             </Button>
