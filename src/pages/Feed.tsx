@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { VideoCard } from '@/components/video/VideoCard';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { supabase } from '@/integrations/supabase/client';
 import { Video } from '@/types';
-import { mockVideos } from '@/data/mockData';
 import { useAuth } from '@/context/AuthContext';
+import { Video as VideoIcon, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 interface PublicVideo {
   id: string;
   title: string | null;
@@ -27,7 +28,9 @@ const PAGE_SIZE = 20;
 
 export default function Feed() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { profile, isLoading } = useAuth();
+  const targetVideoId = searchParams.get('video');
 
   // Redirect employers to their dashboard
   useEffect(() => {
@@ -98,15 +101,26 @@ export default function Feed() {
         }
 
         if (isInitial) {
-          // For initial load, add mock videos after real videos
-          setVideos([...transformedVideos, ...mockVideos]);
+          setVideos(transformedVideos);
+          
+          // If we have a target video ID, find its index and scroll to it
+          if (targetVideoId) {
+            const targetIndex = transformedVideos.findIndex(v => v.id === targetVideoId);
+            if (targetIndex !== -1) {
+              setActiveIndex(targetIndex);
+              // Scroll to the video after render
+              setTimeout(() => {
+                if (containerRef.current) {
+                  containerRef.current.scrollTo({
+                    top: targetIndex * window.innerHeight,
+                    behavior: 'instant',
+                  });
+                }
+              }, 100);
+            }
+          }
         } else {
-          // For subsequent loads, append new videos before mock videos
-          setVideos(prev => {
-            // Remove mock videos, add new real videos, then add mock videos back
-            const realVideos = prev.filter(v => !mockVideos.some(m => m.id === v.id));
-            return [...realVideos, ...transformedVideos, ...mockVideos];
-          });
+          setVideos(prev => [...prev, ...transformedVideos]);
         }
       }
     } catch (error) {
@@ -154,6 +168,32 @@ export default function Feed() {
     return (
       <div className="h-screen w-screen bg-surface-darker flex items-center justify-center">
         <div className="text-background/60 animate-pulse">Loading videos...</div>
+      </div>
+    );
+  }
+
+  // Empty state when no videos
+  if (videos.length === 0) {
+    return (
+      <div className="h-screen w-screen bg-background flex flex-col items-center justify-center px-6">
+        <div className="h-20 w-20 rounded-full bg-secondary flex items-center justify-center mb-6">
+          <VideoIcon className="h-10 w-10 text-muted-foreground" />
+        </div>
+        <h2 className="text-xl font-semibold text-center mb-2">No videos yet</h2>
+        <p className="text-muted-foreground text-center mb-6">
+          Be the first to share your skills! Create a video to showcase your work.
+        </p>
+        <Button variant="coral" size="lg" onClick={() => navigate('/create')}>
+          <Plus className="h-5 w-5 mr-2" />
+          Create Video
+        </Button>
+        
+        {/* Logo */}
+        <div className="fixed top-4 left-4 z-30">
+          <h1 className="text-2xl font-bold drop-shadow-lg">donjo</h1>
+        </div>
+        
+        <BottomNav />
       </div>
     );
   }
