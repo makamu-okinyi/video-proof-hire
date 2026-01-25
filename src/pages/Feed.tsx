@@ -103,21 +103,79 @@ export default function Feed() {
       }
 
       const categoryFilter = category === 'all' ? null : category;
+      let videosData: PublicVideo[] = [];
 
-      const { data, error } = await supabase
+      // Try RPC first
+      const { data: rpcData, error: rpcError } = await supabase
         .rpc('get_public_videos', {
           page_size: PAGE_SIZE,
           page_offset: pageNum * PAGE_SIZE,
           category_filter: categoryFilter
         });
 
-      if (error) {
-        console.error('Error fetching videos:', error);
-        return;
+      if (rpcError) {
+        // Fallback: direct query to videos table with profile join
+        let query = supabase
+          .from('videos')
+          .select(`
+            id,
+            title,
+            description,
+            video_url,
+            thumbnail_url,
+            views,
+            likes,
+            created_at,
+            skill_category,
+            user_id,
+            profiles!videos_user_id_fkey (
+              id,
+              username,
+              avatar,
+              is_verified,
+              skills,
+              skill_category
+            )
+          `)
+          .eq('is_private', false)
+          .order('created_at', { ascending: false })
+          .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
+
+        if (categoryFilter) {
+          query = query.eq('skill_category', categoryFilter);
+        }
+
+        const { data: directData, error: directError } = await query;
+
+        if (directError) {
+          console.error('Error fetching videos:', directError);
+          return;
+        }
+
+        if (directData) {
+          videosData = directData.map((v: any) => ({
+            id: v.id,
+            title: v.title,
+            description: v.description,
+            video_url: v.video_url,
+            thumbnail_url: v.thumbnail_url,
+            views: v.views || 0,
+            likes: v.likes || 0,
+            created_at: v.created_at,
+            creator_id: v.user_id,
+            creator_username: v.profiles?.username,
+            creator_avatar: v.profiles?.avatar,
+            creator_is_verified: v.profiles?.is_verified || false,
+            creator_skills: v.profiles?.skills,
+            creator_skill_category: v.profiles?.skill_category,
+          }));
+        }
+      } else if (rpcData) {
+        videosData = rpcData as PublicVideo[];
       }
 
-      if (data) {
-        const transformedVideos = (data as PublicVideo[]).map(transformVideo);
+      if (videosData.length > 0) {
+        const transformedVideos = videosData.map(transformVideo);
         
         // Check if we have more videos to load
         if (transformedVideos.length < PAGE_SIZE) {
@@ -146,6 +204,9 @@ export default function Feed() {
         } else {
           setVideos(prev => [...prev, ...transformedVideos]);
         }
+      } else if (isInitial) {
+        setVideos([]);
+        setHasMore(false);
       }
     } catch (error) {
       console.error('Error:', error);
