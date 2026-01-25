@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Bookmark, Play, Pause, Volume2, VolumeX, UserPlus, Check } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Play, Pause, Volume2, VolumeX, UserPlus, Check, Star, Send, X } from 'lucide-react';
 import { Video } from '@/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { CommentsSheet } from './CommentsSheet';
+import { ContactModal } from './ContactModal';
 
 interface VideoCardProps {
   video: Video;
@@ -17,18 +18,23 @@ interface VideoCardProps {
 
 export function VideoCard({ video, isActive = false }: VideoCardProps) {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, profile } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isShortlisted, setIsShortlisted] = useState(false);
   const [likes, setLikes] = useState(video.likes);
   const [showPlayButton, setShowPlayButton] = useState(true);
   const [showComments, setShowComments] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
   const [commentsCount, setCommentsCount] = useState(video.comments);
   const [viewRecorded, setViewRecorded] = useState(false);
+  
+  const isRecruiter = profile?.user_type === 'employer';
+  const isOwnVideo = video.userId === user?.id;
 
   // Check initial like/save/follow status
   useEffect(() => {
@@ -58,6 +64,12 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
           .eq('following_id', video.userId)
           .maybeSingle();
         setIsFollowing(!!followData);
+      }
+
+      // Check if shortlisted (for recruiters)
+      if (isRecruiter && video.userId !== user.id) {
+        const { data: shortlistData } = await supabase.rpc('is_shortlisted', { target_talent_id: video.userId });
+        setIsShortlisted(shortlistData || false);
       }
     } catch (error) {
       // Silently fail for interaction checks
@@ -230,6 +242,63 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
     }
   };
 
+  // Recruiter actions
+  const handleShortlist = async () => {
+    if (!isAuthenticated || !isRecruiter) {
+      toast.error('Only recruiters can shortlist talent');
+      return;
+    }
+
+    const wasShortlisted = isShortlisted;
+    setIsShortlisted(!isShortlisted);
+
+    try {
+      const { data, error } = await supabase.rpc('toggle_shortlist', { 
+        target_talent_id: video.userId,
+        target_video_id: video.id 
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        toast.success(`Added @${video.user.username} to shortlist`);
+      } else {
+        toast.success('Removed from shortlist');
+      }
+    } catch (error) {
+      setIsShortlisted(wasShortlisted);
+      // Fallback: try direct insert/delete
+      try {
+        if (wasShortlisted) {
+          await supabase
+            .from('shortlists')
+            .delete()
+            .eq('recruiter_id', user?.id)
+            .eq('talent_id', video.userId);
+          toast.success('Removed from shortlist');
+        } else {
+          await supabase
+            .from('shortlists')
+            .insert({ recruiter_id: user?.id, talent_id: video.userId, video_id: video.id });
+          toast.success(`Added @${video.user.username} to shortlist`);
+          setIsShortlisted(true);
+        }
+      } catch (fallbackError) {
+        toast.error('Failed to update shortlist');
+        setIsShortlisted(wasShortlisted);
+      }
+    }
+  };
+
+  const handleContact = () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to contact talent');
+      navigate('/auth');
+      return;
+    }
+    setShowContactModal(true);
+  };
+
   const handleProfileClick = () => {
     if (video.userId === user?.id) {
       navigate('/profile');
@@ -360,6 +429,43 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
           </div>
           <span className="text-xs text-background font-medium">Share</span>
         </button>
+
+        {/* Recruiter Actions */}
+        {isRecruiter && !isOwnVideo && (
+          <>
+            {/* Shortlist */}
+            <button 
+              className="flex flex-col items-center gap-1"
+              onClick={handleShortlist}
+            >
+              <div className={cn(
+                "h-11 w-11 rounded-full flex items-center justify-center transition-all",
+                isShortlisted ? "bg-amber-500/30" : "bg-background/10 backdrop-blur-sm"
+              )}>
+                <Star 
+                  className={cn(
+                    "h-6 w-6 transition-all",
+                    isShortlisted ? "text-amber-400 fill-amber-400" : "text-background"
+                  )} 
+                />
+              </div>
+              <span className="text-xs text-background font-medium">
+                {isShortlisted ? 'Listed' : 'Shortlist'}
+              </span>
+            </button>
+
+            {/* Contact */}
+            <button 
+              className="flex flex-col items-center gap-1"
+              onClick={handleContact}
+            >
+              <div className="h-11 w-11 rounded-full bg-green-500/30 backdrop-blur-sm flex items-center justify-center">
+                <Send className="h-5 w-5 text-green-400" />
+              </div>
+              <span className="text-xs text-background font-medium">Contact</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* Bottom Content */}
@@ -423,6 +529,20 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
         videoId={video.id}
         onCommentsCountChange={setCommentsCount}
       />
+
+      {/* Contact Modal (for recruiters) */}
+      {isRecruiter && (
+        <ContactModal
+          isOpen={showContactModal}
+          onClose={() => setShowContactModal(false)}
+          talent={{
+            id: video.userId,
+            username: video.user.username,
+            avatar: video.user.avatar,
+          }}
+          videoId={video.id}
+        />
+      )}
     </div>
   );
 }

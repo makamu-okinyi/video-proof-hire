@@ -21,13 +21,28 @@ type Step = 'record' | 'preview' | 'details';
 type Visibility = 'public' | 'recruiters';
 type VideoSource = 'camera' | 'upload';
 
-const categories = [
+const contentCategories = [
   'Project Demo',
   'Technical Walkthrough', 
   'Design Process',
   'Case Study',
   'Skills Showcase',
   'Introduction',
+];
+
+const skillCategories = [
+  { value: 'coding', label: 'Coding & Software', icon: '💻' },
+  { value: 'electrical', label: 'Electrical', icon: '⚡' },
+  { value: 'carpentry', label: 'Carpentry', icon: '🪚' },
+  { value: 'plumbing', label: 'Plumbing', icon: '🔧' },
+  { value: 'welding', label: 'Welding', icon: '🔥' },
+  { value: 'design', label: 'Design & Creative', icon: '🎨' },
+  { value: 'marketing', label: 'Marketing & Sales', icon: '📈' },
+  { value: 'healthcare', label: 'Healthcare', icon: '🏥' },
+  { value: 'construction', label: 'Construction', icon: '🏗️' },
+  { value: 'automotive', label: 'Automotive', icon: '🚗' },
+  { value: 'culinary', label: 'Culinary & Food', icon: '👨‍🍳' },
+  { value: 'other', label: 'Other', icon: '📦' },
 ];
 
 export default function Create() {
@@ -77,10 +92,12 @@ export default function Create() {
   // Details
   const [caption, setCaption] = useState('');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  const [category, setCategory] = useState('');
+  const [contentCategory, setContentCategory] = useState('');
+  const [skillCategory, setSkillCategory] = useState('');
   const [visibility, setVisibility] = useState<Visibility>('public');
   const [showSkillPicker, setShowSkillPicker] = useState(false);
-  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showContentCategoryPicker, setShowContentCategoryPicker] = useState(false);
+  const [showSkillCategoryPicker, setShowSkillCategoryPicker] = useState(false);
 
   // Redirect if not authenticated or if employer
   useEffect(() => {
@@ -195,6 +212,7 @@ export default function Create() {
         video_url: videoUrl,
         thumbnail_url: null, // Could generate thumbnail in future
         is_private: visibility === 'recruiters', // Recruiters-only videos are private
+        skill_category: skillCategory || 'other',
       });
 
       if (error) {
@@ -551,32 +569,71 @@ export default function Create() {
           )}
         </div>
 
-        {/* Category */}
+        {/* Skill Category (Trade/Profession) */}
         <div className="space-y-3">
           <button 
-            onClick={() => setShowCategoryPicker(!showCategoryPicker)}
+            onClick={() => setShowSkillCategoryPicker(!showSkillCategoryPicker)}
             className="w-full flex items-center justify-between py-3 border-b border-border"
           >
-            <span className="font-medium">Category</span>
+            <span className="font-medium">Trade / Profession</span>
             <div className="flex items-center gap-2">
-              {category ? (
-                <span className="text-sm">{category}</span>
+              {skillCategory ? (
+                <span className="text-sm">
+                  {skillCategories.find(c => c.value === skillCategory)?.icon}{' '}
+                  {skillCategories.find(c => c.value === skillCategory)?.label}
+                </span>
               ) : (
-                <span className="text-sm text-muted-foreground">Select category</span>
+                <span className="text-sm text-muted-foreground">Select your field</span>
               )}
-              <ChevronDown className={cn("h-4 w-4 transition-transform", showCategoryPicker && "rotate-180")} />
+              <ChevronDown className={cn("h-4 w-4 transition-transform", showSkillCategoryPicker && "rotate-180")} />
             </div>
           </button>
           
-          {showCategoryPicker && (
+          {showSkillCategoryPicker && (
+            <div className="grid grid-cols-2 gap-2 animate-fade-in">
+              {skillCategories.map((cat) => (
+                <button
+                  key={cat.value}
+                  onClick={() => { setSkillCategory(cat.value); setShowSkillCategoryPicker(false); }}
+                  className={cn(
+                    "text-left px-4 py-3 rounded-xl transition-colors flex items-center gap-2",
+                    skillCategory === cat.value ? "bg-coral/10 text-coral border border-coral" : "bg-secondary hover:bg-secondary/80"
+                  )}
+                >
+                  <span className="text-lg">{cat.icon}</span>
+                  <span className="text-sm font-medium">{cat.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Content Category */}
+        <div className="space-y-3">
+          <button 
+            onClick={() => setShowContentCategoryPicker(!showContentCategoryPicker)}
+            className="w-full flex items-center justify-between py-3 border-b border-border"
+          >
+            <span className="font-medium">Content Type</span>
+            <div className="flex items-center gap-2">
+              {contentCategory ? (
+                <span className="text-sm">{contentCategory}</span>
+              ) : (
+                <span className="text-sm text-muted-foreground">Select type</span>
+              )}
+              <ChevronDown className={cn("h-4 w-4 transition-transform", showContentCategoryPicker && "rotate-180")} />
+            </div>
+          </button>
+          
+          {showContentCategoryPicker && (
             <div className="space-y-1 animate-fade-in">
-              {categories.map((cat) => (
+              {contentCategories.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => { setCategory(cat); setShowCategoryPicker(false); }}
+                  onClick={() => { setContentCategory(cat); setShowContentCategoryPicker(false); }}
                   className={cn(
                     "w-full text-left px-4 py-3 rounded-xl transition-colors",
-                    category === cat ? "bg-coral/10 text-coral" : "hover:bg-secondary"
+                    contentCategory === cat ? "bg-coral/10 text-coral" : "hover:bg-secondary"
                   )}
                 >
                   {cat}

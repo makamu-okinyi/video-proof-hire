@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Briefcase, Trophy, Users, Eye, 
-  ChevronRight, MoreHorizontal, Edit2, Trash2, LogOut, Settings
+  ChevronRight, MoreHorizontal, Edit2, Trash2, LogOut, Settings,
+  Star, MessageCircle, Video
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -179,6 +180,33 @@ export default function EmployerDashboard() {
             {jobs.reduce((acc, j) => acc + j.applications_count, 0)}
           </p>
           <p className="text-xs text-muted-foreground">Applicants</p>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="px-4 pb-4">
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={() => navigate('/feed')}
+            className="bg-gradient-to-br from-coral/20 to-coral/5 border border-coral/20 rounded-xl p-3 text-center hover:border-coral/40 transition-colors"
+          >
+            <Video className="h-5 w-5 mx-auto text-coral mb-1" />
+            <p className="text-xs font-medium">Browse Talent</p>
+          </button>
+          <button
+            onClick={() => navigate('/employer/shortlist')}
+            className="bg-gradient-to-br from-amber-500/20 to-amber-500/5 border border-amber-500/20 rounded-xl p-3 text-center hover:border-amber-500/40 transition-colors"
+          >
+            <Star className="h-5 w-5 mx-auto text-amber-500 mb-1" />
+            <p className="text-xs font-medium">My Shortlist</p>
+          </button>
+          <button
+            onClick={() => navigate('/messages')}
+            className="bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/20 rounded-xl p-3 text-center hover:border-green-500/40 transition-colors"
+          >
+            <MessageCircle className="h-5 w-5 mx-auto text-green-500 mb-1" />
+            <p className="text-xs font-medium">Messages</p>
+          </button>
         </div>
       </div>
 
