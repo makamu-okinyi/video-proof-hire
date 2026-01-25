@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -347,9 +348,12 @@ export default function Auth() {
     <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 animate-fade-in">
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
-        <div className="text-center space-y-2">
-          <h1 className="text-5xl font-bold tracking-tight">donjo</h1>
-          <p className="text-muted-foreground text-lg">Prove your skills. Get hired.</p>
+        <div className="text-center space-y-4">
+          <Logo size="xl" className="justify-center" />
+          <div className="space-y-1">
+            <h1 className="text-4xl font-bold tracking-tight">donjo</h1>
+            <p className="text-muted-foreground text-lg">Prove your skills. Get hired.</p>
+          </div>
         </div>
 
         {/* Hero Visual */}

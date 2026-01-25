@@ -7,6 +7,7 @@ import { Video } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { Video as VideoIcon, Plus, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Logo, LogoIcon } from '@/components/ui/Logo';
 import { cn } from '@/lib/utils';
 
 const skillCategories = [
@@ -224,7 +225,7 @@ export default function Feed() {
         
         {/* Logo */}
         <div className="fixed top-4 left-4 z-30">
-          <h1 className="text-2xl font-bold drop-shadow-lg">donjo</h1>
+          <Logo size="lg" showText variant="default" />
         </div>
         
         <BottomNav />
@@ -313,8 +314,8 @@ export default function Feed() {
       </div>
 
       {/* Logo */}
-      <div className="fixed top-4 left-4 z-30">
-        <h1 className="text-2xl font-bold text-background drop-shadow-lg">donjo</h1>
+      <div className="fixed top-4 left-4 z-30 drop-shadow-lg">
+        <LogoIcon className="h-9 w-9" variant="light" />
       </div>
 
       {/* Bottom Navigation */}
