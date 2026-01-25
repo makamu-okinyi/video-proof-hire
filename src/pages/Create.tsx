@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   X, Video, Upload, RotateCcw, Play, 
   Check, ChevronDown, Globe, Users, Sparkles,
-  Camera, AlertCircle, Loader2
+  Camera, AlertCircle, Loader2, Mic, MicOff, Volume2, VolumeX
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,13 +47,18 @@ export default function Create() {
     recordedUrl,
     recordedBlob,
     error: cameraError,
+    isMicEnabled,
     startStream,
     stopStream,
     flipCamera,
+    toggleMicrophone,
     startRecording,
     stopRecording,
     resetRecording,
   } = useCamera({ maxDuration: 120 });
+  
+  // Preview audio state
+  const [isPreviewMuted, setIsPreviewMuted] = useState(false);
 
   // File upload hook
   const {
@@ -274,13 +279,51 @@ export default function Create() {
           </div>
         )}
 
-        {/* Flip Camera */}
-        <button 
-          onClick={flipCamera}
-          className="absolute top-4 right-4 z-20 h-10 w-10 rounded-full bg-background/10 backdrop-blur-sm flex items-center justify-center"
-        >
-          <RotateCcw className="h-5 w-5 text-background" />
-        </button>
+        {/* Right side controls */}
+        <div className="absolute top-4 right-4 z-20 flex flex-col gap-3">
+          {/* Flip Camera */}
+          <button 
+            onClick={flipCamera}
+            className="h-10 w-10 rounded-full bg-background/10 backdrop-blur-sm flex items-center justify-center"
+          >
+            <RotateCcw className="h-5 w-5 text-background" />
+          </button>
+          
+          {/* Microphone Toggle */}
+          <button 
+            onClick={toggleMicrophone}
+            className={cn(
+              "h-10 w-10 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors",
+              isMicEnabled ? "bg-background/10" : "bg-destructive/80"
+            )}
+          >
+            {isMicEnabled ? (
+              <Mic className="h-5 w-5 text-background" />
+            ) : (
+              <MicOff className="h-5 w-5 text-background" />
+            )}
+          </button>
+        </div>
+
+        {/* Microphone status indicator */}
+        {isRecording && (
+          <div className={cn(
+            "absolute bottom-4 right-4 z-20 px-3 py-1.5 rounded-full backdrop-blur-sm flex items-center gap-2",
+            isMicEnabled ? "bg-green-500/80" : "bg-destructive/80"
+          )}>
+            {isMicEnabled ? (
+              <>
+                <Mic className="h-4 w-4 text-background" />
+                <span className="text-background text-xs font-medium">Recording audio</span>
+              </>
+            ) : (
+              <>
+                <MicOff className="h-4 w-4 text-background" />
+                <span className="text-background text-xs font-medium">Audio muted</span>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Controls */}
@@ -342,6 +385,7 @@ export default function Create() {
             className="absolute inset-0 w-full h-full object-cover"
             playsInline
             loop
+            muted={isPreviewMuted}
             onClick={(e) => {
               const video = e.currentTarget;
               if (video.paused) {
@@ -360,6 +404,18 @@ export default function Create() {
           <X className="h-5 w-5 text-background" />
         </button>
 
+        {/* Volume Toggle */}
+        <button 
+          onClick={() => setIsPreviewMuted(prev => !prev)}
+          className="absolute top-4 right-4 z-20 h-10 w-10 rounded-full bg-background/10 backdrop-blur-sm flex items-center justify-center"
+        >
+          {isPreviewMuted ? (
+            <VolumeX className="h-5 w-5 text-background" />
+          ) : (
+            <Volume2 className="h-5 w-5 text-background" />
+          )}
+        </button>
+
         {/* Play Button Overlay (shown when paused) */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="h-20 w-20 rounded-full bg-background/20 backdrop-blur-sm flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
@@ -367,11 +423,19 @@ export default function Create() {
           </div>
         </div>
 
-        {/* Duration */}
-        <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-full bg-background/10 backdrop-blur-sm">
-          <span className="text-background text-sm font-mono">
-            {videoSource === 'camera' ? formatTime(recordingTime) : 'Uploaded'}
-          </span>
+        {/* Duration & Audio indicator */}
+        <div className="absolute bottom-4 left-4 flex gap-2">
+          <div className="px-3 py-1.5 rounded-full bg-background/10 backdrop-blur-sm">
+            <span className="text-background text-sm font-mono">
+              {videoSource === 'camera' ? formatTime(recordingTime) : 'Uploaded'}
+            </span>
+          </div>
+          {!isPreviewMuted && (
+            <div className="px-3 py-1.5 rounded-full bg-background/10 backdrop-blur-sm flex items-center gap-1.5">
+              <Volume2 className="h-3.5 w-3.5 text-background" />
+              <span className="text-background text-xs">Audio on</span>
+            </div>
+          )}
         </div>
       </div>
 
