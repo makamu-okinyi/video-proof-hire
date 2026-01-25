@@ -1,9 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, Share2, Bookmark, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Heart, MessageCircle, Share2, Bookmark, Play, Pause, Volume2, VolumeX, UserPlus, Check } from 'lucide-react';
 import { Video } from '@/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
+import { CommentsSheet } from './CommentsSheet';
 
 interface VideoCardProps {
   video: Video;
@@ -11,13 +16,69 @@ interface VideoCardProps {
 }
 
 export function VideoCard({ video, isActive = false }: VideoCardProps) {
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [likes, setLikes] = useState(video.likes);
   const [showPlayButton, setShowPlayButton] = useState(true);
+  const [showComments, setShowComments] = useState(false);
+  const [commentsCount, setCommentsCount] = useState(video.comments);
+  const [viewRecorded, setViewRecorded] = useState(false);
+
+  // Check initial like/save/follow status
+  useEffect(() => {
+    if (user && video.id) {
+      checkUserInteractions();
+    }
+  }, [user, video.id]);
+
+  const checkUserInteractions = async () => {
+    if (!user) return;
+
+    try {
+      // Check if liked
+      const { data: likedData } = await supabase.rpc('has_liked_video', { target_video_id: video.id });
+      setIsLiked(likedData || false);
+
+      // Check if saved
+      const { data: savedData } = await supabase.rpc('has_saved_video', { target_video_id: video.id });
+      setIsSaved(savedData || false);
+
+      // Check if following (only if not own video)
+      if (video.userId !== user.id) {
+        const { data: followData } = await supabase
+          .from('user_follows')
+          .select('id')
+          .eq('follower_id', user.id)
+          .eq('following_id', video.userId)
+          .maybeSingle();
+        setIsFollowing(!!followData);
+      }
+    } catch (error) {
+      // Silently fail for interaction checks
+    }
+  };
+
+  // Record view when video becomes active
+  useEffect(() => {
+    if (isActive && !viewRecorded && video.id) {
+      recordView();
+    }
+  }, [isActive, video.id]);
+
+  const recordView = async () => {
+    try {
+      await supabase.rpc('record_video_view', { target_video_id: video.id });
+      setViewRecorded(true);
+    } catch (error) {
+      // Silently fail for view tracking
+    }
+  };
 
   // Auto-play when video becomes active
   useEffect(() => {
@@ -64,9 +125,117 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
     }
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to like videos');
+      navigate('/auth');
+      return;
+    }
+
+    const wasLiked = isLiked;
     setIsLiked(!isLiked);
-    setLikes(prev => isLiked ? prev - 1 : prev + 1);
+    setLikes(prev => wasLiked ? prev - 1 : prev + 1);
+
+    try {
+      if (wasLiked) {
+        await supabase.rpc('unlike_video', { target_video_id: video.id });
+      } else {
+        await supabase.rpc('like_video', { target_video_id: video.id });
+      }
+    } catch (error) {
+      // Revert on error
+      setIsLiked(wasLiked);
+      setLikes(prev => wasLiked ? prev + 1 : prev - 1);
+      toast.error('Failed to update like');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to save videos');
+      navigate('/auth');
+      return;
+    }
+
+    const wasSaved = isSaved;
+    setIsSaved(!isSaved);
+
+    try {
+      if (wasSaved) {
+        await supabase.rpc('unsave_video', { target_video_id: video.id });
+        toast.success('Removed from saved');
+      } else {
+        await supabase.rpc('save_video', { target_video_id: video.id });
+        toast.success('Saved to collection');
+      }
+    } catch (error) {
+      setIsSaved(wasSaved);
+      toast.error('Failed to update save');
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to follow users');
+      navigate('/auth');
+      return;
+    }
+
+    if (video.userId === user?.id) {
+      return; // Can't follow yourself
+    }
+
+    const wasFollowing = isFollowing;
+    setIsFollowing(!isFollowing);
+
+    try {
+      if (wasFollowing) {
+        await supabase
+          .from('user_follows')
+          .delete()
+          .eq('follower_id', user?.id)
+          .eq('following_id', video.userId);
+      } else {
+        await supabase
+          .from('user_follows')
+          .insert({ follower_id: user?.id, following_id: video.userId });
+        toast.success(`Following @${video.user.username}`);
+      }
+    } catch (error) {
+      setIsFollowing(wasFollowing);
+      toast.error('Failed to update follow');
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/feed?video=${video.id}`;
+    const shareData = {
+      title: video.caption || 'Check out this video on Donjo',
+      text: `${video.user.username}'s video portfolio`,
+      url: shareUrl,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Link copied to clipboard');
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Link copied to clipboard');
+      }
+    }
+  };
+
+  const handleProfileClick = () => {
+    if (video.userId === user?.id) {
+      navigate('/profile');
+    } else {
+      navigate(`/user/${video.userId}`);
+    }
   };
 
   const formatNumber = (num: number): string => {
@@ -106,15 +275,30 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
       {/* Right Side Actions */}
       <div className="absolute right-3 bottom-32 flex flex-col items-center gap-5 z-20">
         {/* Profile */}
-        <button className="relative">
+        <button className="relative" onClick={handleProfileClick}>
           <img 
             src={video.user.avatar} 
             alt={video.user.username}
             className="h-12 w-12 rounded-full border-2 border-background object-cover"
           />
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-5 w-5 rounded-full bg-coral flex items-center justify-center">
-            <span className="text-xs text-background font-bold">+</span>
-          </div>
+          {video.userId !== user?.id && (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleFollow();
+              }}
+              className={cn(
+                "absolute -bottom-1 left-1/2 -translate-x-1/2 h-5 w-5 rounded-full flex items-center justify-center transition-colors",
+                isFollowing ? "bg-green-500" : "bg-coral"
+              )}
+            >
+              {isFollowing ? (
+                <Check className="h-3 w-3 text-background" />
+              ) : (
+                <span className="text-xs text-background font-bold">+</span>
+              )}
+            </button>
+          )}
         </button>
 
         {/* Like */}
@@ -137,17 +321,20 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
         </button>
 
         {/* Comment */}
-        <button className="flex flex-col items-center gap-1">
+        <button 
+          className="flex flex-col items-center gap-1"
+          onClick={() => setShowComments(true)}
+        >
           <div className="h-11 w-11 rounded-full bg-background/10 backdrop-blur-sm flex items-center justify-center">
             <MessageCircle className="h-6 w-6 text-background" />
           </div>
-          <span className="text-xs text-background font-medium">{formatNumber(video.comments)}</span>
+          <span className="text-xs text-background font-medium">{formatNumber(commentsCount)}</span>
         </button>
 
         {/* Save */}
         <button 
           className="flex flex-col items-center gap-1"
-          onClick={() => setIsSaved(!isSaved)}
+          onClick={handleSave}
         >
           <div className={cn(
             "h-11 w-11 rounded-full flex items-center justify-center transition-all",
@@ -164,7 +351,10 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
         </button>
 
         {/* Share */}
-        <button className="flex flex-col items-center gap-1">
+        <button 
+          className="flex flex-col items-center gap-1"
+          onClick={handleShare}
+        >
           <div className="h-11 w-11 rounded-full bg-background/10 backdrop-blur-sm flex items-center justify-center">
             <Share2 className="h-6 w-6 text-background" />
           </div>
@@ -175,7 +365,10 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
       {/* Bottom Content */}
       <div className="absolute bottom-20 left-0 right-16 px-4 z-20">
         {/* Username & Verified */}
-        <div className="flex items-center gap-2 mb-2">
+        <button 
+          className="flex items-center gap-2 mb-2"
+          onClick={handleProfileClick}
+        >
           <span className="text-background font-semibold">@{video.user.username}</span>
           {video.user.isVerified && (
             <div className="h-4 w-4 rounded-full bg-coral flex items-center justify-center">
@@ -184,7 +377,7 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
               </svg>
             </div>
           )}
-        </div>
+        </button>
 
         {/* Caption */}
         <p className="text-background/90 text-sm mb-3 line-clamp-2">{video.caption}</p>
@@ -222,6 +415,14 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
           <Volume2 className="h-4 w-4 text-background" />
         )}
       </button>
+
+      {/* Comments Sheet */}
+      <CommentsSheet
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+        videoId={video.id}
+        onCommentsCountChange={setCommentsCount}
+      />
     </div>
   );
 }

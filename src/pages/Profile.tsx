@@ -21,8 +21,22 @@ interface UserVideo {
   description: string | null;
   views: number;
   likes: number;
-  is_private: boolean;
+  is_private?: boolean;
   created_at: string;
+}
+
+interface SavedVideo {
+  id: string;
+  video_url: string;
+  thumbnail_url: string | null;
+  title: string | null;
+  description: string | null;
+  views: number;
+  likes: number;
+  created_at: string;
+  creator_id: string;
+  creator_username: string | null;
+  creator_avatar: string | null;
 }
 
 type Tab = 'private' | 'public' | 'saved';
@@ -32,13 +46,21 @@ export default function Profile() {
   const { user, profile, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('public');
   const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
+  const [savedVideos, setSavedVideos] = useState<SavedVideo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingSaved, setLoadingSaved] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
       fetchUserVideos();
     }
   }, [user?.id]);
+
+  useEffect(() => {
+    if (activeTab === 'saved' && user?.id && savedVideos.length === 0) {
+      fetchSavedVideos();
+    }
+  }, [activeTab, user?.id]);
 
   const fetchUserVideos = async () => {
     try {
@@ -58,6 +80,24 @@ export default function Profile() {
       console.error('Error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSavedVideos = async () => {
+    setLoadingSaved(true);
+    try {
+      const { data, error } = await supabase.rpc('get_saved_videos');
+
+      if (error) {
+        console.error('Error fetching saved videos:', error);
+        return;
+      }
+
+      setSavedVideos((data || []) as SavedVideo[]);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoadingSaved(false);
     }
   };
 
@@ -310,10 +350,53 @@ export default function Profile() {
         )}
 
         {activeTab === 'saved' && (
-          <div className="py-16 text-center">
-            <Bookmark className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">Saved videos will appear here</p>
-          </div>
+          loadingSaved ? (
+            <div className="py-16 text-center">
+              <p className="text-muted-foreground animate-pulse">Loading saved videos...</p>
+            </div>
+          ) : savedVideos.length > 0 ? (
+            <div className="grid grid-cols-3 gap-1">
+              {savedVideos.map((video) => (
+                <div 
+                  key={video.id}
+                  onClick={() => handleVideoClick(video.id)}
+                  className="aspect-[9/16] relative bg-secondary rounded-lg overflow-hidden group cursor-pointer"
+                >
+                  {video.thumbnail_url ? (
+                    <img 
+                      src={video.thumbnail_url} 
+                      alt={video.title || 'Video'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <video 
+                      src={video.video_url}
+                      className="w-full h-full object-cover"
+                      muted
+                      playsInline
+                      preload="metadata"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Play className="h-8 w-8 text-background" fill="white" />
+                  </div>
+                  <div className="absolute bottom-2 left-2 flex items-center gap-1 text-background text-xs">
+                    <Eye className="h-3 w-3" />
+                    {formatNumber(video.views || 0)}
+                  </div>
+                  <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/50 rounded px-1.5 py-0.5">
+                    <span className="text-background text-[10px]">@{video.creator_username || 'user'}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-16 text-center">
+              <Bookmark className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">No saved videos yet</p>
+              <p className="text-sm text-muted-foreground mt-1">Videos you save will appear here</p>
+            </div>
+          )
         )}
       </div>
 
