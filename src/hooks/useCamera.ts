@@ -18,6 +18,7 @@ export function useCamera({ maxDuration = 120 }: UseCameraOptions = {}) {
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [isMicEnabled, setIsMicEnabled] = useState(true);
 
   const startStream = useCallback(async () => {
     try {
@@ -46,14 +47,18 @@ export function useCamera({ maxDuration = 120 }: UseCameraOptions = {}) {
       
       setIsStreaming(true);
     } catch (err) {
-      console.error('Camera error:', err);
+      console.error('Camera/Microphone error:', err);
       if (err instanceof Error) {
         if (err.name === 'NotAllowedError') {
-          setError('Camera permission denied. Please allow camera access.');
+          setError('Camera and microphone permission denied. Please allow access in your browser settings.');
         } else if (err.name === 'NotFoundError') {
-          setError('No camera found on this device.');
+          setError('No camera or microphone found on this device.');
+        } else if (err.name === 'NotReadableError') {
+          setError('Camera or microphone is already in use by another application.');
+        } else if (err.name === 'OverconstrainedError') {
+          setError('Camera does not support the requested settings.');
         } else {
-          setError('Failed to access camera. Please try again.');
+          setError('Failed to access camera and microphone. Please try again.');
         }
       }
     }
@@ -72,6 +77,16 @@ export function useCamera({ maxDuration = 120 }: UseCameraOptions = {}) {
 
   const flipCamera = useCallback(async () => {
     setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+  }, []);
+
+  const toggleMicrophone = useCallback(() => {
+    if (streamRef.current) {
+      const audioTracks = streamRef.current.getAudioTracks();
+      audioTracks.forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      setIsMicEnabled(prev => !prev);
+    }
   }, []);
 
   // Re-start stream when facing mode changes
@@ -166,9 +181,11 @@ export function useCamera({ maxDuration = 120 }: UseCameraOptions = {}) {
     recordedUrl,
     error,
     facingMode,
+    isMicEnabled,
     startStream,
     stopStream,
     flipCamera,
+    toggleMicrophone,
     startRecording,
     stopRecording,
     resetRecording,
