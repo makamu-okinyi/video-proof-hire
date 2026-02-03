@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Send, Heart, MoreHorizontal, Loader2 } from 'lucide-react';
+import { X, Send, Heart, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -11,13 +10,10 @@ import { formatDistanceToNow } from 'date-fns';
 interface Comment {
   id: string;
   content: string;
-  likes_count: number;
   created_at: string;
   user_id: string;
   username: string | null;
   avatar: string | null;
-  is_verified: boolean;
-  parent_id: string | null;
 }
 
 interface CommentsSheetProps {
@@ -44,48 +40,33 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
   const fetchComments = async () => {
     setLoading(true);
     try {
-      // Try RPC first, fallback to direct query
-      let commentsData: Comment[] = [];
-      
-      const { data: rpcData, error: rpcError } = await supabase.rpc('get_video_comments', { target_video_id: videoId });
-      
-      if (rpcError) {
-        // Fallback: direct query with join
-        const { data: directData, error: directError } = await supabase
-          .from('video_comments')
-          .select(`
-            id,
-            content,
-            likes_count,
-            created_at,
-            user_id,
-            parent_id,
-            profiles!video_comments_user_id_fkey (
-              username,
-              avatar,
-              is_verified
-            )
-          `)
-          .eq('video_id', videoId)
-          .order('created_at', { ascending: false });
+      // Query the comments table with a join to profiles
+      const { data, error } = await supabase
+        .from('comments')
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id,
+          profiles!comments_user_id_fkey (
+            username,
+            avatar
+          )
+        `)
+        .eq('video_id', videoId)
+        .order('created_at', { ascending: false });
 
-        if (!directError && directData) {
-          commentsData = directData.map((c: any) => ({
-            id: c.id,
-            content: c.content,
-            likes_count: c.likes_count,
-            created_at: c.created_at,
-            user_id: c.user_id,
-            username: c.profiles?.username,
-            avatar: c.profiles?.avatar,
-            is_verified: c.profiles?.is_verified || false,
-            parent_id: c.parent_id,
-          }));
-        }
-      } else {
-        commentsData = (rpcData || []) as Comment[];
-      }
-      
+      if (error) throw error;
+
+      const commentsData: Comment[] = (data || []).map((c: any) => ({
+        id: c.id,
+        content: c.content,
+        created_at: c.created_at,
+        user_id: c.user_id,
+        username: c.profiles?.username || 'User',
+        avatar: c.profiles?.avatar,
+      }));
+
       setComments(commentsData);
       onCommentsCountChange?.(commentsData.length);
     } catch (error) {
@@ -107,29 +88,18 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
 
     setSubmitting(true);
     try {
-      // Try RPC first, fallback to direct insert
-      const { error: rpcError } = await supabase.rpc('add_video_comment', {
-        target_video_id: videoId,
-        comment_content: newComment.trim(),
-        comment_parent_id: null,
-      });
+      const { error } = await supabase
+        .from('comments')
+        .insert({
+          video_id: videoId,
+          user_id: user.id,
+          content: newComment.trim(),
+        });
 
-      if (rpcError) {
-        // Fallback: direct insert
-        const { error: insertError } = await supabase
-          .from('video_comments')
-          .insert({
-            video_id: videoId,
-            user_id: user.id,
-            content: newComment.trim(),
-            parent_id: null,
-          });
-
-        if (insertError) throw insertError;
-      }
+      if (error) throw error;
 
       setNewComment('');
-      fetchComments(); // Refresh comments
+      fetchComments();
       toast.success('Comment added!');
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -142,7 +112,7 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
   const handleDeleteComment = async (commentId: string) => {
     try {
       const { error } = await supabase
-        .from('video_comments')
+        .from('comments')
         .delete()
         .eq('id', commentId)
         .eq('user_id', user?.id);
@@ -204,13 +174,6 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
                     <span className="font-medium text-sm">
                       @{comment.username || 'user'}
                     </span>
-                    {comment.is_verified && (
-                      <div className="h-3.5 w-3.5 rounded-full bg-coral flex items-center justify-center">
-                        <svg className="h-2 w-2 text-background" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    )}
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                     </span>
@@ -219,10 +182,6 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
                   <div className="flex items-center gap-4 mt-2">
                     <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                       <Heart className="h-3.5 w-3.5" />
-                      {comment.likes_count > 0 && comment.likes_count}
-                    </button>
-                    <button className="text-xs text-muted-foreground hover:text-foreground">
-                      Reply
                     </button>
                     {comment.user_id === user?.id && (
                       <button 
@@ -244,7 +203,7 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
           <div className="flex items-center gap-3">
             {user && (
               <img
-                src={profile?.avatar || user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'}
+                src={profile?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'}
                 alt="You"
                 className="h-8 w-8 rounded-full object-cover"
               />

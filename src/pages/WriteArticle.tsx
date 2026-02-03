@@ -83,17 +83,10 @@ export default function WriteArticle() {
 
     setPublishing(true);
     try {
-      const { error } = await supabase
-        .from('articles')
-        .insert({
-          author_id: user.id,
-          title: title.trim(),
-          content: content.trim(),
-          cover_image: coverImage,
-          tags: selectedTags.length > 0 ? selectedTags : null,
-          is_published: true,
-        });
-
+      // Articles table not yet created - show coming soon message
+      toast.info('Article publishing coming soon!');
+      navigate('/');
+    } catch (error) {
       if (error) throw error;
 
       toast({
