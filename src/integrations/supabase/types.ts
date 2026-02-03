@@ -242,6 +242,190 @@ export type Database = {
           },
         ]
       }
+      hackathon_cohorts: {
+        Row: {
+          created_at: string
+          demo_day: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          start_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          demo_day?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          start_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          demo_day?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          start_date?: string | null
+        }
+        Relationships: []
+      }
+      intro_requests: {
+        Row: {
+          connected_at: string | null
+          founder_id: string
+          founder_response: string | null
+          id: string
+          investment_range: string | null
+          investor_id: string
+          investor_interest: string | null
+          investor_message: string | null
+          requested_at: string
+          responded_at: string | null
+          status: Database["public"]["Enums"]["intro_status"]
+          venture_id: string
+        }
+        Insert: {
+          connected_at?: string | null
+          founder_id: string
+          founder_response?: string | null
+          id?: string
+          investment_range?: string | null
+          investor_id: string
+          investor_interest?: string | null
+          investor_message?: string | null
+          requested_at?: string
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["intro_status"]
+          venture_id: string
+        }
+        Update: {
+          connected_at?: string | null
+          founder_id?: string
+          founder_response?: string | null
+          id?: string
+          investment_range?: string | null
+          investor_id?: string
+          investor_interest?: string | null
+          investor_message?: string | null
+          requested_at?: string
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["intro_status"]
+          venture_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intro_requests_founder_id_fkey"
+            columns: ["founder_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_requests_founder_id_fkey"
+            columns: ["founder_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_requests_founder_id_fkey"
+            columns: ["founder_id"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "intro_requests_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_requests_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intro_requests_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "intro_requests_venture_id_fkey"
+            columns: ["venture_id"]
+            isOneToOne: false
+            referencedRelation: "ventures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investor_bookmarks: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          investor_id: string
+          notes: string | null
+          venture_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          investor_id: string
+          notes?: string | null
+          venture_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          investor_id?: string
+          notes?: string | null
+          venture_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_bookmarks_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_bookmarks_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_bookmarks_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "investor_bookmarks_venture_id_fkey"
+            columns: ["venture_id"]
+            isOneToOne: false
+            referencedRelation: "ventures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_applications: {
         Row: {
           applicant_id: string
@@ -467,6 +651,77 @@ export type Database = {
           },
         ]
       }
+      pitch_decks: {
+        Row: {
+          created_at: string
+          file_type: string | null
+          file_url: string
+          id: string
+          is_current: boolean | null
+          notes: string | null
+          slide_count: number | null
+          title: string
+          uploaded_by: string | null
+          venture_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          file_type?: string | null
+          file_url: string
+          id?: string
+          is_current?: boolean | null
+          notes?: string | null
+          slide_count?: number | null
+          title: string
+          uploaded_by?: string | null
+          venture_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          is_current?: boolean | null
+          notes?: string | null
+          slide_count?: number | null
+          title?: string
+          uploaded_by?: string | null
+          venture_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pitch_decks_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pitch_decks_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pitch_decks_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "pitch_decks_venture_id_fkey"
+            columns: ["venture_id"]
+            isOneToOne: false
+            referencedRelation: "ventures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar: string | null
@@ -548,6 +803,285 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      venture_founders: {
+        Row: {
+          equity_percentage: number | null
+          id: string
+          is_lead: boolean | null
+          joined_at: string
+          role: string
+          title: string | null
+          user_id: string
+          venture_id: string
+        }
+        Insert: {
+          equity_percentage?: number | null
+          id?: string
+          is_lead?: boolean | null
+          joined_at?: string
+          role?: string
+          title?: string | null
+          user_id: string
+          venture_id: string
+        }
+        Update: {
+          equity_percentage?: number | null
+          id?: string
+          is_lead?: boolean | null
+          joined_at?: string
+          role?: string
+          title?: string | null
+          user_id?: string
+          venture_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venture_founders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venture_founders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venture_founders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "venture_founders_venture_id_fkey"
+            columns: ["venture_id"]
+            isOneToOne: false
+            referencedRelation: "ventures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venture_scores: {
+        Row: {
+          created_at: string
+          feasibility_score: number | null
+          feedback: string | null
+          id: string
+          impact_score: number | null
+          improvements: string | null
+          innovation_score: number | null
+          is_final: boolean | null
+          judge_id: string
+          strengths: string | null
+          total_score: number | null
+          updated_at: string
+          ux_score: number | null
+          venture_id: string
+        }
+        Insert: {
+          created_at?: string
+          feasibility_score?: number | null
+          feedback?: string | null
+          id?: string
+          impact_score?: number | null
+          improvements?: string | null
+          innovation_score?: number | null
+          is_final?: boolean | null
+          judge_id: string
+          strengths?: string | null
+          total_score?: number | null
+          updated_at?: string
+          ux_score?: number | null
+          venture_id: string
+        }
+        Update: {
+          created_at?: string
+          feasibility_score?: number | null
+          feedback?: string | null
+          id?: string
+          impact_score?: number | null
+          improvements?: string | null
+          innovation_score?: number | null
+          is_final?: boolean | null
+          judge_id?: string
+          strengths?: string | null
+          total_score?: number | null
+          updated_at?: string
+          ux_score?: number | null
+          venture_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venture_scores_judge_id_fkey"
+            columns: ["judge_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venture_scores_judge_id_fkey"
+            columns: ["judge_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venture_scores_judge_id_fkey"
+            columns: ["judge_id"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "venture_scores_venture_id_fkey"
+            columns: ["venture_id"]
+            isOneToOne: false
+            referencedRelation: "ventures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venture_tech_blocks: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          tech_details: Json | null
+          title: string
+          updated_at: string
+          venture_id: string
+          visibility: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          tech_details?: Json | null
+          title: string
+          updated_at?: string
+          venture_id: string
+          visibility?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          tech_details?: Json | null
+          title?: string
+          updated_at?: string
+          venture_id?: string
+          visibility?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venture_tech_blocks_venture_id_fkey"
+            columns: ["venture_id"]
+            isOneToOne: false
+            referencedRelation: "ventures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ventures: {
+        Row: {
+          business_model: string | null
+          cover_image_url: string | null
+          created_at: string
+          demo_url: string | null
+          description: string | null
+          funding_goal: number | null
+          funding_raised: number | null
+          github_url: string | null
+          hackathon_cohort: string | null
+          hackathon_name: string | null
+          id: string
+          industry: string[] | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          is_fundraising: boolean | null
+          logo_url: string | null
+          market_size: string | null
+          name: string
+          pitch_video_thumbnail: string | null
+          pitch_video_url: string | null
+          problem_statement: string | null
+          solution: string | null
+          stage: Database["public"]["Enums"]["venture_stage"]
+          tagline: string
+          tech_stack: string[] | null
+          traction: string | null
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          business_model?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          demo_url?: string | null
+          description?: string | null
+          funding_goal?: number | null
+          funding_raised?: number | null
+          github_url?: string | null
+          hackathon_cohort?: string | null
+          hackathon_name?: string | null
+          id?: string
+          industry?: string[] | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_fundraising?: boolean | null
+          logo_url?: string | null
+          market_size?: string | null
+          name: string
+          pitch_video_thumbnail?: string | null
+          pitch_video_url?: string | null
+          problem_statement?: string | null
+          solution?: string | null
+          stage?: Database["public"]["Enums"]["venture_stage"]
+          tagline: string
+          tech_stack?: string[] | null
+          traction?: string | null
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          business_model?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          demo_url?: string | null
+          description?: string | null
+          funding_goal?: number | null
+          funding_raised?: number | null
+          github_url?: string | null
+          hackathon_cohort?: string | null
+          hackathon_name?: string | null
+          id?: string
+          industry?: string[] | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_fundraising?: boolean | null
+          logo_url?: string | null
+          market_size?: string | null
+          name?: string
+          pitch_video_thumbnail?: string | null
+          pitch_video_url?: string | null
+          problem_statement?: string | null
+          solution?: string | null
+          stage?: Database["public"]["Enums"]["venture_stage"]
+          tagline?: string
+          tech_stack?: string[] | null
+          traction?: string | null
+          updated_at?: string
+          website_url?: string | null
         }
         Relationships: []
       }
@@ -805,6 +1339,12 @@ export type Database = {
     }
     Enums: {
       app_role: "talent" | "employer" | "investor" | "judge" | "founder"
+      intro_status:
+        | "pending"
+        | "founder_approved"
+        | "founder_declined"
+        | "connected"
+      venture_stage: "idea" | "prototype" | "mvp" | "growth" | "scale"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -933,6 +1473,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["talent", "employer", "investor", "judge", "founder"],
+      intro_status: [
+        "pending",
+        "founder_approved",
+        "founder_declined",
+        "connected",
+      ],
+      venture_stage: ["idea", "prototype", "mvp", "growth", "scale"],
     },
   },
 } as const

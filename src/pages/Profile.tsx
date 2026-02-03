@@ -108,14 +108,8 @@ export default function Profile() {
   const fetchSavedVideos = async () => {
     setLoadingSaved(true);
     try {
-      const { data, error } = await supabase.rpc('get_saved_videos');
-
-      if (error) {
-        console.error('Error fetching saved videos:', error);
-        return;
-      }
-
-      setSavedVideos((data || []) as SavedVideo[]);
+      // Saved videos functionality not yet implemented
+      setSavedVideos([]);
     } catch (error) {
       console.error('Error:', error);
     } finally {
