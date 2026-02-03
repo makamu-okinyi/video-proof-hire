@@ -62,6 +62,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "challenge_submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "challenge_submissions_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["video_id"]
+          },
+          {
             foreignKeyName: "challenge_submissions_video_id_fkey"
             columns: ["video_id"]
             isOneToOne: false
@@ -136,6 +150,59 @@ export type Database = {
             columns: ["employer_id"]
             isOneToOne: false
             referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_employer_id_fkey"
+            columns: ["employer_id"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      comments: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          user_id: string | null
+          video_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+          video_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["video_id"]
+          },
+          {
+            foreignKeyName: "comments_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos_public"
             referencedColumns: ["id"]
           },
         ]
@@ -217,6 +284,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_applicant_id_fkey"
+            columns: ["applicant_id"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "job_applications_job_id_fkey"
@@ -306,6 +380,56 @@ export type Database = {
             referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "job_postings_employer_id_fkey"
+            columns: ["employer_id"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          user_id: string | null
+          video_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+          video_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["video_id"]
+          },
+          {
+            foreignKeyName: "likes_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "likes_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       messages: {
@@ -346,6 +470,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar: string | null
+          avatar_url: string | null
           bio: string | null
           created_at: string
           id: string
@@ -358,6 +483,7 @@ export type Database = {
         }
         Insert: {
           avatar?: string | null
+          avatar_url?: string | null
           bio?: string | null
           created_at?: string
           id: string
@@ -370,6 +496,7 @@ export type Database = {
         }
         Update: {
           avatar?: string | null
+          avatar_url?: string | null
           bio?: string | null
           created_at?: string
           id?: string
@@ -379,6 +506,27 @@ export type Database = {
           updated_at?: string
           user_type?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      shortlists: {
+        Row: {
+          created_at: string | null
+          id: string
+          recruiter_id: string | null
+          talent_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          recruiter_id?: string | null
+          talent_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          recruiter_id?: string | null
+          talent_id?: string | null
         }
         Relationships: []
       }
@@ -409,6 +557,8 @@ export type Database = {
           description: string | null
           id: string
           is_private: boolean
+          is_verified: boolean | null
+          like_count: number | null
           likes: number
           thumbnail_url: string | null
           title: string | null
@@ -422,6 +572,8 @@ export type Database = {
           description?: string | null
           id?: string
           is_private?: boolean
+          is_verified?: boolean | null
+          like_count?: number | null
           likes?: number
           thumbnail_url?: string | null
           title?: string | null
@@ -435,6 +587,8 @@ export type Database = {
           description?: string | null
           id?: string
           is_private?: boolean
+          is_verified?: boolean | null
+          like_count?: number | null
           likes?: number
           thumbnail_url?: string | null
           title?: string | null
@@ -457,6 +611,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "videos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "top_talent"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -498,6 +659,20 @@ export type Database = {
           updated_at?: string | null
           user_type?: string | null
           username?: string | null
+        }
+        Relationships: []
+      }
+      top_talent: {
+        Row: {
+          avatar_url: string | null
+          best_video_title: string | null
+          display_name: string | null
+          like_count: number | null
+          profile_verified: boolean | null
+          user_id: string | null
+          video_id: string | null
+          video_url: string | null
+          video_verified: boolean | null
         }
         Relationships: []
       }
