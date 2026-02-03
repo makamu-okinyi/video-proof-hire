@@ -145,7 +145,7 @@ export default function Feed() {
           query = query.eq('skill_category', categoryFilter);
         }
 
-        const { data: directData, error: directError } = await query;
+        const { data: directData, error: directError } = await query as any;
 
         if (directError) {
           console.error('Error fetching videos:', directError);

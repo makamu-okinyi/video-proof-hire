@@ -6,15 +6,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import { PWAUpdatePrompt } from "@/components/pwa/PWAUpdatePrompt";
 import Index from "./pages/Index";
-import Feed from "./pages/Feed";
 import Jobs from "./pages/Jobs";
 import Challenges from "./pages/Challenges";
 import Create from "./pages/Create";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
-import Articles from "./pages/Articles";
-import WriteArticle from "./pages/WriteArticle";
 import EmployerDashboard from "./pages/EmployerDashboard";
 import EmployerSettings from "./pages/EmployerSettings";
 import CompanyProfileSettings from "./pages/CompanyProfileSettings";
@@ -28,6 +25,8 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Messages from "./pages/Messages";
 import UserProfile from "./pages/UserProfile";
+import Ventures from "./pages/Ventures";
+import FounderWizard from "./pages/FounderWizard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,11 +43,10 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/feed" element={<Feed />} />
+            <Route path="/ventures" element={<Ventures />} />
+            <Route path="/apply" element={<FounderWizard />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/challenges" element={<Challenges />} />
-            <Route path="/articles" element={<Articles />} />
-            <Route path="/articles/write" element={<WriteArticle />} />
             <Route path="/create" element={<Create />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/profile" element={<Profile />} />

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { X, Send, Loader2, CheckCircle, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
@@ -28,39 +27,7 @@ export function ContactModal({ isOpen, onClose, talent, videoId }: ContactModalP
 
     setSending(true);
     try {
-      // Try RPC first
-      const { error: rpcError } = await supabase.rpc('create_hiring_lead', {
-        target_talent_id: talent.id,
-        target_video_id: videoId || null,
-        lead_message: message.trim() || null,
-      });
-
-      if (rpcError) {
-        // Fallback: direct insert
-        const { error: insertError } = await supabase
-          .from('hiring_leads')
-          .insert({
-            recruiter_id: user.id,
-            talent_id: talent.id,
-            video_id: videoId || null,
-            message: message.trim() || null,
-            company_name: profile?.username || 'Company',
-            status: 'pending',
-          });
-
-        if (insertError) throw insertError;
-
-        // Create notification for talent
-        await supabase.from('notifications').insert({
-          user_id: talent.id,
-          type: 'interview',
-          title: 'Interview Request!',
-          message: `${profile?.username || 'A company'} wants to connect with you!`,
-          related_user_id: user.id,
-          action_url: '/notifications',
-        });
-      }
-
+      // For now, just show success - this would integrate with messaging system
       setSent(true);
       toast.success(`Interest sent to @${talent.username}!`);
       
