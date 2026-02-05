@@ -84,16 +84,11 @@ export default function WriteArticle() {
     setPublishing(true);
     try {
       // Articles table not yet created - show coming soon message
-      toast.info('Article publishing coming soon!');
-      navigate('/');
-    } catch (error) {
-      if (error) throw error;
-
       toast({
-        title: "Article published!",
-        description: "Your article is now live",
+        title: "Coming soon!",
+        description: "Article publishing will be available soon",
       });
-      navigate('/articles');
+      navigate('/');
     } catch (error) {
       console.error('Error publishing article:', error);
       toast({

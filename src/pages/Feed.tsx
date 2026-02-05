@@ -115,7 +115,7 @@ export default function Feed() {
 
       if (rpcError) {
         // Fallback: direct query to videos table with profile join
-        let query = supabase
+        const { data: directData, error: directError } = await supabase
           .from('videos')
           .select(`
             id,
@@ -126,7 +126,6 @@ export default function Feed() {
             views,
             likes,
             created_at,
-            skill_category,
             user_id,
             profiles!videos_user_id_fkey (
               id,
@@ -141,11 +140,7 @@ export default function Feed() {
           .order('created_at', { ascending: false })
           .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
 
-        if (categoryFilter) {
-          query = query.eq('skill_category', categoryFilter);
-        }
-
-        const { data: directData, error: directError } = await query as any;
+        
 
         if (directError) {
           console.error('Error fetching videos:', directError);
