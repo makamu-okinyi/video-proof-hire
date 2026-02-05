@@ -27,6 +27,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Messages from "./pages/Messages";
 import UserProfile from "./pages/UserProfile";
 import Ventures from "./pages/Ventures";
+import VentureDetail from "./pages/VentureDetail";
 import FounderWizard from "./pages/FounderWizard";
 import NotFound from "./pages/NotFound";
 
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/ventures" element={<Ventures />} />
+            <Route path="/ventures/:id" element={<VentureDetail />} />
             <Route path="/apply" element={<FounderWizard />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/challenges" element={<Challenges />} />
