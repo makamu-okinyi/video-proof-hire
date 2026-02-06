@@ -4,14 +4,24 @@ import { useAuth } from '@/context/AuthContext';
 import Auth from './Auth';
 
 const Index = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isLoading && isAuthenticated) {
       navigate('/feed');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="neo-pressed px-8 py-4 rounded-2xl text-cool-grey animate-pulse">
+          Loading...
+        </div>
+      </div>
+    );
+  }
 
   return <Auth />;
 };

@@ -1,32 +1,125 @@
 import { useNavigate } from 'react-router-dom';
-import { Settings, Briefcase, Plus } from 'lucide-react';
+import { Settings, Briefcase, Plus, Trophy, Users, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { BottomNav } from '@/components/layout/BottomNav';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
+import { StatCard, MiniBarChart } from '@/components/dashboard/StatCard';
 import { useAuth } from '@/context/AuthContext';
+
+const chartData = [4, 7, 5, 9, 6, 8, 10, 7, 6, 9, 11, 8];
 
 export default function EmployerDashboard() {
   const navigate = useNavigate();
   const { profile } = useAuth();
+  
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 py-8 flex items-center justify-between">
+    <DashboardLayout>
+      <div className="space-y-8">
+        {/* Welcome Header */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Welcome, {profile?.username || 'Employer'}</h1>
-            <p className="text-muted-foreground">Manage your hiring</p>
+            <h1 className="text-3xl font-bold text-charcoal">
+              Welcome, {profile?.username || 'Employer'}
+            </h1>
+            <p className="text-cool-grey">Manage your hiring pipeline</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => navigate('/employer/settings')}><Settings className="h-5 w-5" /></Button>
+          <button 
+            onClick={() => navigate('/employer/settings')}
+            className="neo-extruded p-3 rounded-2xl hover:shadow-neo-pressed transition-all"
+          >
+            <Settings className="h-5 w-5 text-cool-grey" />
+          </button>
         </div>
-      </header>
-      <main className="max-w-6xl mx-auto px-4 py-6">
-        <Card><CardContent className="pt-6 flex items-center gap-4">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center"><Briefcase className="h-6 w-6 text-primary" /></div>
-          <div><p className="text-2xl font-bold">0</p><p className="text-sm text-muted-foreground">Active Jobs</p></div>
-        </CardContent></Card>
-        <Button className="mt-6 w-full" onClick={() => navigate('/employer/jobs/create')}><Plus className="h-4 w-4 mr-2" />Post a Job</Button>
-      </main>
-      <BottomNav />
-    </div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatCard
+            title="Active Jobs"
+            value="0"
+            change={0}
+            changeLabel="this month"
+            chart={<MiniBarChart data={chartData} className="h-10" />}
+          />
+          <StatCard
+            title="Total Applicants"
+            value="0"
+            change={0}
+            changeLabel="this month"
+            chart={<MiniBarChart data={chartData} className="h-10" />}
+          />
+          <StatCard
+            title="Challenges"
+            value="0"
+            change={0}
+            changeLabel="this month"
+            chart={<MiniBarChart data={chartData} className="h-10" />}
+          />
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <NeoCard className="p-6">
+            <NeoCardHeader>
+              <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-2">
+                <Briefcase className="h-6 w-6 text-primary" />
+              </div>
+              <NeoCardTitle>Post a Job</NeoCardTitle>
+            </NeoCardHeader>
+            <NeoCardContent>
+              <p className="text-cool-grey text-sm mb-4">
+                Create a new job listing to attract top talent from our community.
+              </p>
+              <Button 
+                className="w-full"
+                onClick={() => navigate('/employer/jobs/create')}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Job Posting
+              </Button>
+            </NeoCardContent>
+          </NeoCard>
+
+          <NeoCard className="p-6">
+            <NeoCardHeader>
+              <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-2">
+                <Trophy className="h-6 w-6 text-primary" />
+              </div>
+              <NeoCardTitle>Create Challenge</NeoCardTitle>
+            </NeoCardHeader>
+            <NeoCardContent>
+              <p className="text-cool-grey text-sm mb-4">
+                Launch a skill challenge to discover hidden gems in our talent pool.
+              </p>
+              <Button 
+                variant="outline"
+                className="w-full neo-extruded border-none"
+                onClick={() => navigate('/employer/challenges/create')}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Challenge
+              </Button>
+            </NeoCardContent>
+          </NeoCard>
+        </div>
+
+        {/* Recent Activity */}
+        <NeoCard className="p-6">
+          <NeoCardHeader>
+            <NeoCardTitle>Recent Activity</NeoCardTitle>
+          </NeoCardHeader>
+          <NeoCardContent>
+            <div className="text-center py-12">
+              <div className="h-16 w-16 neo-pressed rounded-full flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="h-8 w-8 text-cool-grey" />
+              </div>
+              <p className="text-cool-grey">No recent activity</p>
+              <p className="text-sm text-cool-grey mt-1">
+                Start by posting a job or creating a challenge
+              </p>
+            </div>
+          </NeoCardContent>
+        </NeoCard>
+      </div>
+    </DashboardLayout>
   );
 }

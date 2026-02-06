@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, MapPin, Briefcase, X, Trophy } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { JobCard } from '@/components/jobs/JobCard';
-import { BottomNav } from '@/components/layout/BottomNav';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -46,7 +44,6 @@ export default function Jobs() {
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [userApplications, setUserApplications] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'jobs' | 'challenges'>('jobs');
   const { profile, isLoading: authLoading } = useAuth();
 
   // Redirect employers to their dashboard
@@ -117,53 +114,52 @@ export default function Jobs() {
   const hasActiveFilters = selectedSkills.length > 0 || jobType !== 'all' || experienceLevel !== 'all';
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border/50 px-4 pt-4 pb-3">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Jobs</h1>
-          <Button 
-            variant={showFilters ? "default" : "outline"} 
-            size="icon"
-            onClick={() => setShowFilters(!showFilters)}
-            className={cn(hasActiveFilters && !showFilters && "border-coral text-coral")}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </Button>
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-charcoal">Jobs</h1>
+            <p className="text-cool-grey text-sm">Find your next opportunity</p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => navigate('/challenges')}
+              variant="outline"
+              className="neo-extruded border-none"
+            >
+              <Trophy className="h-4 w-4 mr-2" />
+              Challenges
+            </Button>
+            <Button 
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn(
+                "neo-extruded border-none",
+                hasActiveFilters && "text-primary"
+              )}
+              variant="outline"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
+        <div className="neo-pressed px-4 py-3 rounded-2xl flex items-center gap-3">
+          <Search className="h-5 w-5 text-cool-grey" />
+          <input
             placeholder="Search jobs, companies..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-12"
+            className="flex-1 bg-transparent outline-none text-charcoal placeholder:text-cool-grey"
           />
         </div>
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => {
-          if (v === 'challenges') {
-            navigate('/challenges');
-          }
-          setActiveTab(v as 'jobs' | 'challenges');
-        }} className="mt-3">
-          <TabsList className="w-full">
-            <TabsTrigger value="jobs" className="flex-1">Job Listings</TabsTrigger>
-            <TabsTrigger value="challenges" className="flex-1">
-              <Trophy className="h-3 w-3 mr-1" />
-              Challenges
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
         {/* Active Filters Preview */}
         {hasActiveFilters && !showFilters && (
-          <div className="flex items-center gap-2 mt-3 overflow-x-auto no-scrollbar pb-1">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
             {jobType !== 'all' && (
-              <Badge variant="secondary" className="flex items-center gap-1 shrink-0">
+              <Badge variant="secondary" className="neo-flat flex items-center gap-1 shrink-0">
                 <Briefcase className="h-3 w-3" />
                 {jobType}
                 <button onClick={() => setJobType('all')}>
@@ -172,7 +168,7 @@ export default function Jobs() {
               </Badge>
             )}
             {experienceLevel !== 'all' && (
-              <Badge variant="secondary" className="flex items-center gap-1 shrink-0">
+              <Badge variant="secondary" className="neo-flat flex items-center gap-1 shrink-0">
                 {experienceLevel}
                 <button onClick={() => setExperienceLevel('all')}>
                   <X className="h-3 w-3 ml-1" />
@@ -180,7 +176,7 @@ export default function Jobs() {
               </Badge>
             )}
             {selectedSkills.map(skill => (
-              <Badge key={skill} variant="secondary" className="flex items-center gap-1 shrink-0">
+              <Badge key={skill} variant="secondary" className="neo-flat flex items-center gap-1 shrink-0">
                 {skill}
                 <button onClick={() => toggleSkill(skill)}>
                   <X className="h-3 w-3 ml-1" />
@@ -189,113 +185,120 @@ export default function Jobs() {
             ))}
             <button 
               onClick={clearFilters}
-              className="text-xs text-muted-foreground hover:text-foreground shrink-0"
+              className="text-xs text-cool-grey hover:text-charcoal shrink-0"
             >
               Clear all
             </button>
           </div>
         )}
-      </div>
 
-      {/* Filters Panel */}
-      {showFilters && (
-        <div className="bg-card border-b border-border px-4 py-4 space-y-5 animate-slide-down">
-          {/* Job Type */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-2">
-              <Briefcase className="h-4 w-4" />
-              Job Type
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {(['all', 'full-time', 'part-time', 'contract', 'internship'] as JobType[]).map((type) => (
-                <Button
-                  key={type}
-                  variant={jobType === type ? "default" : "secondary"}
-                  size="sm"
-                  onClick={() => setJobType(type)}
-                  className="capitalize"
-                >
-                  {type === 'all' ? 'All' : type.replace('-', ' ')}
-                </Button>
-              ))}
+        {/* Filters Panel */}
+        {showFilters && (
+          <div className="neo-extruded rounded-3xl p-6 space-y-5 animate-scale-up">
+            {/* Job Type */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-charcoal flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                Job Type
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {(['all', 'full-time', 'part-time', 'contract', 'internship'] as JobType[]).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setJobType(type)}
+                    className={cn(
+                      "px-4 py-2 rounded-2xl text-sm font-medium capitalize transition-all",
+                      jobType === type ? "neo-pressed text-charcoal" : "neo-flat text-cool-grey hover:text-charcoal"
+                    )}
+                  >
+                    {type === 'all' ? 'All' : type.replace('-', ' ')}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Experience Level */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Experience Level</label>
-            <div className="flex flex-wrap gap-2">
-              {(['all', 'entry', 'mid', 'senior'] as ExperienceLevel[]).map((level) => (
-                <Button
-                  key={level}
-                  variant={experienceLevel === level ? "default" : "secondary"}
-                  size="sm"
-                  onClick={() => setExperienceLevel(level)}
-                  className="capitalize"
-                >
-                  {level === 'all' ? 'All Levels' : level}
-                </Button>
-              ))}
+            {/* Experience Level */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-charcoal">Experience Level</label>
+              <div className="flex flex-wrap gap-2">
+                {(['all', 'entry', 'mid', 'senior'] as ExperienceLevel[]).map((level) => (
+                  <button
+                    key={level}
+                    onClick={() => setExperienceLevel(level)}
+                    className={cn(
+                      "px-4 py-2 rounded-2xl text-sm font-medium capitalize transition-all",
+                      experienceLevel === level ? "neo-pressed text-charcoal" : "neo-flat text-cool-grey hover:text-charcoal"
+                    )}
+                  >
+                    {level === 'all' ? 'All Levels' : level}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Skills */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Skills</label>
-            <div className="flex flex-wrap gap-2">
-              {skillsList.map((skill) => (
-                <Button
-                  key={skill}
-                  variant={selectedSkills.includes(skill) ? "default" : "secondary"}
-                  size="sm"
-                  onClick={() => toggleSkill(skill)}
-                >
-                  {skill}
-                </Button>
-              ))}
+            {/* Skills */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-charcoal">Skills</label>
+              <div className="flex flex-wrap gap-2">
+                {skillsList.map((skill) => (
+                  <button
+                    key={skill}
+                    onClick={() => toggleSkill(skill)}
+                    className={cn(
+                      "px-4 py-2 rounded-2xl text-sm font-medium transition-all",
+                      selectedSkills.includes(skill) ? "neo-pressed text-charcoal" : "neo-flat text-cool-grey hover:text-charcoal"
+                    )}
+                  >
+                    {skill}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3 pt-2">
-            <Button variant="ghost" onClick={clearFilters} className="flex-1">
-              Clear All
-            </Button>
-            <Button onClick={() => setShowFilters(false)} className="flex-1">
-              Apply Filters
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Job List */}
-      <div className="px-4 py-4 space-y-3">
-        <p className="text-sm text-muted-foreground">
-          {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''} found
-        </p>
-        
-        {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">
-            Loading jobs...
-          </div>
-        ) : filteredJobs.length > 0 ? (
-          filteredJobs.map((job) => (
-            <JobCard 
-              key={job.id} 
-              job={job} 
-              hasApplied={userApplications.includes(job.id)}
-            />
-          ))
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No jobs match your criteria</p>
-            <Button variant="link" onClick={clearFilters}>
-              Clear filters
-            </Button>
+            <div className="flex items-center gap-3 pt-2">
+              <Button variant="ghost" onClick={clearFilters} className="flex-1">
+                Clear All
+              </Button>
+              <Button onClick={() => setShowFilters(false)} className="flex-1">
+                Apply Filters
+              </Button>
+            </div>
           </div>
         )}
-      </div>
 
-      <BottomNav />
-    </div>
+        {/* Job List */}
+        <div className="space-y-4">
+          <p className="text-sm text-cool-grey">
+            {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''} found
+          </p>
+          
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="neo-pressed px-6 py-3 rounded-2xl inline-block text-cool-grey animate-pulse">
+                Loading jobs...
+              </div>
+            </div>
+          ) : filteredJobs.length > 0 ? (
+            <div className="space-y-4">
+              {filteredJobs.map((job) => (
+                <div key={job.id} className="neo-extruded rounded-3xl overflow-hidden">
+                  <JobCard 
+                    job={job} 
+                    hasApplied={userApplications.includes(job.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 neo-extruded rounded-3xl">
+              <p className="text-cool-grey">No jobs match your criteria</p>
+              <Button variant="link" onClick={clearFilters} className="text-primary">
+                Clear filters
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </DashboardLayout>
   );
 }
