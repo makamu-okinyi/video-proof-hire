@@ -351,64 +351,66 @@ export default function Auth() {
         <div className="text-center space-y-4">
           <Logo size="xl" className="justify-center" />
           <div className="space-y-1">
-            <h1 className="text-4xl font-bold tracking-tight">donjo</h1>
-            <p className="text-muted-foreground text-lg">Prove your skills. Get hired.</p>
+            <h1 className="text-4xl font-bold tracking-tight text-charcoal">donjo</h1>
+            <p className="text-cool-grey text-lg">Prove your skills. Get hired.</p>
           </div>
         </div>
 
-        {/* Hero Visual */}
-        <div className="relative h-64 w-full rounded-3xl bg-gradient-to-br from-secondary to-muted overflow-hidden">
+        {/* Hero Visual - Neomorphic */}
+        <div className="relative h-64 w-full neo-extruded rounded-3xl overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-32 h-48 rounded-2xl bg-foreground/10 backdrop-blur-sm transform rotate-6 animate-float" />
-            <div className="absolute w-32 h-48 rounded-2xl bg-coral/20 backdrop-blur-sm transform -rotate-6 animate-float" style={{ animationDelay: '0.5s' }} />
+            <div className="w-32 h-48 rounded-2xl neo-pressed transform rotate-6 animate-float" />
+            <div className="absolute w-32 h-48 rounded-2xl neo-subtle transform -rotate-6 animate-float" style={{ animationDelay: '0.5s' }} />
           </div>
         </div>
 
         {/* Role Selection */}
         <div className="space-y-3 pt-4">
-          <p className="text-center text-sm text-muted-foreground mb-4">I am a...</p>
+          <p className="text-center text-sm text-cool-grey mb-4">I am a...</p>
           
           {/* Student/Applicant Option */}
-          <Button 
-            variant="hero" 
-            size="xl" 
-            className="w-full"
+          <button 
+            className="w-full neo-extruded p-4 rounded-2xl flex items-center justify-between hover:shadow-neo-pressed transition-all"
             onClick={() => { setUserType('talent'); setIsLogin(false); setStep('login'); }}
           >
-            <User className="h-5 w-5 mr-2" />
-            Student / Applicant
-            <ArrowRight className="h-5 w-5 ml-2" />
-          </Button>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 neo-pressed rounded-xl flex items-center justify-center">
+                <User className="h-5 w-5 text-primary" />
+              </div>
+              <span className="font-medium text-charcoal">Student / Applicant</span>
+            </div>
+            <ArrowRight className="h-5 w-5 text-cool-grey" />
+          </button>
           
           {/* Employer Option */}
-          <Button 
-            variant="outline" 
-            size="xl" 
-            className="w-full"
+          <button 
+            className="w-full neo-extruded p-4 rounded-2xl flex items-center justify-between hover:shadow-neo-pressed transition-all"
             onClick={() => { setUserType('employer'); setIsLogin(false); setStep('login'); }}
           >
-            <Briefcase className="h-5 w-5 mr-2" />
-            Employer / Recruiter
-            <ArrowRight className="h-5 w-5 ml-2" />
-          </Button>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 neo-pressed rounded-xl flex items-center justify-center">
+                <Briefcase className="h-5 w-5 text-primary" />
+              </div>
+              <span className="font-medium text-charcoal">Employer / Recruiter</span>
+            </div>
+            <ArrowRight className="h-5 w-5 text-cool-grey" />
+          </button>
           
           <div className="relative py-4">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
+              <span className="w-full border-t border-border/30" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">or</span>
+              <span className="bg-background px-2 text-cool-grey">or</span>
             </div>
           </div>
           
-          <Button 
-            variant="ghost" 
-            size="lg" 
-            className="w-full"
+          <button 
+            className="w-full py-3 text-cool-grey hover:text-charcoal transition-colors"
             onClick={() => { setIsLogin(true); setStep('login'); }}
           >
             I already have an account
-          </Button>
+          </button>
         </div>
       </div>
     </div>
