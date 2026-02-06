@@ -1,381 +1,193 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { VideoCard } from '@/components/video/VideoCard';
-import { BottomNav } from '@/components/layout/BottomNav';
-import { supabase } from '@/integrations/supabase/client';
-import { Video } from '@/types';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Video as VideoIcon, Plus, Filter, X } from 'lucide-react';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { StatCard, MiniBarChart } from '@/components/dashboard/StatCard';
+import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
+import { Rocket, Users, TrendingUp, Briefcase, Trophy, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Logo, LogoIcon } from '@/components/ui/Logo';
-import { cn } from '@/lib/utils';
 
-const skillCategories = [
-  { value: 'all', label: 'All', icon: '🌟' },
-  { value: 'coding', label: 'Coding', icon: '💻' },
-  { value: 'electrical', label: 'Electrical', icon: '⚡' },
-  { value: 'carpentry', label: 'Carpentry', icon: '🪚' },
-  { value: 'plumbing', label: 'Plumbing', icon: '🔧' },
-  { value: 'welding', label: 'Welding', icon: '🔥' },
-  { value: 'design', label: 'Design', icon: '🎨' },
-  { value: 'marketing', label: 'Marketing', icon: '📈' },
-  { value: 'healthcare', label: 'Healthcare', icon: '🏥' },
-  { value: 'construction', label: 'Construction', icon: '🏗️' },
-  { value: 'automotive', label: 'Automotive', icon: '🚗' },
-  { value: 'culinary', label: 'Culinary', icon: '👨‍🍳' },
-  { value: 'other', label: 'Other', icon: '📦' },
+const chartData = [4, 7, 5, 9, 6, 8, 10, 7, 6, 9, 11, 8];
+const barChartData = [
+  { month: 'JAN', newUser: 20, existingUser: 15 },
+  { month: 'FEB', newUser: 25, existingUser: 18 },
+  { month: 'MAR', newUser: 15, existingUser: 12 },
+  { month: 'APR', newUser: 30, existingUser: 22 },
+  { month: 'MAY', newUser: 35, existingUser: 28 },
+  { month: 'JUN', newUser: 38, existingUser: 18 },
+  { month: 'JUL', newUser: 28, existingUser: 20 },
+  { month: 'AUG', newUser: 32, existingUser: 25 },
+  { month: 'SEP', newUser: 22, existingUser: 16 },
+  { month: 'OCT', newUser: 26, existingUser: 19 },
+  { month: 'NOV', newUser: 30, existingUser: 22 },
+  { month: 'DEC', newUser: 28, existingUser: 20 },
 ];
-
-interface PublicVideo {
-  id: string;
-  title: string | null;
-  description: string | null;
-  video_url: string;
-  thumbnail_url: string | null;
-  views: number;
-  likes: number;
-  created_at: string;
-  creator_id: string;
-  creator_username: string | null;
-  creator_avatar: string | null;
-  creator_is_verified: boolean;
-  creator_skills: string[] | null;
-  creator_skill_category: string | null;
-}
-
-const PAGE_SIZE = 20;
 
 export default function Feed() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { profile, isLoading } = useAuth();
-  const targetVideoId = searchParams.get('video');
+  const { profile, isLoading, isAuthenticated } = useAuth();
 
-  // Redirect employers to their dashboard
   useEffect(() => {
-    if (!isLoading && profile?.user_type === 'employer') {
-      navigate('/employer', { replace: true });
+    if (!isLoading && !isAuthenticated) {
+      navigate('/auth');
     }
-  }, [profile, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
 
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [videos, setVideos] = useState<Video[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const transformVideo = (v: PublicVideo): Video => ({
-    id: v.id,
-    userId: v.creator_id,
-    user: {
-      id: v.creator_id,
-      username: v.creator_username || 'User',
-      email: '',
-      userType: 'talent' as const,
-      avatar: v.creator_avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      skills: v.creator_skills || [],
-      skillCategory: (v.creator_skill_category || 'other') as 'tech' | 'design' | 'business' | 'other',
-      isVerified: v.creator_is_verified || false,
-      createdAt: new Date(),
-    },
-    videoUrl: v.video_url,
-    thumbnailUrl: v.thumbnail_url || v.video_url,
-    caption: v.title || v.description || '',
-    skills: v.creator_skills || [],
-    category: 'Project Demo',
-    visibility: 'public' as const,
-    likes: v.likes,
-    comments: 0,
-    views: v.views,
-    createdAt: new Date(v.created_at),
-  });
-
-  const fetchVideos = useCallback(async (pageNum: number, isInitial: boolean = false, category: string = selectedCategory) => {
-    try {
-      if (isInitial) {
-        setLoading(true);
-      } else {
-        setLoadingMore(true);
-      }
-
-      const categoryFilter = category === 'all' ? null : category;
-      let videosData: PublicVideo[] = [];
-
-      // Try RPC first
-      const { data: rpcData, error: rpcError } = await supabase
-        .rpc('get_public_videos', {
-          page_size: PAGE_SIZE,
-          page_offset: pageNum * PAGE_SIZE,
-          category_filter: categoryFilter
-        });
-
-      if (rpcError) {
-        // Fallback: direct query to videos table with profile join
-        const { data: directData, error: directError } = await supabase
-          .from('videos')
-          .select(`
-            id,
-            title,
-            description,
-            video_url,
-            thumbnail_url,
-            views,
-            likes,
-            created_at,
-            user_id,
-            profiles!videos_user_id_fkey (
-              id,
-              username,
-              avatar,
-              is_verified,
-              skills,
-              skill_category
-            )
-          `)
-          .eq('is_private', false)
-          .order('created_at', { ascending: false })
-          .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
-
-        
-
-        if (directError) {
-          console.error('Error fetching videos:', directError);
-          return;
-        }
-
-        if (directData) {
-          videosData = directData.map((v: any) => ({
-            id: v.id,
-            title: v.title,
-            description: v.description,
-            video_url: v.video_url,
-            thumbnail_url: v.thumbnail_url,
-            views: v.views || 0,
-            likes: v.likes || 0,
-            created_at: v.created_at,
-            creator_id: v.user_id,
-            creator_username: v.profiles?.username,
-            creator_avatar: v.profiles?.avatar,
-            creator_is_verified: v.profiles?.is_verified || false,
-            creator_skills: v.profiles?.skills,
-            creator_skill_category: v.profiles?.skill_category,
-          }));
-        }
-      } else if (rpcData) {
-        videosData = rpcData as PublicVideo[];
-      }
-
-      if (videosData.length > 0) {
-        const transformedVideos = videosData.map(transformVideo);
-        
-        // Check if we have more videos to load
-        if (transformedVideos.length < PAGE_SIZE) {
-          setHasMore(false);
-        }
-
-        if (isInitial) {
-          setVideos(transformedVideos);
-          
-          // If we have a target video ID, find its index and scroll to it
-          if (targetVideoId) {
-            const targetIndex = transformedVideos.findIndex(v => v.id === targetVideoId);
-            if (targetIndex !== -1) {
-              setActiveIndex(targetIndex);
-              // Scroll to the video after render
-              setTimeout(() => {
-                if (containerRef.current) {
-                  containerRef.current.scrollTo({
-                    top: targetIndex * window.innerHeight,
-                    behavior: 'instant',
-                  });
-                }
-              }, 100);
-            }
-          }
-        } else {
-          setVideos(prev => [...prev, ...transformedVideos]);
-        }
-      } else if (isInitial) {
-        setVideos([]);
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, [selectedCategory]);
-
-  useEffect(() => {
-    fetchVideos(0, true);
-  }, [fetchVideos]);
-
-  // Refetch when category changes
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    setPage(0);
-    setHasMore(true);
-    setVideos([]);
-    setActiveIndex(0);
-    fetchVideos(0, true, category);
-    setShowCategoryFilter(false);
-  };
-
-  // Handle scroll for active video tracking and infinite scroll
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const scrollTop = container.scrollTop;
-      const videoHeight = window.innerHeight;
-      const newIndex = Math.round(scrollTop / videoHeight);
-      
-      if (newIndex !== activeIndex && newIndex >= 0 && newIndex < videos.length) {
-        setActiveIndex(newIndex);
-      }
-
-      // Load more when approaching the end (3 videos before the last)
-      const scrollBottom = container.scrollHeight - scrollTop - container.clientHeight;
-      const loadMoreThreshold = videoHeight * 3;
-      
-      if (scrollBottom < loadMoreThreshold && hasMore && !loadingMore && !loading) {
-        const nextPage = page + 1;
-        setPage(nextPage);
-        fetchVideos(nextPage, false);
-      }
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [activeIndex, videos.length, hasMore, loadingMore, loading, page, fetchVideos]);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="h-screen w-screen bg-surface-darker flex items-center justify-center">
-        <div className="text-background/60 animate-pulse">Loading videos...</div>
-      </div>
-    );
-  }
-
-  // Empty state when no videos
-  if (videos.length === 0) {
-    return (
-      <div className="h-screen w-screen bg-background flex flex-col items-center justify-center px-6">
-        <div className="h-20 w-20 rounded-full bg-secondary flex items-center justify-center mb-6">
-          <VideoIcon className="h-10 w-10 text-muted-foreground" />
+      <DashboardLayout>
+        <div className="h-full flex items-center justify-center">
+          <div className="neo-pressed px-8 py-4 rounded-2xl text-cool-grey animate-pulse">
+            Loading...
+          </div>
         </div>
-        <h2 className="text-xl font-semibold text-center mb-2">No videos yet</h2>
-        <p className="text-muted-foreground text-center mb-6">
-          Be the first to share your skills! Create a video to showcase your work.
-        </p>
-        <Button variant="coral" size="lg" onClick={() => navigate('/create')}>
-          <Plus className="h-5 w-5 mr-2" />
-          Create Video
-        </Button>
-        
-        {/* Logo */}
-        <div className="fixed top-4 left-4 z-30">
-          <Logo size="lg" showText variant="default" />
-        </div>
-        
-        <BottomNav />
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="h-screen w-screen bg-surface-darker overflow-hidden">
-      {/* Category Filter Button */}
-      <button
-        onClick={() => setShowCategoryFilter(true)}
-        className={cn(
-          "fixed top-4 right-4 z-30 h-10 px-4 rounded-full backdrop-blur-sm flex items-center gap-2 transition-colors",
-          selectedCategory !== 'all' 
-            ? "bg-coral text-background" 
-            : "bg-background/20 text-background"
-        )}
-      >
-        <Filter className="h-4 w-4" />
-        <span className="text-sm font-medium">
-          {selectedCategory === 'all' 
-            ? 'Filter' 
-            : skillCategories.find(c => c.value === selectedCategory)?.label}
-        </span>
-      </button>
+    <DashboardLayout>
+      <div className="space-y-8">
+        {/* Welcome Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-charcoal mb-2">
+            Welcome back, {profile?.username || 'there'}
+          </h1>
+          <p className="text-cool-grey">Here's what's happening with your ventures today.</p>
+        </div>
 
-      {/* Category Filter Modal */}
-      {showCategoryFilter && (
-        <div className="fixed inset-0 z-50">
-          <div 
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            onClick={() => setShowCategoryFilter(false)}
+        {/* Stats Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatCard
+            title="Total Ventures"
+            value="42"
+            change={0.94}
+            changeLabel="last year"
+            chart={<MiniBarChart data={chartData} className="h-10" />}
           />
-          <div className="absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl p-4 pb-8 animate-slide-up safe-area-pb">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-lg">Filter by Trade</h2>
-              <button 
-                onClick={() => setShowCategoryFilter(false)}
-                className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center"
-              >
-                <X className="h-4 w-4" />
+          <StatCard
+            title="Active Applications"
+            value="128"
+            change={0.94}
+            changeLabel="last year"
+            chart={<MiniBarChart data={chartData} className="h-10" />}
+          />
+          <StatCard
+            title="New Founders"
+            value="2,847"
+            change={0.94}
+            changeLabel="last year"
+            chart={<MiniBarChart data={chartData} className="h-10" />}
+          />
+        </div>
+
+        {/* Main Chart Area */}
+        <NeoCard className="p-8">
+          <NeoCardHeader className="flex-row items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-1">
+                Application Trend
+              </p>
+              <NeoCardTitle className="text-2xl">
+                Total Revenue: <span className="font-bold">$20,320</span>
+              </NeoCardTitle>
+            </div>
+            <div className="flex gap-2">
+              <button className="neo-flat px-4 py-2 rounded-xl text-sm text-cool-grey hover:text-charcoal transition-colors">
+                Weekly
+              </button>
+              <button className="neo-pressed px-4 py-2 rounded-xl text-sm text-charcoal font-medium">
+                Monthly
+              </button>
+              <button className="neo-flat px-4 py-2 rounded-xl text-sm text-cool-grey hover:text-charcoal transition-colors">
+                Yearly
               </button>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {skillCategories.map((cat) => (
-                <button
-                  key={cat.value}
-                  onClick={() => handleCategoryChange(cat.value)}
-                  className={cn(
-                    "flex flex-col items-center gap-1 p-3 rounded-xl transition-colors",
-                    selectedCategory === cat.value 
-                      ? "bg-coral text-background" 
-                      : "bg-secondary hover:bg-secondary/80"
-                  )}
-                >
-                  <span className="text-2xl">{cat.icon}</span>
-                  <span className="text-xs font-medium">{cat.label}</span>
-                </button>
+          </NeoCardHeader>
+          <NeoCardContent>
+            {/* Pixelated Bar Chart */}
+            <div className="mt-8 h-64 flex items-end justify-between gap-2 px-4">
+              {barChartData.map((data, index) => (
+                <div key={data.month} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="w-full flex flex-col gap-0.5">
+                    {/* Stacked bars with pixel effect */}
+                    <div 
+                      className="w-full bg-foreground/80 rounded-t"
+                      style={{ height: `${data.newUser * 4}px` }}
+                    />
+                    <div 
+                      className="w-full bg-foreground/30"
+                      style={{ height: `${data.existingUser * 3}px` }}
+                    />
+                  </div>
+                  <span className={`text-xs mt-2 ${index === 5 ? 'font-bold text-charcoal' : 'text-cool-grey'}`}>
+                    {data.month}
+                  </span>
+                </div>
               ))}
             </div>
-          </div>
-        </div>
-      )}
+            
+            {/* Legend */}
+            <div className="flex items-center gap-6 mt-6 justify-center">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 bg-foreground/80 rounded-sm" />
+                <span className="text-sm text-cool-grey">New User</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 bg-foreground/30 rounded-sm" />
+                <span className="text-sm text-cool-grey">Existing User</span>
+              </div>
+            </div>
+          </NeoCardContent>
+        </NeoCard>
 
-      {/* Video Feed */}
-      <div 
-        ref={containerRef}
-        className="h-full w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar"
-      >
-        {videos.map((video, index) => (
-          <div 
-            key={video.id} 
-            className="h-screen w-full snap-start snap-always"
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <button 
+            onClick={() => navigate('/ventures')}
+            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all group"
           >
-            <VideoCard video={video} isActive={index === activeIndex} />
-          </div>
-        ))}
-        
-        {/* Loading more indicator */}
-        {loadingMore && (
-          <div className="h-20 flex items-center justify-center">
-            <div className="text-background/60 animate-pulse">Loading more...</div>
-          </div>
-        )}
+            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all">
+              <Rocket className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="font-semibold text-charcoal mb-1">Explore Ventures</h3>
+            <p className="text-sm text-cool-grey">Browse startup projects</p>
+          </button>
+          
+          <button 
+            onClick={() => navigate('/apply')}
+            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all group"
+          >
+            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all">
+              <TrendingUp className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="font-semibold text-charcoal mb-1">Apply as Founder</h3>
+            <p className="text-sm text-cool-grey">Submit your venture</p>
+          </button>
+          
+          <button 
+            onClick={() => navigate('/jobs')}
+            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all group"
+          >
+            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all">
+              <Briefcase className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="font-semibold text-charcoal mb-1">Find Jobs</h3>
+            <p className="text-sm text-cool-grey">Browse opportunities</p>
+          </button>
+          
+          <button 
+            onClick={() => navigate('/challenges')}
+            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all group"
+          >
+            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all">
+              <Trophy className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="font-semibold text-charcoal mb-1">Challenges</h3>
+            <p className="text-sm text-cool-grey">Win prizes & recognition</p>
+          </button>
+        </div>
       </div>
-
-      {/* Logo */}
-      <div className="fixed top-4 left-4 z-30 drop-shadow-lg">
-        <LogoIcon className="h-9 w-9" variant="light" />
-      </div>
-
-      {/* Bottom Navigation */}
-      <BottomNav />
-    </div>
+    </DashboardLayout>
   );
 }
