@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,25 +6,25 @@
 
 @layer base {
   :root {
-    /* Donjo Venture Engine - High-end Minimalist */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 12%;
+    /* Neomorphic Dashboard Theme */
+    --background: 220 14% 94%;
+    --foreground: 0 0% 13%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 12%;
+    --card: 220 14% 94%;
+    --card-foreground: 0 0% 13%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 12%;
+    --popover: 220 14% 94%;
+    --popover-foreground: 0 0% 13%;
 
     /* Success Orange - Primary CTA Color */
     --primary: 14 100% 60%;
     --primary-foreground: 0 0% 100%;
 
-    /* Charcoal tones */
-    --secondary: 0 0% 96%;
+    /* Neomorphic surface tones */
+    --secondary: 220 14% 90%;
     --secondary-foreground: 0 0% 18%;
 
-    --muted: 0 0% 96%;
+    --muted: 220 14% 88%;
     --muted-foreground: 0 0% 45%;
 
     --accent: 14 100% 60%;
@@ -33,38 +33,43 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 92%;
-    --input: 0 0% 92%;
+    --border: 220 14% 85%;
+    --input: 220 14% 88%;
     --ring: 14 100% 60%;
 
-    --radius: 0.75rem;
+    --radius: 1.25rem;
 
-    /* Custom tokens - Success Orange (#FF5733) */
-    --success-orange: 14 100% 60%;
-    --success-orange-light: 14 100% 70%;
-    --success-orange-dark: 14 100% 50%;
+    /* Neomorphic specific tokens */
+    --neo-bg: 220 14% 94%;
+    --neo-shadow-dark: 222 20% 80%;
+    --neo-shadow-light: 0 0% 100%;
     
-    /* Charcoal palette */
-    --charcoal: 0 0% 18%;
+    /* Charcoal palette for text */
+    --charcoal: 0 0% 13%;
     --charcoal-light: 0 0% 28%;
-    --charcoal-dark: 0 0% 12%;
+    --charcoal-dark: 0 0% 8%;
     
-    /* Legacy coral (mapped to success orange) */
+    /* Cool grey for subtitles */
+    --cool-grey: 220 10% 50%;
+    
+    /* Legacy tokens mapped */
     --coral: 14 100% 60%;
     --coral-light: 14 100% 70%;
     --coral-dark: 14 100% 50%;
+    --success-orange: 14 100% 60%;
     
     --surface-dark: 0 0% 8%;
     --surface-darker: 0 0% 4%;
-    
-    --glass: 0 0% 100% / 0.9;
-    --glass-border: 0 0% 0% / 0.06;
 
-    /* Elegant Shadows */
+    /* Neomorphic Shadows */
+    --shadow-neo-extruded: 8px 8px 16px hsl(222 20% 80%), -8px -8px 16px hsl(0 0% 100%);
+    --shadow-neo-pressed: inset 5px 5px 10px hsl(222 20% 80%), inset -5px -5px 10px hsl(0 0% 100%);
+    --shadow-neo-subtle: 4px 4px 8px hsl(222 20% 82%), -4px -4px 8px hsl(0 0% 100%);
+    
+    /* Legacy shadows */
     --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.04);
     --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.06);
     --shadow-lg: 0 12px 40px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 24px 60px hsl(0 0% 0% / 0.12);
     --shadow-glow: 0 0 40px hsl(var(--success-orange) / 0.25);
 
     /* Smooth Animations */
@@ -72,33 +77,33 @@
     --transition-base: 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
     --transition-slow: 500ms cubic-bezier(0.25, 0.1, 0.25, 1);
 
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 220 14% 94%;
     --sidebar-foreground: 0 0% 18%;
     --sidebar-primary: 0 0% 12%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent: 220 14% 88%;
     --sidebar-accent-foreground: 0 0% 12%;
-    --sidebar-border: 0 0% 92%;
+    --sidebar-border: 220 14% 85%;
     --sidebar-ring: 14 100% 60%;
   }
 
   .dark {
-    --background: 0 0% 6%;
+    --background: 220 15% 12%;
     --foreground: 0 0% 96%;
 
-    --card: 0 0% 10%;
+    --card: 220 15% 14%;
     --card-foreground: 0 0% 96%;
 
-    --popover: 0 0% 10%;
+    --popover: 220 15% 14%;
     --popover-foreground: 0 0% 96%;
 
     --primary: 14 100% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 14%;
+    --secondary: 220 15% 18%;
     --secondary-foreground: 0 0% 96%;
 
-    --muted: 0 0% 14%;
+    --muted: 220 15% 20%;
     --muted-foreground: 0 0% 60%;
 
     --accent: 14 100% 60%;
@@ -107,24 +112,27 @@
     --destructive: 0 62% 40%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 16%;
-    --input: 0 0% 16%;
+    --border: 220 15% 22%;
+    --input: 220 15% 22%;
     --ring: 14 100% 60%;
+
+    --neo-bg: 220 15% 12%;
+    --neo-shadow-dark: 220 15% 8%;
+    --neo-shadow-light: 220 15% 18%;
 
     --charcoal: 0 0% 88%;
     --charcoal-light: 0 0% 78%;
     --charcoal-dark: 0 0% 94%;
+    
+    --cool-grey: 220 10% 60%;
 
-    --glass: 0 0% 12% / 0.9;
-    --glass-border: 0 0% 100% / 0.08;
-
-    --sidebar-background: 0 0% 8%;
+    --sidebar-background: 220 15% 10%;
     --sidebar-foreground: 0 0% 96%;
     --sidebar-primary: 14 100% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent: 220 15% 18%;
     --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 0 0% 16%;
+    --sidebar-border: 220 15% 22%;
     --sidebar-ring: 14 100% 60%;
   }
 }
@@ -136,12 +144,13 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     @apply tracking-tight;
+    color: hsl(var(--charcoal));
   }
 
   html {
@@ -150,6 +159,31 @@
 }
 
 @layer utilities {
+  /* Neomorphic utilities */
+  .neo-extruded {
+    background: hsl(var(--neo-bg));
+    box-shadow: var(--shadow-neo-extruded);
+    border-radius: var(--radius);
+  }
+
+  .neo-pressed {
+    background: hsl(var(--neo-bg));
+    box-shadow: var(--shadow-neo-pressed);
+    border-radius: var(--radius);
+  }
+
+  .neo-subtle {
+    background: hsl(var(--neo-bg));
+    box-shadow: var(--shadow-neo-subtle);
+    border-radius: var(--radius);
+  }
+
+  .neo-flat {
+    background: hsl(var(--neo-bg));
+    border-radius: var(--radius);
+  }
+
+  /* Text utilities */
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--muted-foreground)) 100%);
@@ -157,13 +191,22 @@
 
   .text-gradient-orange {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--success-orange)) 0%, hsl(var(--success-orange-light)) 100%);
+    background-image: linear-gradient(135deg, hsl(var(--success-orange)) 0%, hsl(var(--coral-light)) 100%);
   }
 
+  .text-cool-grey {
+    color: hsl(var(--cool-grey));
+  }
+
+  .text-charcoal {
+    color: hsl(var(--charcoal));
+  }
+
+  /* Legacy utilities */
   .glass {
     @apply backdrop-blur-2xl;
-    background: hsl(var(--glass));
-    border: 1px solid hsl(var(--glass-border));
+    background: hsl(var(--background) / 0.9);
+    border: 1px solid hsl(var(--border) / 0.5);
   }
 
   .glow {
@@ -174,24 +217,21 @@
     box-shadow: var(--shadow-glow);
   }
 
-  /* Minimal card style */
+  /* Card styles */
   .card-minimal {
-    @apply bg-card rounded-xl border border-border/50;
-    box-shadow: var(--shadow-sm);
+    @apply neo-extruded;
     transition: all var(--transition-base);
   }
 
   .card-minimal:hover {
-    box-shadow: var(--shadow-md);
-    border-color: hsl(var(--border));
+    box-shadow: 10px 10px 20px hsl(222 20% 78%), -10px -10px 20px hsl(0 0% 100%);
   }
 
-  /* Elevated card */
   .card-elevated {
-    @apply bg-card rounded-2xl;
-    box-shadow: var(--shadow-lg);
+    @apply neo-extruded;
   }
 
+  /* Animation utilities */
   .animate-in {
     animation: animate-in var(--transition-base) forwards;
   }
@@ -215,23 +255,22 @@
 
   /* Video feed specific */
   .video-card {
-    @apply relative w-full h-full overflow-hidden rounded-2xl;
+    @apply relative w-full h-full overflow-hidden rounded-2xl neo-extruded;
   }
 
   .video-overlay {
     @apply absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent;
   }
 
-  /* Venture cards - Masonry style */
+  /* Venture cards - Neomorphic style */
   .venture-card {
-    @apply relative overflow-hidden rounded-2xl bg-card;
-    box-shadow: var(--shadow-md);
+    @apply relative overflow-hidden neo-extruded;
     transition: all var(--transition-base);
   }
 
   .venture-card:hover {
     transform: translateY(-4px);
-    box-shadow: var(--shadow-xl);
+    box-shadow: 12px 12px 24px hsl(222 20% 78%), -12px -12px 24px hsl(0 0% 100%);
   }
 
   /* Safe area padding for mobile */

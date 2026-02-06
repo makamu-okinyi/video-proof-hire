@@ -7,14 +7,14 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "1rem",
+      padding: "1.5rem",
       screens: {
-        "2xl": "430px",
+        "2xl": "1400px",
       },
     },
     extend: {
       fontFamily: {
-        sans: ['Outfit', 'system-ui', 'sans-serif'],
+        sans: ['DM Sans', 'Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -22,6 +22,17 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        neo: {
+          bg: "hsl(var(--neo-bg))",
+          "shadow-dark": "hsl(var(--neo-shadow-dark))",
+          "shadow-light": "hsl(var(--neo-shadow-light))",
+        },
+        charcoal: {
+          DEFAULT: "hsl(var(--charcoal))",
+          light: "hsl(var(--charcoal-light))",
+          dark: "hsl(var(--charcoal-dark))",
+        },
+        "cool-grey": "hsl(var(--cool-grey))",
         coral: {
           DEFAULT: "hsl(var(--coral))",
           light: "hsl(var(--coral-light))",
@@ -72,16 +83,20 @@ export default {
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 4px)",
+        sm: "calc(var(--radius) - 8px)",
         "2xl": "1.5rem",
         "3xl": "2rem",
+        "4xl": "2.5rem",
       },
       boxShadow: {
         sm: "var(--shadow-sm)",
         md: "var(--shadow-md)",
         lg: "var(--shadow-lg)",
         glow: "var(--shadow-glow)",
+        "neo-extruded": "8px 8px 16px hsl(222 20% 80%), -8px -8px 16px hsl(0 0% 100%)",
+        "neo-pressed": "inset 5px 5px 10px hsl(222 20% 80%), inset -5px -5px 10px hsl(0 0% 100%)",
+        "neo-subtle": "4px 4px 8px hsl(222 20% 82%), -4px -4px 8px hsl(0 0% 100%)",
       },
       keyframes: {
         "accordion-down": {
