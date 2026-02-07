@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardTopBar } from './DashboardTopBar';
+import { OrganicBackground } from './OrganicBackground';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -8,12 +9,15 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen flex relative">
+      {/* Organic Abstract Background */}
+      <OrganicBackground />
+      
       {/* Sidebar */}
       <DashboardSidebar />
       
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-0 lg:ml-72">
+      <div className="flex-1 flex flex-col ml-0 lg:ml-72 transition-all duration-300">
         {/* Top Bar */}
         <DashboardTopBar />
         

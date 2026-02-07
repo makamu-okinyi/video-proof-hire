@@ -1,31 +1,36 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard, MiniBarChart } from '@/components/dashboard/StatCard';
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
-import { Rocket, Users, TrendingUp, Briefcase, Trophy, ArrowRight } from 'lucide-react';
+import { PixelatedChart } from '@/components/dashboard/PixelatedChart';
+import { SquircleIcon } from '@/components/ui/SquircleIcon';
+import { Rocket, Users, TrendingUp, Briefcase, Trophy, ArrowRight, FileText, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const chartData = [4, 7, 5, 9, 6, 8, 10, 7, 6, 9, 11, 8];
-const barChartData = [
-  { month: 'JAN', newUser: 20, existingUser: 15 },
-  { month: 'FEB', newUser: 25, existingUser: 18 },
-  { month: 'MAR', newUser: 15, existingUser: 12 },
-  { month: 'APR', newUser: 30, existingUser: 22 },
-  { month: 'MAY', newUser: 35, existingUser: 28 },
-  { month: 'JUN', newUser: 38, existingUser: 18 },
-  { month: 'JUL', newUser: 28, existingUser: 20 },
-  { month: 'AUG', newUser: 32, existingUser: 25 },
-  { month: 'SEP', newUser: 22, existingUser: 16 },
-  { month: 'OCT', newUser: 26, existingUser: 19 },
-  { month: 'NOV', newUser: 30, existingUser: 22 },
-  { month: 'DEC', newUser: 28, existingUser: 20 },
+
+// Venture Engine chart data
+const applicationData = [
+  { label: 'JAN', applications: 20, velocity: 15 },
+  { label: 'FEB', applications: 25, velocity: 18 },
+  { label: 'MAR', applications: 15, velocity: 12 },
+  { label: 'APR', applications: 30, velocity: 22 },
+  { label: 'MAY', applications: 35, velocity: 28 },
+  { label: 'JUN', applications: 38, velocity: 18 },
+  { label: 'JUL', applications: 28, velocity: 20 },
+  { label: 'AUG', applications: 32, velocity: 25 },
+  { label: 'SEP', applications: 22, velocity: 16 },
+  { label: 'OCT', applications: 26, velocity: 19 },
+  { label: 'NOV', applications: 30, velocity: 22 },
+  { label: 'DEC', applications: 28, velocity: 20 },
 ];
 
 export default function Feed() {
   const navigate = useNavigate();
   const { profile, isLoading, isAuthenticated } = useAuth();
+  const [timeframe, setTimeframe] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -45,6 +50,9 @@ export default function Feed() {
     );
   }
 
+  // Check if user is admin/employer for the admin dashboard view
+  const isAdmin = profile?.user_type === 'employer' || profile?.user_type === 'investor';
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -53,91 +61,76 @@ export default function Feed() {
           <h1 className="text-3xl font-bold text-charcoal mb-2">
             Welcome back, {profile?.username || 'there'}
           </h1>
-          <p className="text-cool-grey">Here's what's happening with your ventures today.</p>
+          <p className="text-cool-grey">
+            {isAdmin 
+              ? "Startup Garage program overview and cohort health metrics."
+              : "Here's what's happening with your ventures today."
+            }
+          </p>
         </div>
 
-        {/* Stats Row */}
+        {/* Stats Row - Venture Engine Labels */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard
-            title="Total Ventures"
-            value="42"
+            title="TOTAL APPLICATIONS"
+            value="347"
             change={0.94}
             changeLabel="last year"
             chart={<MiniBarChart data={chartData} className="h-10" />}
           />
           <StatCard
-            title="Active Applications"
-            value="128"
+            title="ACTIVE VENTURES"
+            value="42 Active"
             change={0.94}
             changeLabel="last year"
             chart={<MiniBarChart data={chartData} className="h-10" />}
           />
           <StatCard
-            title="New Founders"
-            value="2,847"
+            title="MENTORS ENGAGED"
+            value="128 Mentors"
             change={0.94}
             changeLabel="last year"
             chart={<MiniBarChart data={chartData} className="h-10" />}
           />
         </div>
 
-        {/* Main Chart Area */}
+        {/* Main Chart Area - Application Intake & Cohort Velocity */}
         <NeoCard className="p-8">
-          <NeoCardHeader className="flex-row items-center justify-between">
+          <NeoCardHeader className="flex-row items-center justify-between flex-wrap gap-4">
             <div>
               <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-1">
-                Application Trend
+                Application Intake & Cohort Velocity
               </p>
               <NeoCardTitle className="text-2xl">
-                Total Revenue: <span className="font-bold">$20,320</span>
+                Total Applications: <span className="font-bold">347</span>
               </NeoCardTitle>
             </div>
             <div className="flex gap-2">
-              <button className="neo-flat px-4 py-2 rounded-xl text-sm text-cool-grey hover:text-charcoal transition-colors">
-                Weekly
-              </button>
-              <button className="neo-pressed px-4 py-2 rounded-xl text-sm text-charcoal font-medium">
-                Monthly
-              </button>
-              <button className="neo-flat px-4 py-2 rounded-xl text-sm text-cool-grey hover:text-charcoal transition-colors">
-                Yearly
-              </button>
-            </div>
-          </NeoCardHeader>
-          <NeoCardContent>
-            {/* Pixelated Bar Chart */}
-            <div className="mt-8 h-64 flex items-end justify-between gap-2 px-4">
-              {barChartData.map((data, index) => (
-                <div key={data.month} className="flex-1 flex flex-col items-center gap-1">
-                  <div className="w-full flex flex-col gap-0.5">
-                    {/* Stacked bars with pixel effect */}
-                    <div 
-                      className="w-full bg-foreground/80 rounded-t"
-                      style={{ height: `${data.newUser * 4}px` }}
-                    />
-                    <div 
-                      className="w-full bg-foreground/30"
-                      style={{ height: `${data.existingUser * 3}px` }}
-                    />
-                  </div>
-                  <span className={`text-xs mt-2 ${index === 5 ? 'font-bold text-charcoal' : 'text-cool-grey'}`}>
-                    {data.month}
-                  </span>
-                </div>
+              {(['weekly', 'monthly', 'yearly'] as const).map((tf) => (
+                <button
+                  key={tf}
+                  onClick={() => setTimeframe(tf)}
+                  className={`
+                    px-4 py-2 rounded-xl text-sm capitalize transition-all duration-300
+                    ${timeframe === tf 
+                      ? 'neo-pressed text-charcoal font-medium' 
+                      : 'neo-flat text-cool-grey hover:text-charcoal'
+                    }
+                  `}
+                >
+                  {tf}
+                </button>
               ))}
             </div>
-            
-            {/* Legend */}
-            <div className="flex items-center gap-6 mt-6 justify-center">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 bg-foreground/80 rounded-sm" />
-                <span className="text-sm text-cool-grey">New User</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 bg-foreground/30 rounded-sm" />
-                <span className="text-sm text-cool-grey">Existing User</span>
-              </div>
-            </div>
+          </NeoCardHeader>
+          <NeoCardContent className="mt-6">
+            {/* Pixelated Bar Chart */}
+            <PixelatedChart 
+              data={applicationData}
+              maxValue={60}
+              pixelSize={8}
+              activeIndex={5}
+            />
           </NeoCardContent>
         </NeoCard>
 
@@ -145,44 +138,56 @@ export default function Feed() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <button 
             onClick={() => navigate('/ventures')}
-            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all group"
+            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all duration-300 group"
           >
-            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all">
-              <Rocket className="h-6 w-6 text-primary" />
-            </div>
+            <SquircleIcon 
+              icon={Rocket} 
+              variant="blue" 
+              size="lg"
+              className="mb-4 group-hover:scale-105 transition-transform duration-300"
+            />
             <h3 className="font-semibold text-charcoal mb-1">Explore Ventures</h3>
             <p className="text-sm text-cool-grey">Browse startup projects</p>
           </button>
           
           <button 
             onClick={() => navigate('/apply')}
-            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all group"
+            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all duration-300 group"
           >
-            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all">
-              <TrendingUp className="h-6 w-6 text-primary" />
-            </div>
+            <SquircleIcon 
+              icon={FileText} 
+              variant="coral" 
+              size="lg"
+              className="mb-4 group-hover:scale-105 transition-transform duration-300"
+            />
             <h3 className="font-semibold text-charcoal mb-1">Apply as Founder</h3>
             <p className="text-sm text-cool-grey">Submit your venture</p>
           </button>
           
           <button 
             onClick={() => navigate('/jobs')}
-            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all group"
+            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all duration-300 group"
           >
-            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all">
-              <Briefcase className="h-6 w-6 text-primary" />
-            </div>
+            <SquircleIcon 
+              icon={Briefcase} 
+              variant="green" 
+              size="lg"
+              className="mb-4 group-hover:scale-105 transition-transform duration-300"
+            />
             <h3 className="font-semibold text-charcoal mb-1">Find Jobs</h3>
             <p className="text-sm text-cool-grey">Browse opportunities</p>
           </button>
           
           <button 
             onClick={() => navigate('/challenges')}
-            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all group"
+            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all duration-300 group"
           >
-            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all">
-              <Trophy className="h-6 w-6 text-primary" />
-            </div>
+            <SquircleIcon 
+              icon={Trophy} 
+              variant="purple" 
+              size="lg"
+              className="mb-4 group-hover:scale-105 transition-transform duration-300"
+            />
             <h3 className="font-semibold text-charcoal mb-1">Challenges</h3>
             <p className="text-sm text-cool-grey">Win prizes & recognition</p>
           </button>
