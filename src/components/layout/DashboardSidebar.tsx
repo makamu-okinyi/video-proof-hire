@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import {
-  Home,
   Briefcase,
   Trophy,
   Plus,
@@ -24,7 +23,6 @@ import {
   X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SquircleIcon, navIconVariants } from '@/components/ui/SquircleIcon';
 
 interface NavItem {
   icon: React.ElementType;
@@ -120,7 +118,6 @@ export function DashboardSidebar() {
 
   const NavLink = ({ item }: { item: NavItem }) => {
     const active = isActive(item.path);
-    const iconVariant = navIconVariants[item.path] || 'default';
     
     return (
       <button
@@ -133,12 +130,10 @@ export function DashboardSidebar() {
           isCollapsed && "justify-center px-2"
         )}
       >
-        <SquircleIcon 
-          icon={item.icon} 
-          variant={active ? iconVariant : 'default'}
-          size="sm"
-          isActive={active}
-        />
+        <item.icon className={cn(
+          "h-5 w-5 flex-shrink-0",
+          active ? "text-primary" : "text-cool-grey"
+        )} />
         {!isCollapsed && (
           <>
             <span className="transition-opacity duration-300">{item.label}</span>
@@ -158,11 +153,9 @@ export function DashboardSidebar() {
       {/* Logo Section */}
       <div className={cn("p-6 pb-4", isCollapsed && "p-4 pb-2")}>
         <div className={cn("flex items-center gap-3", isCollapsed && "justify-center")}>
-          <SquircleIcon 
-            icon={Rocket} 
-            variant="coral" 
-            size="lg"
-          />
+          <div className="h-12 w-12 neo-extruded rounded-2xl flex items-center justify-center flex-shrink-0">
+            <Rocket className="h-6 w-6 text-primary" />
+          </div>
           {!isCollapsed && (
             <div className="transition-opacity duration-300">
               <h1 className="text-lg font-bold text-charcoal">Donjo</h1>
@@ -207,7 +200,7 @@ export function DashboardSidebar() {
             {(isCollapsed || expandedGroups.includes(group.title)) && (
               <div className={cn("space-y-1", !isCollapsed && "mt-1")}>
                 {group.items.map((item) => (
-                  <NavLink key={item.path} item={item} />
+                  <NavLink key={item.path + item.label} item={item} />
                 ))}
               </div>
             )}
@@ -220,11 +213,12 @@ export function DashboardSidebar() {
       <div className={cn("p-4 border-t border-border/30", isCollapsed && "p-2")}>
         <div className={cn("neo-subtle p-4 rounded-2xl", isCollapsed && "p-2")}>
           <div className={cn("flex items-center gap-3 mb-3", isCollapsed && "flex-col mb-2")}>
-            <SquircleIcon 
-              icon={User} 
-              variant="blue" 
-              size={isCollapsed ? "sm" : "md"}
-            />
+            <div className={cn(
+              "neo-pressed rounded-full flex items-center justify-center flex-shrink-0",
+              isCollapsed ? "h-8 w-8" : "h-10 w-10"
+            )}>
+              <User className="h-5 w-5 text-cool-grey" />
+            </div>
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-charcoal truncate">

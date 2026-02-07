@@ -5,9 +5,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard, MiniBarChart } from '@/components/dashboard/StatCard';
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
 import { PixelatedChart } from '@/components/dashboard/PixelatedChart';
-import { SquircleIcon } from '@/components/ui/SquircleIcon';
-import { Rocket, Users, TrendingUp, Briefcase, Trophy, ArrowRight, FileText, UserCheck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Rocket, Briefcase, Trophy, FileText } from 'lucide-react';
 
 const chartData = [4, 7, 5, 9, 6, 8, 10, 7, 6, 9, 11, 8];
 
@@ -140,12 +138,9 @@ export default function Feed() {
             onClick={() => navigate('/ventures')}
             className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all duration-300 group"
           >
-            <SquircleIcon 
-              icon={Rocket} 
-              variant="blue" 
-              size="lg"
-              className="mb-4 group-hover:scale-105 transition-transform duration-300"
-            />
+            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all duration-300">
+              <Rocket className="h-6 w-6 text-primary" />
+            </div>
             <h3 className="font-semibold text-charcoal mb-1">Explore Ventures</h3>
             <p className="text-sm text-cool-grey">Browse startup projects</p>
           </button>
@@ -154,12 +149,9 @@ export default function Feed() {
             onClick={() => navigate('/apply')}
             className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all duration-300 group"
           >
-            <SquircleIcon 
-              icon={FileText} 
-              variant="coral" 
-              size="lg"
-              className="mb-4 group-hover:scale-105 transition-transform duration-300"
-            />
+            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all duration-300">
+              <FileText className="h-6 w-6 text-primary" />
+            </div>
             <h3 className="font-semibold text-charcoal mb-1">Apply as Founder</h3>
             <p className="text-sm text-cool-grey">Submit your venture</p>
           </button>
@@ -168,12 +160,9 @@ export default function Feed() {
             onClick={() => navigate('/jobs')}
             className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all duration-300 group"
           >
-            <SquircleIcon 
-              icon={Briefcase} 
-              variant="green" 
-              size="lg"
-              className="mb-4 group-hover:scale-105 transition-transform duration-300"
-            />
+            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all duration-300">
+              <Briefcase className="h-6 w-6 text-primary" />
+            </div>
             <h3 className="font-semibold text-charcoal mb-1">Find Jobs</h3>
             <p className="text-sm text-cool-grey">Browse opportunities</p>
           </button>
@@ -182,12 +171,9 @@ export default function Feed() {
             onClick={() => navigate('/challenges')}
             className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all duration-300 group"
           >
-            <SquircleIcon 
-              icon={Trophy} 
-              variant="purple" 
-              size="lg"
-              className="mb-4 group-hover:scale-105 transition-transform duration-300"
-            />
+            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all duration-300">
+              <Trophy className="h-6 w-6 text-primary" />
+            </div>
             <h3 className="font-semibold text-charcoal mb-1">Challenges</h3>
             <p className="text-sm text-cool-grey">Win prizes & recognition</p>
           </button>
