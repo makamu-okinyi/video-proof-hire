@@ -346,70 +346,85 @@ export default function Auth() {
 
   const renderWelcome = () => (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 animate-fade-in">
-      <div className="w-full max-w-sm space-y-8">
+      <div className="w-full max-w-md space-y-8">
         {/* Logo */}
         <div className="text-center space-y-4">
           <Logo size="xl" className="justify-center" />
           <div className="space-y-1">
-            <h1 className="text-4xl font-bold tracking-tight text-charcoal">donjo</h1>
-            <p className="text-cool-grey text-lg">Prove your skills. Get hired.</p>
+            <h1 className="text-4xl font-bold tracking-tight text-charcoal">Startup Garage</h1>
+            <p className="text-cool-grey text-lg">Venture Acceleration Engine</p>
           </div>
         </div>
 
         {/* Hero Visual - Neomorphic */}
-        <div className="relative h-64 w-full neo-extruded rounded-3xl overflow-hidden">
+        <div className="relative h-48 w-full neo-extruded rounded-3xl overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-32 h-48 rounded-2xl neo-pressed transform rotate-6 animate-float" />
-            <div className="absolute w-32 h-48 rounded-2xl neo-subtle transform -rotate-6 animate-float" style={{ animationDelay: '0.5s' }} />
+            <div className="w-24 h-36 rounded-2xl neo-pressed transform rotate-6 animate-float" />
+            <div className="absolute w-24 h-36 rounded-2xl neo-subtle transform -rotate-6 animate-float" style={{ animationDelay: '0.5s' }} />
           </div>
         </div>
 
-        {/* Role Selection */}
-        <div className="space-y-3 pt-4">
-          <p className="text-center text-sm text-cool-grey mb-4">I am a...</p>
+        {/* Role Selection - Clear Founder vs Admin distinction */}
+        <div className="space-y-4 pt-4">
+          <p className="text-center text-sm text-cool-grey mb-2">Select your role to continue</p>
           
-          {/* Student/Applicant Option */}
-          <button 
-            className="w-full neo-extruded p-4 rounded-2xl flex items-center justify-between hover:shadow-neo-pressed transition-all"
-            onClick={() => { setUserType('talent'); setIsLogin(false); setStep('login'); }}
-          >
+          {/* Founder/Applicant Option - Primary CTA */}
+          <div className="neo-extruded p-5 rounded-3xl space-y-3">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 neo-pressed rounded-xl flex items-center justify-center">
-                <User className="h-5 w-5 text-primary" />
+              <div className="h-12 w-12 neo-pressed rounded-2xl flex items-center justify-center">
+                <User className="h-6 w-6 text-primary" />
               </div>
-              <span className="font-medium text-charcoal">Student / Applicant</span>
+              <div>
+                <h3 className="font-semibold text-charcoal">Apply as Founder</h3>
+                <p className="text-xs text-cool-grey">Submit your venture to Startup Garage</p>
+              </div>
             </div>
-            <ArrowRight className="h-5 w-5 text-cool-grey" />
-          </button>
+            <p className="text-sm text-cool-grey pl-15">
+              Join our cohort program, get mentorship, and pitch to investors.
+            </p>
+            <button 
+              className="w-full bg-primary text-primary-foreground py-3 rounded-2xl font-medium hover:bg-primary/90 transition-all duration-300 flex items-center justify-center gap-2"
+              onClick={() => { setUserType('talent'); setIsLogin(false); setStep('login'); }}
+            >
+              Apply Now
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </div>
           
-          {/* Employer Option */}
-          <button 
-            className="w-full neo-extruded p-4 rounded-2xl flex items-center justify-between hover:shadow-neo-pressed transition-all"
-            onClick={() => { setUserType('employer'); setIsLogin(false); setStep('login'); }}
-          >
+          {/* Admin/Program Manager Option */}
+          <div className="neo-subtle p-5 rounded-3xl space-y-3">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 neo-pressed rounded-xl flex items-center justify-center">
-                <Briefcase className="h-5 w-5 text-primary" />
+              <div className="h-12 w-12 neo-pressed rounded-2xl flex items-center justify-center">
+                <Briefcase className="h-6 w-6 text-charcoal" />
               </div>
-              <span className="font-medium text-charcoal">Employer / Recruiter</span>
+              <div>
+                <h3 className="font-semibold text-charcoal">Program Manager / Admin</h3>
+                <p className="text-xs text-cool-grey">Manage cohorts and review applications</p>
+              </div>
             </div>
-            <ArrowRight className="h-5 w-5 text-cool-grey" />
-          </button>
+            <button 
+              className="w-full neo-extruded py-3 rounded-2xl font-medium text-charcoal hover:shadow-neo-pressed transition-all duration-300 flex items-center justify-center gap-2"
+              onClick={() => { setUserType('employer'); setIsLogin(false); setStep('login'); }}
+            >
+              Admin Login
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </div>
           
           <div className="relative py-4">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-border/30" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-cool-grey">or</span>
+              <span className="bg-background px-2 text-cool-grey">existing user?</span>
             </div>
           </div>
           
           <button 
-            className="w-full py-3 text-cool-grey hover:text-charcoal transition-colors"
+            className="w-full py-3 text-cool-grey hover:text-charcoal transition-colors font-medium"
             onClick={() => { setIsLogin(true); setStep('login'); }}
           >
-            I already have an account
+            Sign in to my account
           </button>
         </div>
       </div>
@@ -429,15 +444,15 @@ export default function Auth() {
 
       <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
         <div className="space-y-2 mb-8">
-          <h2 className="text-3xl font-bold">
-            {isLogin ? 'Welcome back' : userType === 'employer' ? 'Create employer account' : 'Create applicant account'}
+          <h2 className="text-3xl font-bold text-charcoal">
+            {isLogin ? 'Welcome back' : userType === 'employer' ? 'Admin Access' : 'Founder Application'}
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-cool-grey">
             {isLogin 
-              ? 'Sign in to continue to Donjo' 
+              ? 'Sign in to your Startup Garage account' 
               : userType === 'employer'
-                ? 'Start discovering and hiring verified talent'
-                : 'Start building your video portfolio'}
+                ? 'Access the program management dashboard'
+                : 'Create your account to submit your venture'}
           </p>
         </div>
 
