@@ -15,8 +15,8 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="neo-pressed px-8 py-4 rounded-2xl text-cool-grey animate-pulse">
+      <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 px-8 py-4 rounded-2xl text-white/60 animate-pulse">
           Loading...
         </div>
       </div>

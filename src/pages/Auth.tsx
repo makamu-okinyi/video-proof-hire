@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft, Loader2 } from 'lucide-react';
+import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft, Loader2, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
+import { GlassBackground } from '@/components/layout/GlassBackground';
+import { GlassCard } from '@/components/ui/glass-card';
 
 // Validation schemas
 const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
@@ -345,232 +346,239 @@ export default function Auth() {
   }
 
   const renderWelcome = () => (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 animate-fade-in">
-      <div className="w-full max-w-md space-y-8">
-        {/* Logo */}
-        <div className="text-center space-y-4">
-          <Logo size="xl" className="justify-center" />
-          <div className="space-y-1">
-            <h1 className="text-4xl font-bold tracking-tight text-charcoal">Startup Garage</h1>
-            <p className="text-cool-grey text-lg">Venture Acceleration Engine</p>
+    <div className="min-h-screen relative">
+      <GlassBackground variant="neutral" />
+      
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 py-12 animate-fade-in">
+        <div className="w-full max-w-md space-y-8">
+          {/* Logo */}
+          <div className="text-center space-y-4">
+            <div className="h-20 w-20 mx-auto bg-primary/20 backdrop-blur-sm border border-white/20 rounded-2xl flex items-center justify-center">
+              <Rocket className="h-10 w-10 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-4xl font-bold tracking-tight text-white">Startup Garage</h1>
+              <p className="text-white/60 text-lg">Venture Acceleration Engine</p>
+            </div>
           </div>
-        </div>
 
-        {/* Hero Visual - Neomorphic */}
-        <div className="relative h-48 w-full neo-extruded rounded-3xl overflow-hidden">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-24 h-36 rounded-2xl neo-pressed transform rotate-6 animate-float" />
-            <div className="absolute w-24 h-36 rounded-2xl neo-subtle transform -rotate-6 animate-float" style={{ animationDelay: '0.5s' }} />
-          </div>
-        </div>
+          {/* Hero Visual - Glassmorphism */}
+          <GlassCard variant="dark" className="relative h-48 w-full overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-24 h-36 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 transform rotate-6 animate-float" />
+              <div className="absolute w-24 h-36 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 transform -rotate-6 animate-float" style={{ animationDelay: '0.5s' }} />
+            </div>
+          </GlassCard>
 
-        {/* Role Selection - Clear Founder vs Admin distinction */}
-        <div className="space-y-4 pt-4">
-          <p className="text-center text-sm text-cool-grey mb-2">Select your role to continue</p>
-          
-          {/* Founder/Applicant Option - Primary CTA */}
-          <div className="neo-extruded p-5 rounded-3xl space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 neo-pressed rounded-2xl flex items-center justify-center">
-                <User className="h-6 w-6 text-primary" />
+          {/* Role Selection - Clear Founder vs Admin distinction */}
+          <div className="space-y-4 pt-4">
+            <p className="text-center text-sm text-white/50 mb-2">Select your role to continue</p>
+            
+            {/* Founder/Applicant Option - Primary CTA */}
+            <GlassCard variant="dark" className="p-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white">Apply as Founder</h3>
+                  <p className="text-xs text-white/50">Submit your venture to Startup Garage</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-charcoal">Apply as Founder</h3>
-                <p className="text-xs text-cool-grey">Submit your venture to Startup Garage</p>
+              <p className="text-sm text-white/60 pl-15">
+                Join our cohort program, get mentorship, and pitch to investors.
+              </p>
+              <button 
+                className="w-full bg-primary text-white py-3 rounded-2xl font-medium hover:bg-primary/90 transition-all duration-300 flex items-center justify-center gap-2"
+                onClick={() => { setUserType('talent'); setIsLogin(false); setStep('login'); }}
+              >
+                Apply Now
+                <ArrowRight className="h-5 w-5" />
+              </button>
+            </GlassCard>
+            
+            {/* Admin/Program Manager Option */}
+            <GlassCard variant="dark" className="p-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                  <Briefcase className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white">Program Manager / Admin</h3>
+                  <p className="text-xs text-white/50">Manage cohorts and review applications</p>
+                </div>
+              </div>
+              <button 
+                className="w-full bg-white/10 border border-white/20 py-3 rounded-2xl font-medium text-white hover:bg-white/20 transition-all duration-300 flex items-center justify-center gap-2"
+                onClick={() => { setUserType('employer'); setIsLogin(false); setStep('login'); }}
+              >
+                Admin Login
+                <ArrowRight className="h-5 w-5" />
+              </button>
+            </GlassCard>
+            
+            <div className="relative py-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-white/20" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-transparent backdrop-blur-sm px-2 text-white/50">existing user?</span>
               </div>
             </div>
-            <p className="text-sm text-cool-grey pl-15">
-              Join our cohort program, get mentorship, and pitch to investors.
-            </p>
+            
             <button 
-              className="w-full bg-primary text-primary-foreground py-3 rounded-2xl font-medium hover:bg-primary/90 transition-all duration-300 flex items-center justify-center gap-2"
-              onClick={() => { setUserType('talent'); setIsLogin(false); setStep('login'); }}
+              className="w-full py-3 text-white/60 hover:text-white transition-colors font-medium"
+              onClick={() => { setIsLogin(true); setStep('login'); }}
             >
-              Apply Now
-              <ArrowRight className="h-5 w-5" />
+              Sign in to my account
             </button>
           </div>
-          
-          {/* Admin/Program Manager Option */}
-          <div className="neo-subtle p-5 rounded-3xl space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 neo-pressed rounded-2xl flex items-center justify-center">
-                <Briefcase className="h-6 w-6 text-charcoal" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-charcoal">Program Manager / Admin</h3>
-                <p className="text-xs text-cool-grey">Manage cohorts and review applications</p>
-              </div>
-            </div>
-            <button 
-              className="w-full neo-extruded py-3 rounded-2xl font-medium text-charcoal hover:shadow-neo-pressed transition-all duration-300 flex items-center justify-center gap-2"
-              onClick={() => { setUserType('employer'); setIsLogin(false); setStep('login'); }}
-            >
-              Admin Login
-              <ArrowRight className="h-5 w-5" />
-            </button>
-          </div>
-          
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border/30" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-cool-grey">existing user?</span>
-            </div>
-          </div>
-          
-          <button 
-            className="w-full py-3 text-cool-grey hover:text-charcoal transition-colors font-medium"
-            onClick={() => { setIsLogin(true); setStep('login'); }}
-          >
-            Sign in to my account
-          </button>
         </div>
       </div>
     </div>
   );
 
   const renderLoginSignup = () => (
-    <div className="flex flex-col min-h-screen px-6 py-8 animate-fade-in">
-      {/* Back Button */}
-      <button 
-        onClick={() => setStep('welcome')}
-        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
-      >
-        <ChevronLeft className="h-5 w-5" />
-        <span>Back</span>
-      </button>
+    <div className="min-h-screen relative">
+      <GlassBackground variant="burgundy" />
+      
+      <div className="relative z-10 flex flex-col min-h-screen px-6 py-8 animate-fade-in">
+        {/* Back Button */}
+        <button 
+          onClick={() => setStep('welcome')}
+          className="flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-8"
+        >
+          <ChevronLeft className="h-5 w-5" />
+          <span>Back</span>
+        </button>
 
-      <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
-        <div className="space-y-2 mb-8">
-          <h2 className="text-3xl font-bold text-charcoal">
-            {isLogin ? 'Welcome back' : userType === 'employer' ? 'Admin Access' : 'Founder Application'}
-          </h2>
-          <p className="text-cool-grey">
-            {isLogin 
-              ? 'Sign in to your Startup Garage account' 
-              : userType === 'employer'
-                ? 'Access the program management dashboard'
-                : 'Create your account to submit your venture'}
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          {/* Email */}
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="pl-12 h-14 text-base"
-            />
+        <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
+          <div className="space-y-2 mb-8">
+            <h2 className="text-3xl font-bold text-white">
+              {isLogin ? 'Welcome back' : userType === 'employer' ? 'Admin Access' : 'Founder Application'}
+            </h2>
+            <p className="text-white/60">
+              {isLogin 
+                ? 'Sign in to your Startup Garage account' 
+                : userType === 'employer'
+                  ? 'Access the program management dashboard'
+                  : 'Create your account to submit your venture'}
+            </p>
           </div>
 
-          {/* Password */}
-          <div className="space-y-2">
+          <GlassCard variant="dark" className="p-6 space-y-4">
+            {/* Email */}
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />
               <Input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-12 pr-12 h-14 text-base"
+                type="email"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-12 h-14 text-base bg-white/10 border-white/20 text-white placeholder:text-white/40"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
             </div>
-            {/* Password strength indicator - only show during signup */}
-            {!isLogin && <PasswordStrengthIndicator password={password} />}
-            {/* Forgot password link - only show during login */}
-            {isLogin && (
-              <button
-                type="button"
-                onClick={() => {
-                  setResetEmail(email);
-                  setResetEmailSent(false);
-                  setStep('forgotPassword');
-                }}
-                className="text-sm text-muted-foreground hover:text-coral transition-colors"
-              >
-                Forgot password?
-              </button>
-            )}
-          </div>
 
-          {/* Submit */}
-          <Button 
-            variant="hero" 
-            size="xl" 
-            className="w-full mt-6"
-            onClick={handleAuth}
-            disabled={loading || !email || !password}
-          >
-            {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Continue'}
-            <ArrowRight className="h-5 w-5 ml-2" />
-          </Button>
-
-          {/* Divider */}
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
+            {/* Password */}
+            <div className="space-y-2">
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-12 pr-12 h-14 text-base bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+              {/* Password strength indicator - only show during signup */}
+              {!isLogin && <PasswordStrengthIndicator password={password} />}
+              {/* Forgot password link - only show during login */}
+              {isLogin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetEmail(email);
+                    setResetEmailSent(false);
+                    setStep('forgotPassword');
+                  }}
+                  className="text-sm text-white/50 hover:text-primary transition-colors"
+                >
+                  Forgot password?
+                </button>
+              )}
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">or continue with</span>
-            </div>
-          </div>
 
-          {/* Google Sign In */}
-          <Button 
-            variant="outline" 
-            size="xl" 
-            className="w-full"
-            onClick={handleGoogleSignIn}
-            disabled={loading || googleLoading}
-          >
-            {googleLoading ? (
-              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-            ) : (
-              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-            )}
-            {googleLoading ? 'Connecting...' : 'Continue with Google'}
-          </Button>
-
-          {/* Toggle */}
-          <p className="text-center text-muted-foreground pt-4">
-            {isLogin ? "Don't have an account? " : 'Already have an account? '}
-            <button 
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-foreground font-medium hover:text-coral transition-colors"
+            {/* Submit */}
+            <Button 
+              className="w-full mt-6 bg-primary hover:bg-primary/90 text-white h-14"
+              onClick={handleAuth}
+              disabled={loading || !email || !password}
             >
-              {isLogin ? 'Sign up' : 'Sign in'}
-            </button>
-          </p>
+              {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Continue'}
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+
+            {/* Divider */}
+            <div className="relative py-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-white/20" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-transparent backdrop-blur-sm px-2 text-white/50">or continue with</span>
+              </div>
+            </div>
+
+            {/* Google Sign In */}
+            <Button 
+              variant="outline" 
+              className="w-full h-14 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              onClick={handleGoogleSignIn}
+              disabled={loading || googleLoading}
+            >
+              {googleLoading ? (
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              ) : (
+                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
+                </svg>
+              )}
+              {googleLoading ? 'Connecting...' : 'Continue with Google'}
+            </Button>
+
+            {/* Toggle */}
+            <p className="text-center text-white/60 pt-4">
+              {isLogin ? "Don't have an account? " : 'Already have an account? '}
+              <button 
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-white font-medium hover:text-primary transition-colors"
+              >
+                {isLogin ? 'Sign up' : 'Sign in'}
+              </button>
+            </p>
+          </GlassCard>
         </div>
       </div>
     </div>
