@@ -1,28 +1,29 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { StatCard, MiniBarChart } from '@/components/dashboard/StatCard';
-import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
-import { PixelatedChart } from '@/components/dashboard/PixelatedChart';
-import { Rocket, Briefcase, Trophy, FileText } from 'lucide-react';
+import { DarkDashboardLayout } from '@/components/layout/DarkDashboardLayout';
+import { DarkStatCard, MiniSparkline } from '@/components/dashboard/DarkStatCard';
+import { DarkPixelatedChart } from '@/components/dashboard/DarkPixelatedChart';
+import { ReviewQueue } from '@/components/admin/ReviewQueue';
+import { GlassPanel } from '@/components/ui/glass-card';
+import { Rocket, ClipboardList, CheckCircle, XCircle, Users } from 'lucide-react';
 
 const chartData = [4, 7, 5, 9, 6, 8, 10, 7, 6, 9, 11, 8];
 
-// Venture Engine chart data
+// Venture Engine chart data - realistic application trends
 const applicationData = [
-  { label: 'JAN', applications: 20, velocity: 15 },
-  { label: 'FEB', applications: 25, velocity: 18 },
-  { label: 'MAR', applications: 15, velocity: 12 },
-  { label: 'APR', applications: 30, velocity: 22 },
-  { label: 'MAY', applications: 35, velocity: 28 },
-  { label: 'JUN', applications: 38, velocity: 18 },
-  { label: 'JUL', applications: 28, velocity: 20 },
-  { label: 'AUG', applications: 32, velocity: 25 },
-  { label: 'SEP', applications: 22, velocity: 16 },
-  { label: 'OCT', applications: 26, velocity: 19 },
-  { label: 'NOV', applications: 30, velocity: 22 },
-  { label: 'DEC', applications: 28, velocity: 20 },
+  { label: 'JAN', applications: 45 },
+  { label: 'FEB', applications: 52 },
+  { label: 'MAR', applications: 38 },
+  { label: 'APR', applications: 61 },
+  { label: 'MAY', applications: 55 },
+  { label: 'JUN', applications: 72 },
+  { label: 'JUL', applications: 48 },
+  { label: 'AUG', applications: 65 },
+  { label: 'SEP', applications: 58 },
+  { label: 'OCT', applications: 44 },
+  { label: 'NOV', applications: 51 },
+  { label: 'DEC', applications: 67 },
 ];
 
 export default function Feed() {
@@ -38,70 +39,81 @@ export default function Feed() {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
+      <DarkDashboardLayout>
         <div className="h-full flex items-center justify-center">
-          <div className="neo-pressed px-8 py-4 rounded-2xl text-cool-grey animate-pulse">
+          <div className="bg-white/10 backdrop-blur-xl px-8 py-4 rounded-2xl text-white/60 animate-pulse">
             Loading...
           </div>
         </div>
-      </DashboardLayout>
+      </DarkDashboardLayout>
     );
   }
 
-  // Check if user is admin/employer for the admin dashboard view
-  const isAdmin = profile?.user_type === 'employer' || profile?.user_type === 'investor';
+  // Calculate totals for stats
+  const totalApplications = applicationData.reduce((sum, d) => sum + d.applications, 0);
+  const pendingReview = 23;
+  const shortlisted = 12;
+  const rejected = 8;
 
   return (
-    <DashboardLayout>
+    <DarkDashboardLayout>
       <div className="space-y-8">
         {/* Welcome Header */}
         <div>
-          <h1 className="text-3xl font-bold text-charcoal mb-2">
-            Welcome back, {profile?.username || 'there'}
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Welcome back, {profile?.username || 'Admin'}
           </h1>
-          <p className="text-cool-grey">
-            {isAdmin 
-              ? "Startup Garage program overview and cohort health metrics."
-              : "Here's what's happening with your ventures today."
-            }
+          <p className="text-white/60">
+            Startup Garage program overview and cohort health metrics.
           </p>
         </div>
 
-        {/* Stats Row - Venture Engine Labels */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard
-            title="TOTAL APPLICATIONS"
-            value="347"
-            change={0.94}
-            changeLabel="last year"
-            chart={<MiniBarChart data={chartData} className="h-10" />}
+        {/* Stats Row - Updated Donjo Labels */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <DarkStatCard
+            title="Total Applications Received"
+            value={totalApplications}
+            change={0.18}
+            changeLabel="vs last month"
+            icon={<ClipboardList className="h-4 w-4 text-primary" />}
+            chart={<MiniSparkline data={chartData} color="primary" />}
           />
-          <StatCard
-            title="ACTIVE VENTURES"
-            value="42 Active"
-            change={0.94}
-            changeLabel="last year"
-            chart={<MiniBarChart data={chartData} className="h-10" />}
+          <DarkStatCard
+            title="Applications Pending Review"
+            value={pendingReview}
+            change={-0.05}
+            changeLabel="vs last week"
+            icon={<Users className="h-4 w-4 text-yellow-400" />}
+            chart={<MiniSparkline data={[3, 5, 4, 6, 8, 7, 5]} color="primary" />}
           />
-          <StatCard
-            title="MENTORS ENGAGED"
-            value="128 Mentors"
-            change={0.94}
-            changeLabel="last year"
-            chart={<MiniBarChart data={chartData} className="h-10" />}
+          <DarkStatCard
+            title="Founders Shortlisted"
+            value={shortlisted}
+            change={0.25}
+            changeLabel="this cohort"
+            icon={<CheckCircle className="h-4 w-4 text-green-400" />}
+            chart={<MiniSparkline data={[2, 3, 4, 5, 6, 8, 12]} color="green" />}
+          />
+          <DarkStatCard
+            title="Rejected Applications"
+            value={rejected}
+            change={-0.12}
+            changeLabel="vs last cohort"
+            icon={<XCircle className="h-4 w-4 text-red-400" />}
+            chart={<MiniSparkline data={[5, 4, 6, 3, 4, 2, 3]} color="red" />}
           />
         </div>
 
-        {/* Main Chart Area - Application Intake & Cohort Velocity */}
-        <NeoCard className="p-8">
-          <NeoCardHeader className="flex-row items-center justify-between flex-wrap gap-4">
+        {/* Main Chart Area - Application Intake */}
+        <GlassPanel className="p-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
             <div>
-              <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-1">
+              <p className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-1">
                 Application Intake & Cohort Velocity
               </p>
-              <NeoCardTitle className="text-2xl">
-                Total Applications: <span className="font-bold">347</span>
-              </NeoCardTitle>
+              <h2 className="text-2xl font-bold text-white">
+                Total Applications: <span className="text-primary">{totalApplications}</span>
+              </h2>
             </div>
             <div className="flex gap-2">
               {(['weekly', 'monthly', 'yearly'] as const).map((tf) => (
@@ -111,8 +123,8 @@ export default function Feed() {
                   className={`
                     px-4 py-2 rounded-xl text-sm capitalize transition-all duration-300
                     ${timeframe === tf 
-                      ? 'neo-pressed text-charcoal font-medium' 
-                      : 'neo-flat text-cool-grey hover:text-charcoal'
+                      ? 'bg-white/20 text-white font-medium' 
+                      : 'text-white/40 hover:text-white hover:bg-white/10'
                     }
                   `}
                 >
@@ -120,65 +132,67 @@ export default function Feed() {
                 </button>
               ))}
             </div>
-          </NeoCardHeader>
-          <NeoCardContent className="mt-6">
-            {/* Pixelated Bar Chart */}
-            <PixelatedChart 
-              data={applicationData}
-              maxValue={60}
-              pixelSize={8}
-              activeIndex={5}
-            />
-          </NeoCardContent>
-        </NeoCard>
+          </div>
+          
+          {/* Pixelated Bar Chart - Dark Theme */}
+          <DarkPixelatedChart 
+            data={applicationData}
+            maxValue={80}
+            pixelSize={8}
+            activeIndex={5}
+          />
+        </GlassPanel>
+
+        {/* Review Queue Preview */}
+        <ReviewQueue />
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <button 
             onClick={() => navigate('/ventures')}
-            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all duration-300 group"
+            className="bg-white/10 backdrop-blur-xl border border-white/10 p-6 rounded-2xl text-left hover:bg-white/20 transition-all duration-300 group"
           >
-            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all duration-300">
+            <div className="h-12 w-12 bg-primary/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Rocket className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="font-semibold text-charcoal mb-1">Explore Ventures</h3>
-            <p className="text-sm text-cool-grey">Browse startup projects</p>
+            <h3 className="font-semibold text-white mb-1">View All Ventures</h3>
+            <p className="text-sm text-white/50">Browse active startups</p>
           </button>
           
           <button 
-            onClick={() => navigate('/apply')}
-            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all duration-300 group"
+            onClick={() => navigate('/admin/review')}
+            className="bg-white/10 backdrop-blur-xl border border-white/10 p-6 rounded-2xl text-left hover:bg-white/20 transition-all duration-300 group"
           >
-            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all duration-300">
-              <FileText className="h-6 w-6 text-primary" />
+            <div className="h-12 w-12 bg-yellow-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <ClipboardList className="h-6 w-6 text-yellow-400" />
             </div>
-            <h3 className="font-semibold text-charcoal mb-1">Apply as Founder</h3>
-            <p className="text-sm text-cool-grey">Submit your venture</p>
+            <h3 className="font-semibold text-white mb-1">Review Applications</h3>
+            <p className="text-sm text-white/50">{pendingReview} pending review</p>
           </button>
           
           <button 
-            onClick={() => navigate('/jobs')}
-            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all duration-300 group"
+            onClick={() => navigate('/admin/cohorts')}
+            className="bg-white/10 backdrop-blur-xl border border-white/10 p-6 rounded-2xl text-left hover:bg-white/20 transition-all duration-300 group"
           >
-            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all duration-300">
-              <Briefcase className="h-6 w-6 text-primary" />
+            <div className="h-12 w-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Users className="h-6 w-6 text-blue-400" />
             </div>
-            <h3 className="font-semibold text-charcoal mb-1">Find Jobs</h3>
-            <p className="text-sm text-cool-grey">Browse opportunities</p>
+            <h3 className="font-semibold text-white mb-1">Manage Cohorts</h3>
+            <p className="text-sm text-white/50">Configure programs</p>
           </button>
           
           <button 
             onClick={() => navigate('/challenges')}
-            className="neo-extruded p-6 rounded-3xl text-left hover:shadow-neo-pressed transition-all duration-300 group"
+            className="bg-white/10 backdrop-blur-xl border border-white/10 p-6 rounded-2xl text-left hover:bg-white/20 transition-all duration-300 group"
           >
-            <div className="h-12 w-12 neo-subtle rounded-2xl flex items-center justify-center mb-4 group-hover:neo-pressed transition-all duration-300">
-              <Trophy className="h-6 w-6 text-primary" />
+            <div className="h-12 w-12 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Rocket className="h-6 w-6 text-purple-400" />
             </div>
-            <h3 className="font-semibold text-charcoal mb-1">Challenges</h3>
-            <p className="text-sm text-cool-grey">Win prizes & recognition</p>
+            <h3 className="font-semibold text-white mb-1">Create Challenge</h3>
+            <p className="text-sm text-white/50">Launch a new challenge</p>
           </button>
         </div>
       </div>
-    </DashboardLayout>
+    </DarkDashboardLayout>
   );
 }
