@@ -29,7 +29,6 @@ import UserProfile from "./pages/UserProfile";
 import Ventures from "./pages/Ventures";
 import VentureDetail from "./pages/VentureDetail";
 import FounderWizard from "./pages/FounderWizard";
-import AdminReview from "./pages/AdminReview";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,8 +69,6 @@ const App = () => (
             <Route path="/employer/challenges/create" element={<CreateChallenge />} />
             <Route path="/employer/challenges/:challengeId/edit" element={<CreateChallenge />} />
             <Route path="/employer/challenges/:challengeId/submissions" element={<ChallengeSubmissions />} />
-            {/* Admin Routes */}
-            <Route path="/admin/review" element={<AdminReview />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
