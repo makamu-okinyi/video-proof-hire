@@ -41,40 +41,32 @@ const mainMenuItems: NavGroup = {
   items: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/feed' },
     { icon: Rocket, label: 'Ventures', path: '/ventures' },
-    { icon: Briefcase, label: 'Jobs', path: '/jobs' },
-    { icon: Trophy, label: 'Challenges', path: '/challenges' },
     { icon: MessageSquare, label: 'Messages', path: '/messages' },
   ],
 };
 
 const founderItems: NavGroup = {
-  title: 'Founders',
+  title: 'Founder Hub',
   items: [
+    { icon: LayoutDashboard, label: 'My Dashboard', path: '/founder' },
     { icon: Plus, label: 'Apply to Program', path: '/apply' },
     { icon: Rocket, label: 'My Ventures', path: '/ventures' },
   ],
 };
 
-const investorItems: NavGroup = {
-  title: 'Investors',
+const adminItems: NavGroup = {
+  title: 'Program Admin',
   items: [
-    { icon: TrendingUp, label: 'Deal Flow', path: '/invest' },
-    { icon: Bookmark, label: 'Saved Ventures', path: '/invest/saved' },
-  ],
-};
-
-const employerItems: NavGroup = {
-  title: 'Employer Hub',
-  items: [
-    { icon: Building, label: 'Employer Dashboard', path: '/employer' },
+    { icon: TrendingUp, label: 'Venture Engine', path: '/admin' },
+    { icon: Building, label: 'Employer Hub', path: '/employer' },
     { icon: Plus, label: 'Post a Job', path: '/employer/jobs/create' },
-    { icon: Trophy, label: 'Create Challenge', path: '/employer/challenges/create' },
-    { icon: Bookmark, label: 'My Shortlist', path: '/employer/shortlist' },
+    { icon: Trophy, label: 'Challenges', path: '/challenges' },
+    { icon: Bookmark, label: 'Shortlist', path: '/employer/shortlist' },
   ],
 };
 
 const managementItems: NavGroup = {
-  title: 'Management',
+  title: 'Account',
   items: [
     { icon: Bell, label: 'Notifications', path: '/notifications' },
     { icon: User, label: 'Profile', path: '/profile' },
@@ -108,11 +100,13 @@ export function DashboardSidebar() {
     setIsOpen(false);
   };
 
+  const isAdmin = profile?.user_type === 'employer' || profile?.user_type === 'investor';
+  const isFounder = profile?.user_type === 'founder' || profile?.user_type === 'talent';
+
   const navGroups = [
     mainMenuItems,
-    founderItems,
-    investorItems,
-    employerItems,
+    ...(isFounder ? [founderItems] : []),
+    ...(isAdmin ? [adminItems] : []),
     managementItems,
   ];
 
