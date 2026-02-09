@@ -29,6 +29,8 @@ import UserProfile from "./pages/UserProfile";
 import Ventures from "./pages/Ventures";
 import VentureDetail from "./pages/VentureDetail";
 import FounderWizard from "./pages/FounderWizard";
+import FounderDashboard from "./pages/FounderDashboard";
+import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +51,8 @@ const App = () => (
             <Route path="/ventures" element={<Ventures />} />
             <Route path="/ventures/:id" element={<VentureDetail />} />
             <Route path="/apply" element={<FounderWizard />} />
+            <Route path="/founder" element={<FounderDashboard />} />
+            <Route path="/admin" element={<AdminPanel />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/challenges" element={<Challenges />} />
             <Route path="/create" element={<Create />} />
