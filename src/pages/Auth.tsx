@@ -80,7 +80,8 @@ export default function Auth() {
       // Redirect to appropriate page based on user type
       // This handles: login, Google OAuth return for existing users
       if (justLoggedIn || location.search.includes('code=') || location.hash.includes('access_token')) {
-        const destination = profile.user_type === 'employer' ? '/employer' : '/feed';
+        const destination = (profile.user_type === 'employer' || profile.user_type === 'investor') ? '/admin' : 
+                          profile.user_type === 'founder' ? '/founder' : '/feed';
         navigate(destination, { replace: true });
         setJustLoggedIn(false);
       }
@@ -257,7 +258,7 @@ export default function Auth() {
 
       // Redirect based on user type
       if (userType === 'employer') {
-        navigate('/employer');
+        navigate('/admin');
       } else {
         navigate('/feed');
       }
@@ -288,7 +289,8 @@ export default function Auth() {
     // If profile needs completion (new Google OAuth user), show onboarding flow
     // Let the step rendering handle it - don't show "already signed in" screen
     if (!profileNeedsCompletion && step === 'welcome') {
-      const destination = profile.user_type === 'employer' ? '/employer' : '/feed';
+      const destination = (profile.user_type === 'employer' || profile.user_type === 'investor') ? '/admin' : 
+                          profile.user_type === 'founder' ? '/founder' : '/feed';
 
       return (
         <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
