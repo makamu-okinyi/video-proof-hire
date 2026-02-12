@@ -42,7 +42,7 @@ const baseMenuItems = [
 ];
 
 const founderItems: NavGroup = {
-  title: 'Founder Hub',
+  title: 'Applicant Hub',
   items: [
     { icon: LayoutDashboard, label: 'My Dashboard', path: '/founder' },
     { icon: Plus, label: 'Apply to Program', path: '/apply' },

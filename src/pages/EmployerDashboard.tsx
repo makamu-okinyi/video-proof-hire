@@ -1,16 +1,18 @@
 import { useNavigate } from 'react-router-dom';
-import { Settings, Briefcase, Plus, Trophy, Users, TrendingUp } from 'lucide-react';
+import { Settings, Briefcase, Plus, Trophy, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
 import { StatCard, MiniBarChart } from '@/components/dashboard/StatCard';
 import { useAuth } from '@/context/AuthContext';
+import { useEmployerAnalytics } from '@/hooks/useEmployerAnalytics';
 
 const chartData = [4, 7, 5, 9, 6, 8, 10, 7, 6, 9, 11, 8];
 
 export default function EmployerDashboard() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const { data: analytics } = useEmployerAnalytics(user?.id);
   
   return (
     <DashboardLayout>
@@ -35,21 +37,21 @@ export default function EmployerDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard
             title="Active Jobs"
-            value="0"
+            value={String(analytics?.activeJobs ?? 0)}
             change={0}
             changeLabel="this month"
             chart={<MiniBarChart data={chartData} className="h-10" />}
           />
           <StatCard
             title="Total Applicants"
-            value="0"
+            value={String(analytics?.totalApplicants ?? 0)}
             change={0}
             changeLabel="this month"
             chart={<MiniBarChart data={chartData} className="h-10" />}
           />
           <StatCard
             title="Challenges"
-            value="0"
+            value={String(analytics?.challenges ?? 0)}
             change={0}
             changeLabel="this month"
             chart={<MiniBarChart data={chartData} className="h-10" />}

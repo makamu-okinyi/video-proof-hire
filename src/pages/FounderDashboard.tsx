@@ -48,7 +48,7 @@ export default function FounderDashboard() {
         {/* Welcome */}
         <div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-charcoal mb-1">
-            Welcome, {profile?.username || 'Founder'} 🚀
+            Welcome, {profile?.username || 'Applicant'}
           </h1>
           <p className="text-cool-grey text-sm lg:text-base">Track your venture application and upcoming sessions.</p>
         </div>
@@ -90,15 +90,13 @@ export default function FounderDashboard() {
                 {venture.pitch_video_url && (
                   <div className="mb-6 flex flex-col items-center justify-center w-full">
                     <p className="text-sm font-medium text-cool-grey mb-2">Your Pitch Video</p>
-                    <div className="w-full max-w-full md:max-w-2xl flex items-center justify-center">
-                      <div className="aspect-video w-full max-w-full rounded-2xl overflow-hidden bg-black/5">
-                        <video
-                          src={venture.pitch_video_url}
-                          controls
-                          playsInline
-                          className="w-full h-full object-contain mx-auto"
-                        />
-                      </div>
+                    <div className="flex items-center justify-center w-full bg-black/5 rounded-xl overflow-hidden p-2">
+                      <video
+                        src={venture.pitch_video_url}
+                        controls
+                        playsInline
+                        className="max-w-full aspect-video mx-auto object-contain"
+                      />
                     </div>
                   </div>
                 )}

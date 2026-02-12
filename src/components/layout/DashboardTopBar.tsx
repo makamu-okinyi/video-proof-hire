@@ -14,7 +14,7 @@ const routeLabels: Record<string, string> = {
   '/apply': 'Apply to Program',
   '/auth': 'Authentication',
   '/admin': 'Venture Engine',
-  '/founder': 'Founder Dashboard',
+  '/founder': 'Applicant Dashboard',
   '/employer': 'Employer Dashboard',
   '/employer/jobs/create': 'Post a Job',
   '/employer/challenges/create': 'Create Challenge',

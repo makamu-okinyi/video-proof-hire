@@ -106,7 +106,7 @@ export default function JobApplicants() {
       setApplicants(applicants.map(a => 
         a.id === applicationId ? { ...a, status } : a
       ));
-      toast.success(`Application ${status}`);
+      toast.success(`Application ${status}`, { icon: null });
       
       // Send email notification for status change (fire and forget)
       supabase.functions.invoke('send-notification', {
@@ -121,7 +121,7 @@ export default function JobApplicants() {
         },
       }).catch(console.error);
     } else {
-      toast.error('Failed to update status');
+      toast.error('Failed to update status', { icon: null });
     }
   };
 

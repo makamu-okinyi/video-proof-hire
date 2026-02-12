@@ -274,22 +274,20 @@ export default function AdminPanel() {
         <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
           <DialogContent className="max-w-lg p-0 overflow-hidden rounded-3xl">
             <DialogHeader className="p-4 pb-0">
-              <DialogTitle>Founder Pitch Video</DialogTitle>
+              <DialogTitle>Applicant Pitch Video</DialogTitle>
             </DialogHeader>
             <div className="p-4 flex items-center justify-center w-full">
-              <div className="w-full max-w-full md:max-w-2xl flex items-center justify-center">
-                <div className="aspect-video w-full max-w-full bg-black rounded-2xl overflow-hidden">
-                  {selectedVideo && (
-                    <video
-                      src={selectedVideo}
-                      controls
-                      autoPlay
-                      playsInline
-                      preload="auto"
-                      className="w-full h-full object-contain mx-auto"
-                    />
-                  )}
-                </div>
+              <div className="flex items-center justify-center w-full bg-black/5 rounded-xl overflow-hidden p-2">
+                {selectedVideo && (
+                  <video
+                    src={selectedVideo}
+                    controls
+                    autoPlay
+                    playsInline
+                    preload="auto"
+                    className="max-w-full aspect-video mx-auto object-contain"
+                  />
+                )}
               </div>
             </div>
           </DialogContent>
