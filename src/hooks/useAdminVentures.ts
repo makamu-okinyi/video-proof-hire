@@ -151,11 +151,29 @@ export function useAdminVentures() {
     refetchInterval: 10000, // Poll every 10 seconds
   });
 
-  // Supabase Realtime: refetch immediately when ventures change
+  // Supabase Realtime: subscribe to ventures changes and apply payload-based cache updates
   useEffect(() => {
     const channel = supabase
       .channel('admin-ventures-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ventures' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ventures' }, (payload) => {
+        const newRow = payload.new as Record<string, unknown> | null;
+        const ventureId = newRow?.id as string | undefined;
+        const reviewStatus = newRow?.review_status as VentureReviewStatus | undefined;
+
+        if (ventureId && (reviewStatus === 'shortlisted' || reviewStatus === 'rejected')) {
+          // Immediate local state update: filter venture out of queue
+          queryClient.setQueryData(
+            ['admin-ventures-pending'],
+            (prev: AdminVenture[] | undefined) => (prev ?? []).filter((v) => v.id !== ventureId)
+          );
+          queryClient.setQueryData(
+            ['admin-ventures-all'],
+            (prev: AdminVenture[] | undefined) =>
+              (prev ?? []).map((v) =>
+                v.id === ventureId ? { ...v, review_status: reviewStatus } : v
+              )
+          );
+        }
         queryClient.invalidateQueries({ queryKey: ['admin-ventures-pending'] });
         queryClient.invalidateQueries({ queryKey: ['admin-ventures-all'] });
       })
@@ -201,11 +219,11 @@ export function useAdminVentures() {
   ) => {
     updateStatusMutation.mutate(variables, {
       onSuccess: () => {
-        toast.success(variables.status === 'shortlisted' ? 'Venture shortlisted' : 'Venture rejected');
+        toast.success(variables.status === 'shortlisted' ? 'Venture shortlisted' : 'Venture rejected', { icon: null });
         options?.onSuccess?.();
       },
       onError: () => {
-        toast.error('Failed to update status');
+        toast.error('Failed to update status', { icon: null });
         options?.onError?.();
       },
     });

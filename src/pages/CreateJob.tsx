@@ -130,13 +130,19 @@ export default function CreateJob() {
     setLoading(true);
 
     try {
+      const parseSalary = (val: string): number | null => {
+        if (!val?.trim()) return null;
+        const n = parseInt(val, 10);
+        return isNaN(n) ? null : n;
+      };
+
       const { error } = await supabase.from('job_postings').insert({
         employer_id: user?.id,
         title: validation.data.title,
         description: validation.data.description,
         location: validation.data.location,
-        salary_min: salaryMin ? parseInt(salaryMin) : null,
-        salary_max: salaryMax ? parseInt(salaryMax) : null,
+        salary_min: parseSalary(salaryMin),
+        salary_max: parseSalary(salaryMax),
         job_type: jobType,
         experience_level: experienceLevel,
         company_name: validation.data.company_name,
@@ -148,11 +154,11 @@ export default function CreateJob() {
 
       if (error) throw error;
 
-      toast.success('Job posting created!');
-      navigate('/employer');
+      toast.success('Job posting created!', { icon: null });
+      navigate('/employer', { replace: true });
     } catch (error) {
       console.error('Error creating job:', error);
-      toast.error('Failed to create job posting');
+      toast.error('Failed to create job posting', { icon: null });
     } finally {
       setLoading(false);
     }

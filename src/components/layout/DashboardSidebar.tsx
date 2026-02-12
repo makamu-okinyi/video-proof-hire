@@ -46,6 +46,7 @@ const founderItems: NavGroup = {
   items: [
     { icon: LayoutDashboard, label: 'My Dashboard', path: '/founder' },
     { icon: Plus, label: 'Apply to Program', path: '/apply' },
+    { icon: Briefcase, label: 'Jobs', path: '/jobs' },
     { icon: Rocket, label: 'My Ventures', path: '/ventures' },
   ],
 };

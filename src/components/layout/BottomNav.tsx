@@ -20,8 +20,8 @@ const employerNavItems = [
 ];
 
 const founderNavItems = [
-  { icon: Home, label: 'Home', path: '/feed' },
   { icon: Rocket, label: 'Dashboard', path: '/founder' },
+  { icon: Briefcase, label: 'Jobs', path: '/jobs' },
   { icon: null, label: 'Apply', path: '/apply' },
   { icon: Bell, label: 'Alerts', path: '/notifications' },
   { icon: User, label: 'Profile', path: '/profile' },

@@ -61,10 +61,19 @@ export function useFounderVenture(userId: string | undefined) {
   const ventureId = query.data?.id;
 
   useEffect(() => {
-    if (!ventureId) return;
+    if (!ventureId || !userId) return;
     const channel = supabase
       .channel(`founder-venture-${ventureId}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ventures', filter: `id=eq.${ventureId}` }, () => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ventures', filter: `id=eq.${ventureId}` }, (payload) => {
+        const newRow = payload.new as Record<string, unknown> | null;
+        const status = newRow?.review_status as string | undefined;
+        if (status === 'shortlisted' || status === 'rejected') {
+          // Immediate local state update: Status Badge reflects change the millisecond Admin decides
+          queryClient.setQueryData(['founder-venture', userId], (prev: FounderVenture | null | undefined) => {
+            if (!prev || prev.id !== ventureId) return prev;
+            return { ...prev, review_status: status };
+          });
+        }
         queryClient.invalidateQueries({ queryKey: ['founder-venture', userId] });
       })
       .subscribe();
