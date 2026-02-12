@@ -26,13 +26,16 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function buildApplicationChartData(ventures: { created_at: string }[]) {
+function buildApplicationChartData(ventures: { created_at?: string }[]) {
   const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
   const currentYear = new Date().getFullYear();
+  const safeVentures = Array.isArray(ventures) ? ventures : [];
   const byMonth = months.map((_, i) => {
-    const count = ventures.filter(v => {
-      const d = new Date(v.created_at);
-      return d.getMonth() === i && d.getFullYear() === currentYear;
+    const count = safeVentures.filter((v) => {
+      const ts = v?.created_at;
+      if (!ts) return false;
+      const d = new Date(ts);
+      return !isNaN(d.getTime()) && d.getMonth() === i && d.getFullYear() === currentYear;
     }).length;
     return {
       label: months[i],
@@ -57,10 +60,10 @@ export default function AdminPanel() {
     isUpdating,
   } = useAdminVentures();
 
-  const pendingCount = pendingVentures.length;
-  const shortlistedCount = allVentures.filter(v => v.review_status === 'shortlisted').length;
-  const rejectedCount = allVentures.filter(v => v.review_status === 'rejected').length;
-  const applicationChartData = buildApplicationChartData(allVentures);
+  const pendingCount = pendingVentures?.length ?? 0;
+  const shortlistedCount = allVentures?.filter((v) => v?.review_status === 'shortlisted').length ?? 0;
+  const rejectedCount = allVentures?.filter((v) => v?.review_status === 'rejected').length ?? 0;
+  const applicationChartData = buildApplicationChartData(allVentures ?? []);
 
   const handleAction = async (ventureId: string, action: 'shortlisted' | 'rejected') => {
     try {
@@ -144,7 +147,7 @@ export default function AdminPanel() {
                     </div>
                   </NeoCardHeader>
                   <NeoCardContent className="mt-4">
-                    <PixelatedChart data={applicationChartData} maxValue={Math.max(...applicationChartData.map(d => d.applications), 5)} pixelSize={8} activeIndex={new Date().getMonth()} />
+                    <PixelatedChart data={applicationChartData} maxValue={Math.max(5, ...applicationChartData.map((d) => d.applications), 0)} pixelSize={8} activeIndex={new Date().getMonth()} />
                   </NeoCardContent>
                 </NeoCard>
               </>
@@ -166,7 +169,7 @@ export default function AdminPanel() {
                 <p className="text-cool-grey text-sm">No pending applications to review.</p>
               </NeoCard>
             ) : (
-              pendingVentures.map(venture => (
+              (pendingVentures ?? []).map((venture) => (
                 <NeoCard key={venture.id} className="p-4 lg:p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
