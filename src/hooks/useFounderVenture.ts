@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface FounderVenture {
@@ -48,10 +49,27 @@ async function fetchFounderVenture(userId: string): Promise<FounderVenture | nul
 }
 
 export function useFounderVenture(userId: string | undefined) {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ['founder-venture', userId],
     queryFn: () => (userId ? fetchFounderVenture(userId) : Promise.resolve(null)),
     enabled: !!userId,
-    refetchInterval: 15000, // Sync status from Admin updates every 15s
+    refetchInterval: 5000, // Poll every 5s as backup for Admin status updates
   });
+
+  const ventureId = query.data?.id;
+
+  useEffect(() => {
+    if (!ventureId) return;
+    const channel = supabase
+      .channel(`founder-venture-${ventureId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ventures', filter: `id=eq.${ventureId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ['founder-venture', userId] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [ventureId, userId, queryClient]);
+
+  return query;
 }

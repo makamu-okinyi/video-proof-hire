@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAdminVentures } from '@/hooks/useAdminVentures';
-import { toast } from 'sonner';
 
 
 const mentors = [
@@ -60,19 +59,14 @@ export default function AdminPanel() {
     isUpdating,
   } = useAdminVentures();
 
-  const pendingCount = pendingVentures?.length ?? 0;
+  const reviewQueueItems = (pendingVentures ?? []).filter((v) => v?.review_status === 'pending' || v?.review_status === 'submitted');
+  const pendingCount = reviewQueueItems.length;
   const shortlistedCount = allVentures?.filter((v) => v?.review_status === 'shortlisted').length ?? 0;
   const rejectedCount = allVentures?.filter((v) => v?.review_status === 'rejected').length ?? 0;
   const applicationChartData = buildApplicationChartData(allVentures ?? []);
 
-  const handleAction = async (ventureId: string, action: 'shortlisted' | 'rejected') => {
-    try {
-      await updateStatus({ ventureId, status: action });
-      toast.success(action === 'shortlisted' ? 'Venture shortlisted' : 'Venture rejected');
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to update status');
-    }
+  const handleAction = (ventureId: string, action: 'shortlisted' | 'rejected') => {
+    updateStatus({ ventureId, status: action });
   };
 
   const tabs: { id: Tab; label: string }[] = [
@@ -169,7 +163,7 @@ export default function AdminPanel() {
                 <p className="text-cool-grey text-sm">No pending applications to review.</p>
               </NeoCard>
             ) : (
-              (pendingVentures ?? []).map((venture) => (
+              reviewQueueItems.map((venture) => (
                 <NeoCard key={venture.id} className="p-4 lg:p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
