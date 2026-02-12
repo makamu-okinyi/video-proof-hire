@@ -26,8 +26,8 @@ const announcements = [
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-600', icon: <Clock className="h-4 w-4" /> },
   submitted: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-600', icon: <Clock className="h-4 w-4" /> },
-  shortlisted: { label: 'Shortlisted', color: 'bg-green-500/10 text-green-600', icon: <CheckCircle className="h-4 w-4" /> },
-  rejected: { label: 'Not Selected', color: 'bg-red-500/10 text-red-600', icon: <AlertCircle className="h-4 w-4" /> },
+  shortlisted: { label: "Congratulations! You've been Shortlisted", color: 'bg-green-500/10 text-green-600', icon: <CheckCircle className="h-4 w-4" /> },
+  rejected: { label: 'Application Closed', color: 'bg-slate-500/10 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400', icon: <AlertCircle className="h-4 w-4" /> },
   accepted: { label: 'Accepted', color: 'bg-primary/10 text-primary', icon: <CheckCircle className="h-4 w-4" /> },
 };
 
@@ -87,6 +87,22 @@ export default function FounderDashboard() {
                 </div>
               </NeoCardHeader>
               <NeoCardContent>
+                {venture.pitch_video_url && (
+                  <div className="mb-6 flex flex-col items-center justify-center w-full">
+                    <p className="text-sm font-medium text-cool-grey mb-2">Your Pitch Video</p>
+                    <div className="w-full max-w-full md:max-w-2xl flex items-center justify-center">
+                      <div className="aspect-video w-full max-w-full rounded-2xl overflow-hidden bg-black/5">
+                        <video
+                          src={venture.pitch_video_url}
+                          controls
+                          playsInline
+                          className="w-full h-full object-contain mx-auto"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
                   <div className="neo-subtle rounded-2xl p-4 text-center">
                     <Video className="h-5 w-5 mx-auto mb-2 text-green-600" />

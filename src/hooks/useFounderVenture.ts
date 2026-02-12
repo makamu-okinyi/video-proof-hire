@@ -52,5 +52,6 @@ export function useFounderVenture(userId: string | undefined) {
     queryKey: ['founder-venture', userId],
     queryFn: () => (userId ? fetchFounderVenture(userId) : Promise.resolve(null)),
     enabled: !!userId,
+    refetchInterval: 15000, // Sync status from Admin updates every 15s
   });
 }
