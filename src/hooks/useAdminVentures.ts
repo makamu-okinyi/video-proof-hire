@@ -168,7 +168,27 @@ export function useAdminVentures() {
   const updateStatusMutation = useMutation({
     mutationFn: ({ ventureId, status }: { ventureId: string; status: 'shortlisted' | 'rejected' }) =>
       updateVentureReviewStatus(ventureId, status),
-    onSuccess: () => {
+    onMutate: async ({ ventureId, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['admin-ventures-pending'] });
+      await queryClient.cancelQueries({ queryKey: ['admin-ventures-all'] });
+      const prevPending = queryClient.getQueryData<AdminVenture[]>(['admin-ventures-pending']);
+      const prevAll = queryClient.getQueryData<AdminVenture[]>(['admin-ventures-all']);
+      queryClient.setQueryData(
+        ['admin-ventures-pending'],
+        (prev: AdminVenture[] | undefined) => (prev ?? []).filter((v) => v.id !== ventureId)
+      );
+      queryClient.setQueryData(
+        ['admin-ventures-all'],
+        (prev: AdminVenture[] | undefined) =>
+          (prev ?? []).map((v) => (v.id === ventureId ? { ...v, review_status: status } : v))
+      );
+      return { prevPending, prevAll };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prevPending) queryClient.setQueryData(['admin-ventures-pending'], context.prevPending);
+      if (context?.prevAll) queryClient.setQueryData(['admin-ventures-all'], context.prevAll);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-ventures-pending'] });
       queryClient.invalidateQueries({ queryKey: ['admin-ventures-all'] });
     },
