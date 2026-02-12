@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+/** Venture applications are stored in the `ventures` table (not a separate applications table). */
+
 export type VentureReviewStatus = 'pending' | 'submitted' | 'shortlisted' | 'rejected';
 
 export interface AdminVenture {

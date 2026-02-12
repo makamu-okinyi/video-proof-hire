@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { FounderRoute } from "@/components/auth/FounderRoute";
 import { EmployerRoute } from "@/components/auth/EmployerRoute";
@@ -55,7 +55,9 @@ const App = () => (
             <Route path="/ventures/:id" element={<VentureDetail />} />
             <Route path="/apply" element={<FounderWizard />} />
             <Route path="/founder" element={<FounderRoute><FounderDashboard /></FounderRoute>} />
+            <Route path="/founder/dashboard" element={<Navigate to="/founder" replace />} />
             <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
+            <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/challenges" element={<Challenges />} />
             <Route path="/create" element={<Create />} />
