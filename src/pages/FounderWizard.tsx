@@ -131,29 +131,43 @@ export default function FounderWizard() {
         if (!videoUrl) throw new Error('Video upload failed');
       }
 
-      // Create venture
+      // Create venture (review_status defaults to 'submitted' for admin review)
       const { data: venture, error: ventureError } = await supabase
         .from('ventures')
         .insert({
-          name: formData.name, tagline: formData.tagline, description: formData.description,
-          problem_statement: formData.problemStatement, solution: formData.solution,
-          market_size: formData.marketSize, traction: formData.traction,
-          business_model: formData.businessModel, stage: formData.stage,
-          industry: formData.industry, tech_stack: formData.techStack,
-          website_url: formData.websiteUrl || null, github_url: formData.githubUrl || null,
+          name: formData.name,
+          tagline: formData.tagline,
+          description: formData.description || null,
+          problem_statement: formData.problemStatement || null,
+          solution: formData.solution || null,
+          market_size: formData.marketSize || null,
+          traction: formData.traction || null,
+          business_model: formData.businessModel || null,
+          stage: formData.stage,
+          industry: formData.industry,
+          tech_stack: formData.techStack,
+          website_url: formData.websiteUrl || null,
+          github_url: formData.githubUrl || null,
           demo_url: formData.demoUrl || null,
           pitch_video_url: videoUrl,
+          review_status: 'submitted',
         })
         .select()
         .single();
 
-      if (ventureError) throw ventureError;
+      if (ventureError) {
+        console.error('[FounderWizard] Venture insert error:', ventureError);
+        throw ventureError;
+      }
 
       // Add founder
       const { error: founderError } = await supabase
         .from('venture_founders')
         .insert({ venture_id: venture.id, user_id: user.id, role: 'lead', title: formData.founderTitle, is_lead: true });
-      if (founderError) throw founderError;
+      if (founderError) {
+        console.error('[FounderWizard] Venture founder insert error:', founderError);
+        throw founderError;
+      }
 
       // Upload pitch deck if provided
       if (pitchDeckFile) {
@@ -165,9 +179,10 @@ export default function FounderWizard() {
 
       toast.success('Application submitted! 🎉');
       navigate('/founder');
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to submit. Please try again.');
+    } catch (error: unknown) {
+      console.error('[FounderWizard] Submit error:', error);
+      const msg = error instanceof Error ? error.message : 'Failed to submit. Please try again.';
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

@@ -53,7 +53,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/ventures" element={<Ventures />} />
             <Route path="/ventures/:id" element={<VentureDetail />} />
-            <Route path="/apply" element={<FounderWizard />} />
+            <Route path="/apply" element={<FounderRoute><FounderWizard /></FounderRoute>} />
             <Route path="/founder" element={<FounderRoute><FounderDashboard /></FounderRoute>} />
             <Route path="/founder/dashboard" element={<Navigate to="/founder" replace />} />
             <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
