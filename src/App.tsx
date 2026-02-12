@@ -3,6 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AdminRoute } from "@/components/auth/AdminRoute";
+import { FounderRoute } from "@/components/auth/FounderRoute";
+import { EmployerRoute } from "@/components/auth/EmployerRoute";
 import { AuthProvider } from "@/context/AuthContext";
 import { PWAUpdatePrompt } from "@/components/pwa/PWAUpdatePrompt";
 import Index from "./pages/Index";
@@ -51,8 +54,8 @@ const App = () => (
             <Route path="/ventures" element={<Ventures />} />
             <Route path="/ventures/:id" element={<VentureDetail />} />
             <Route path="/apply" element={<FounderWizard />} />
-            <Route path="/founder" element={<FounderDashboard />} />
-            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/founder" element={<FounderRoute><FounderDashboard /></FounderRoute>} />
+            <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/challenges" element={<Challenges />} />
             <Route path="/create" element={<Create />} />
@@ -61,18 +64,20 @@ const App = () => (
             <Route path="/profile/edit" element={<EditProfile />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/user/:userId" element={<UserProfile />} />
-            {/* Employer Routes */}
-            <Route path="/employer" element={<EmployerDashboard />} />
-            <Route path="/employer/settings" element={<EmployerSettings />} />
-            <Route path="/employer/settings/company" element={<CompanyProfileSettings />} />
-            <Route path="/employer/settings/account" element={<AccountSettings />} />
-            <Route path="/employer/shortlist" element={<MyShortlist />} />
-            <Route path="/employer/jobs/create" element={<CreateJob />} />
-            <Route path="/employer/jobs/:jobId/edit" element={<CreateJob />} />
-            <Route path="/employer/jobs/:jobId/applicants" element={<JobApplicants />} />
-            <Route path="/employer/challenges/create" element={<CreateChallenge />} />
-            <Route path="/employer/challenges/:challengeId/edit" element={<CreateChallenge />} />
-            <Route path="/employer/challenges/:challengeId/submissions" element={<ChallengeSubmissions />} />
+            {/* Employer Routes (protected by EmployerRoute) */}
+            <Route path="/employer" element={<EmployerRoute />}>
+              <Route index element={<EmployerDashboard />} />
+              <Route path="settings" element={<EmployerSettings />} />
+              <Route path="settings/company" element={<CompanyProfileSettings />} />
+              <Route path="settings/account" element={<AccountSettings />} />
+              <Route path="shortlist" element={<MyShortlist />} />
+              <Route path="jobs/create" element={<CreateJob />} />
+              <Route path="jobs/:jobId/edit" element={<CreateJob />} />
+              <Route path="jobs/:jobId/applicants" element={<JobApplicants />} />
+              <Route path="challenges/create" element={<CreateChallenge />} />
+              <Route path="challenges/:challengeId/edit" element={<CreateChallenge />} />
+              <Route path="challenges/:challengeId/submissions" element={<ChallengeSubmissions />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

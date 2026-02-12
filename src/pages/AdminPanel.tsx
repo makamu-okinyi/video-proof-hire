@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
 import { StatCard, MiniBarChart } from '@/components/dashboard/StatCard';
@@ -49,26 +47,10 @@ const mentors = [
 type Tab = 'overview' | 'review' | 'mentors' | 'cohorts';
 
 export default function AdminPanel() {
-  const navigate = useNavigate();
-  const { profile, isLoading, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [applications, setApplications] = useState(mockApplications);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) navigate('/auth');
-  }, [isAuthenticated, isLoading, navigate]);
-
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="h-full flex items-center justify-center">
-          <div className="neo-pressed px-8 py-4 rounded-2xl text-cool-grey animate-pulse">Loading...</div>
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   const pendingCount = applications.filter(a => a.status === 'pending').length;
   const shortlistedCount = applications.filter(a => a.status === 'shortlisted').length;

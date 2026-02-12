@@ -1,4 +1,4 @@
-import { Home, Briefcase, Bell, User, Plus, Trophy, LogOut } from 'lucide-react';
+import { Home, Briefcase, Bell, User, Plus, Trophy, Rocket } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -19,17 +19,29 @@ const employerNavItems = [
   { icon: User, label: 'Profile', path: '/profile' },
 ];
 
+const founderNavItems = [
+  { icon: Home, label: 'Home', path: '/feed' },
+  { icon: Rocket, label: 'Dashboard', path: '/founder' },
+  { icon: null, label: 'Apply', path: '/apply' },
+  { icon: Bell, label: 'Alerts', path: '/notifications' },
+  { icon: User, label: 'Profile', path: '/profile' },
+];
+
 export function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile } = useAuth();
 
-  const isEmployer = profile?.user_type === 'employer';
-  const navItems = isEmployer ? employerNavItems : applicantNavItems;
+  const isEmployer = profile?.user_type === 'employer' || profile?.user_type === 'investor';
+  const isFounder = profile?.user_type === 'founder' || profile?.user_type === 'talent';
+  const navItems = isEmployer ? employerNavItems : isFounder ? founderNavItems : applicantNavItems;
 
   const isActiveRoute = (path: string) => {
     if (path === '/employer') {
       return location.pathname === '/employer' || location.pathname.startsWith('/employer/');
+    }
+    if (path === '/founder') {
+      return location.pathname === '/founder';
     }
     return location.pathname === path;
   };

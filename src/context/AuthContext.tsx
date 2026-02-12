@@ -15,8 +15,11 @@ interface Profile {
   avatar?: string | null;
 }
 
-interface UserRole {
-  role: 'talent' | 'employer';
+/** Matches Supabase app_role enum */
+type AppRole = 'talent' | 'employer' | 'founder' | 'investor' | 'judge';
+
+interface UserRoleRow {
+  role: AppRole;
 }
 
 interface AuthContextType {
@@ -52,10 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
+      .order('created_at', { ascending: true })
+      .limit(1)
       .maybeSingle();
 
     if (!profileError && profileData) {
-      const userType = (roleData as UserRole)?.role || profileData.user_type;
+      const userType = (roleData as UserRoleRow | null)?.role || profileData.user_type;
       setProfile({ ...profileData, user_type: userType } as Profile);
     }
   };
