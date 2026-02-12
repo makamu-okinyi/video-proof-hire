@@ -29,7 +29,7 @@ const skillCategories: { value: SkillCategory; label: string; icon: string }[] =
   { value: 'tech', label: 'Technology', icon: '💻' },
   { value: 'design', label: 'Design', icon: '🎨' },
   { value: 'business', label: 'Business', icon: '📊' },
-  { value: 'other', label: 'Other', icon: '✨' },
+  { value: 'other', label: 'Other', icon: '📦' },
 ];
 
 export default function Auth() {
@@ -370,15 +370,15 @@ export default function Auth() {
         <div className="space-y-4 pt-4">
           <p className="text-center text-sm text-cool-grey mb-2">Select your role to continue</p>
           
-          {/* Founder/Applicant Option - Primary CTA */}
+          {/* Applicant Option - Primary CTA */}
           <div className="neo-extruded p-5 rounded-3xl space-y-3">
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 neo-pressed rounded-2xl flex items-center justify-center">
                 <User className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-charcoal">Apply as Founder</h3>
-                <p className="text-xs text-cool-grey">Submit your venture to Startup Garage</p>
+                <h3 className="font-semibold text-charcoal">Apply as Applicant</h3>
+                <p className="text-xs text-cool-grey">Submit your video portfolio to find your next hire</p>
               </div>
             </div>
             <p className="text-sm text-cool-grey pl-15">
@@ -447,14 +447,14 @@ export default function Auth() {
       <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
         <div className="space-y-2 mb-8">
           <h2 className="text-3xl font-bold text-charcoal">
-            {isLogin ? 'Welcome back' : userType === 'employer' ? 'Admin Access' : 'Founder Application'}
+            {isLogin ? 'Welcome back' : userType === 'employer' ? 'Admin Access' : 'Applicant Application'}
           </h2>
           <p className="text-cool-grey">
             {isLogin 
               ? 'Sign in to your Startup Garage account' 
               : userType === 'employer'
                 ? 'Access the program management dashboard'
-                : 'Create your account to submit your venture'}
+                : 'Create your account to submit your video portfolio'}
           </p>
         </div>
 

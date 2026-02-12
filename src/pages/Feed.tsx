@@ -125,8 +125,8 @@ export default function Feed() {
             <div className="h-10 w-10 sm:h-12 sm:w-12 neo-subtle rounded-2xl flex items-center justify-center mb-3 sm:mb-4 group-hover:neo-pressed transition-all duration-300">
               <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>
-            <h3 className="font-semibold text-charcoal mb-1 text-sm sm:text-base">Apply as Founder</h3>
-            <p className="text-xs sm:text-sm text-cool-grey">Submit your venture</p>
+            <h3 className="font-semibold text-charcoal mb-1 text-sm sm:text-base">Apply as Applicant</h3>
+            <p className="text-xs sm:text-sm text-cool-grey">Submit your video portfolio to find your next hire</p>
           </button>
 
           <button
