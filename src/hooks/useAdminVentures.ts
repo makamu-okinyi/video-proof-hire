@@ -18,39 +18,43 @@ export interface AdminVenture {
   founder_name: string | null;
 }
 
-function mapVentureToAdmin(v: any): AdminVenture {
-  const founders = v.venture_founders || [];
-  const leadFounder = founders.find((f: any) => f.is_lead) || founders[0];
+function mapVentureToAdmin(v: Record<string, unknown>): AdminVenture {
+  const founders = (v.venture_founders as Array<Record<string, unknown>>) ?? [];
+  const leadFounder = founders.find((f) => f.is_lead) ?? founders[0];
+  const profiles = leadFounder?.profiles as Record<string, unknown> | undefined;
   return {
-    id: v.id,
-    name: v.name,
-    tagline: v.tagline,
-    stage: v.stage,
-    industry: v.industry,
-    pitch_video_url: v.pitch_video_url,
-    review_status: (v.review_status || 'submitted') as VentureReviewStatus,
-    created_at: v.created_at,
-    founder_name: leadFounder?.profiles?.username ?? null,
+    id: String(v.id ?? ''),
+    name: String(v.name ?? ''),
+    tagline: String(v.tagline ?? ''),
+    stage: String(v.stage ?? ''),
+    industry: Array.isArray(v.industry) ? v.industry : null,
+    pitch_video_url: v.pitch_video_url ? String(v.pitch_video_url) : null,
+    review_status: (v.review_status as VentureReviewStatus) || 'submitted',
+    created_at: String(v.created_at ?? ''),
+    founder_name: profiles?.username ? String(profiles.username) : null,
   };
 }
+
+/** Full query with nested venture_founders -> profiles (FK hint avoids ambiguity when multiple relations exist). */
+const ADMIN_VENTURES_SELECT = `
+  id,
+  name,
+  tagline,
+  stage,
+  industry,
+  pitch_video_url,
+  review_status,
+  created_at,
+  venture_founders(
+    is_lead,
+    profiles(id, username)
+  )
+`;
 
 async function fetchAdminVentures(): Promise<AdminVenture[]> {
   const { data, error } = await supabase
     .from('ventures')
-    .select(`
-      id,
-      name,
-      tagline,
-      stage,
-      industry,
-      pitch_video_url,
-      review_status,
-      created_at,
-      venture_founders(
-        is_lead,
-        profiles(id, username)
-      )
-    `)
+    .select(ADMIN_VENTURES_SELECT)
     .in('review_status', ['pending', 'submitted'])
     .order('created_at', { ascending: false });
 
@@ -59,26 +63,17 @@ async function fetchAdminVentures(): Promise<AdminVenture[]> {
     throw error;
   }
 
-  return (data || []).map(mapVentureToAdmin);
+  if (!data || !Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map((v) => mapVentureToAdmin(v as Record<string, unknown>));
 }
 
 async function fetchAllAdminVentures(): Promise<AdminVenture[]> {
   const { data, error } = await supabase
     .from('ventures')
-    .select(`
-      id,
-      name,
-      tagline,
-      stage,
-      industry,
-      pitch_video_url,
-      review_status,
-      created_at,
-      venture_founders(
-        is_lead,
-        profiles(id, username)
-      )
-    `)
+    .select(ADMIN_VENTURES_SELECT)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -86,7 +81,30 @@ async function fetchAllAdminVentures(): Promise<AdminVenture[]> {
     throw error;
   }
 
-  return (data || []).map(mapVentureToAdmin);
+  if (!data || !Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map((v) => mapVentureToAdmin(v as Record<string, unknown>));
+}
+
+/** Fallback: fetch ventures without nested join (no founder names) */
+async function fetchAdminVenturesSimple(): Promise<AdminVenture[]> {
+  const { data, error } = await supabase
+    .from('ventures')
+    .select('id, name, tagline, stage, industry, pitch_video_url, review_status, created_at')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[useAdminVentures] fetchAdminVenturesSimple error:', error);
+    throw error;
+  }
+
+  if (!data || !Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map((v) => mapVentureToAdmin({ ...v, venture_founders: [] }));
 }
 
 async function updateVentureReviewStatus(
@@ -106,13 +124,29 @@ export function useAdminVentures() {
 
   const pendingQuery = useQuery({
     queryKey: ['admin-ventures-pending'],
-    queryFn: fetchAdminVentures,
+    queryFn: async () => {
+      try {
+        const all = await fetchAdminVentures();
+        return all;
+      } catch (err) {
+        console.warn('[useAdminVentures] Full query failed, trying simple fetch:', err);
+        const simple = await fetchAdminVenturesSimple();
+        return simple.filter((v) => v.review_status === 'pending' || v.review_status === 'submitted');
+      }
+    },
     refetchInterval: 10000, // Poll every 10 seconds for real-time feel
   });
 
   const allQuery = useQuery({
     queryKey: ['admin-ventures-all'],
-    queryFn: fetchAllAdminVentures,
+    queryFn: async () => {
+      try {
+        return await fetchAllAdminVentures();
+      } catch (err) {
+        console.warn('[useAdminVentures] Full query failed, trying simple fetch:', err);
+        return fetchAdminVenturesSimple();
+      }
+    },
     refetchInterval: 10000, // Poll every 10 seconds
   });
 
