@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 /** Venture applications are stored in the `ventures` table (not a separate applications table). */
 
@@ -194,6 +195,22 @@ export function useAdminVentures() {
     },
   });
 
+  const updateStatus = (
+    variables: { ventureId: string; status: 'shortlisted' | 'rejected' },
+    options?: { onSuccess?: () => void; onError?: () => void }
+  ) => {
+    updateStatusMutation.mutate(variables, {
+      onSuccess: () => {
+        toast.success(variables.status === 'shortlisted' ? 'Venture shortlisted' : 'Venture rejected');
+        options?.onSuccess?.();
+      },
+      onError: () => {
+        toast.error('Failed to update status');
+        options?.onError?.();
+      },
+    });
+  };
+
   return {
     pendingVentures: pendingQuery.data ?? [],
     allVentures: allQuery.data ?? [],
@@ -203,7 +220,7 @@ export function useAdminVentures() {
       pendingQuery.refetch();
       allQuery.refetch();
     },
-    updateStatus: updateStatusMutation.mutateAsync,
+    updateStatus,
     isUpdating: updateStatusMutation.isPending,
   };
 }
