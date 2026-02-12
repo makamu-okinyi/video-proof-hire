@@ -91,7 +91,7 @@ export default function AdminPanel() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="space-y-6 max-w-6xl mx-auto w-full overflow-x-hidden px-1 sm:px-0">
         {/* Header */}
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-charcoal mb-1">Venture Engine</h1>

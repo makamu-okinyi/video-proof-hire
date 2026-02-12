@@ -44,10 +44,10 @@ export default function FounderDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="space-y-6 max-w-5xl mx-auto w-full overflow-x-hidden px-1 sm:px-0">
         {/* Welcome */}
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-charcoal mb-1">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-charcoal mb-1">
             Welcome, {profile?.username || 'Founder'} 🚀
           </h1>
           <p className="text-cool-grey text-sm lg:text-base">Track your venture application and upcoming sessions.</p>

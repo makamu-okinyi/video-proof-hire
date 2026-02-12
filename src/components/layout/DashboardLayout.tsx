@@ -9,7 +9,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen flex relative">
+    <div className="min-h-screen min-h-dvh flex relative overflow-x-hidden w-full max-w-full">
       {/* Organic Abstract Background */}
       <OrganicBackground />
       
@@ -17,12 +17,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <DashboardSidebar />
       
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-0 lg:ml-72 transition-all duration-300">
+      <div className="flex-1 flex flex-col ml-0 lg:ml-72 transition-all duration-300 min-w-0 overflow-x-hidden">
         {/* Top Bar */}
         <DashboardTopBar />
         
-        {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8">
+        {/* Page Content - mobile-first, safe-area, no horizontal scroll */}
+        <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8 safe-area-pb overflow-x-hidden w-full max-w-full">
           {children}
         </main>
       </div>

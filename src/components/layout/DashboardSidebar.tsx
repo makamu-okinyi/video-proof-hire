@@ -36,14 +36,10 @@ interface NavGroup {
   items: NavItem[];
 }
 
-const mainMenuItems: NavGroup = {
-  title: 'Main Menu',
-  items: [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/feed' },
-    { icon: Rocket, label: 'Ventures', path: '/ventures' },
-    { icon: MessageSquare, label: 'Messages', path: '/messages' },
-  ],
-};
+const baseMenuItems = [
+  { icon: Rocket, label: 'Ventures', path: '/ventures' },
+  { icon: MessageSquare, label: 'Messages', path: '/messages' },
+];
 
 const founderItems: NavGroup = {
   title: 'Founder Hub',
@@ -102,6 +98,12 @@ export function DashboardSidebar() {
 
   const isAdmin = profile?.user_type === 'employer' || profile?.user_type === 'investor';
   const isFounder = profile?.user_type === 'founder' || profile?.user_type === 'talent';
+
+  const dashboardPath = isAdmin ? '/admin' : isFounder ? '/founder' : '/feed';
+  const mainMenuItems: NavGroup = {
+    title: 'Main Menu',
+    items: [{ icon: LayoutDashboard, label: 'Dashboard', path: dashboardPath }, ...baseMenuItems],
+  };
 
   const navGroups = [
     mainMenuItems,
