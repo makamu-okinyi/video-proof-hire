@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Trophy, Sparkles } from 'lucide-react';
+import { Search, Trophy, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChallengeCard } from '@/components/challenges/ChallengeCard';
 import { SubmitChallengeModal } from '@/components/challenges/SubmitChallengeModal';
@@ -120,7 +120,7 @@ export default function Challenges() {
               activeTab === 'featured' ? "neo-pressed text-charcoal" : "neo-flat text-cool-grey"
             )}
           >
-            <Sparkles className="h-4 w-4" />
+            <Star className="h-4 w-4" />
             Featured
           </button>
         </div>

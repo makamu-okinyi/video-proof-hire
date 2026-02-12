@@ -54,7 +54,10 @@ async function fetchAdminVentures(): Promise<AdminVenture[]> {
     .in('review_status', ['pending', 'submitted'])
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('[useAdminVentures] fetchAdminVentures error:', error);
+    throw error;
+  }
 
   return (data || []).map(mapVentureToAdmin);
 }
@@ -78,7 +81,10 @@ async function fetchAllAdminVentures(): Promise<AdminVenture[]> {
     `)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('[useAdminVentures] fetchAllAdminVentures error:', error);
+    throw error;
+  }
 
   return (data || []).map(mapVentureToAdmin);
 }

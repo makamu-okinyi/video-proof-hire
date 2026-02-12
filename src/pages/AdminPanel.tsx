@@ -282,7 +282,14 @@ export default function AdminPanel() {
             <div className="p-4">
               <div className="aspect-[9/16] max-h-[70vh] bg-black rounded-2xl overflow-hidden">
                 {selectedVideo && (
-                  <video src={selectedVideo} controls autoPlay className="w-full h-full object-contain" />
+                  <video
+                    src={selectedVideo}
+                    controls
+                    autoPlay
+                    playsInline
+                    preload="auto"
+                    className="w-full h-full object-contain"
+                  />
                 )}
               </div>
             </div>

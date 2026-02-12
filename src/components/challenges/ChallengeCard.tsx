@@ -1,4 +1,4 @@
-import { Trophy, Users, Clock, Sparkles } from 'lucide-react';
+import { Trophy, Users, Clock, Star } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,7 @@ export function ChallengeCard({ challenge, onSubmit, hasSubmitted }: ChallengeCa
       {challenge.is_featured && (
         <div className="absolute top-3 right-3">
           <Badge className="bg-amber-500/20 text-amber-600 border-amber-500/30">
-            <Sparkles className="h-3 w-3 mr-1" />
+            <Star className="h-3 w-3 mr-1" />
             Featured
           </Badge>
         </div>

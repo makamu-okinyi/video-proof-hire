@@ -8,7 +8,7 @@ import {
   Filter,
   ArrowUpRight,
   Users,
-  Sparkles,
+  Star,
   TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -196,7 +196,7 @@ export default function Ventures() {
             {featuredVentures.length > 0 && (
               <section>
                 <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <Star className="h-5 w-5 text-primary" />
                   <h2 className="text-lg font-semibold text-charcoal">Featured Ventures</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

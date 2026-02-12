@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   X, Video, Upload, RotateCcw, Play, 
-  Check, ChevronDown, Globe, Users, Sparkles,
+  Check, ChevronDown, Globe, Users, SlidersHorizontal,
   Camera, AlertCircle, Loader2, Mic, MicOff, Volume2, VolumeX
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -378,7 +378,7 @@ export default function Create() {
           {/* Effects */}
           <button className="flex flex-col items-center gap-2 opacity-50">
             <div className="h-12 w-12 rounded-xl bg-background/10 flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-background" />
+              <SlidersHorizontal className="h-5 w-5 text-background" />
             </div>
             <span className="text-xs text-background/60">Effects</span>
           </button>
