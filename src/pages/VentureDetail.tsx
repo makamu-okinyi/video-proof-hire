@@ -15,7 +15,7 @@ import {
   Share2,
   FileText,
   Loader2,
-  Sparkles,
+  Building2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -278,7 +278,7 @@ export default function VentureDetail() {
               />
             ) : (
               <div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Sparkles className="h-8 w-8 text-primary" />
+                <Building2 className="h-8 w-8 text-primary" />
               </div>
             )}
             <div className="flex-1 min-w-0">
