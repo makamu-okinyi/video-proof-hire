@@ -1,24 +1,15 @@
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useFounderVenture } from '@/hooks/useFounderVenture';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
 import { 
   Rocket, FileText, Users, Calendar, Bell, 
-  Clock, CheckCircle, AlertCircle, ArrowRight,
-  Video, MessageSquare
+  Clock, CheckCircle, AlertCircle,
+  Video, MessageSquare, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
-// Mock data for presentation
-const ventureStatus = {
-  name: 'EcoTrack',
-  stage: 'mvp',
-  status: 'under_review',
-  submittedAt: '2026-01-15',
-  pitchVideoUploaded: true,
-  pitchDeckUploaded: true,
-  cohort: 'Cohort 3 - 2026',
-};
 
 const mentorSessions = [
   { id: '1', mentorName: 'Dr. Sarah Kimani', topic: 'Go-to-Market Strategy', date: '2026-02-12', time: '10:00 AM', status: 'upcoming' },
@@ -33,16 +24,23 @@ const announcements = [
 ];
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  under_review: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-600', icon: <Clock className="h-4 w-4" /> },
+  pending: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-600', icon: <Clock className="h-4 w-4" /> },
+  submitted: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-600', icon: <Clock className="h-4 w-4" /> },
   shortlisted: { label: 'Shortlisted', color: 'bg-green-500/10 text-green-600', icon: <CheckCircle className="h-4 w-4" /> },
   rejected: { label: 'Not Selected', color: 'bg-red-500/10 text-red-600', icon: <AlertCircle className="h-4 w-4" /> },
   accepted: { label: 'Accepted', color: 'bg-primary/10 text-primary', icon: <CheckCircle className="h-4 w-4" /> },
 };
 
-export default function FounderDashboard() {
-  const { profile } = useAuth();
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
-  const currentStatus = statusConfig[ventureStatus.status] || statusConfig.under_review;
+export default function FounderDashboard() {
+  const navigate = useNavigate();
+  const { user, profile } = useAuth();
+  const { data: venture, isLoading } = useFounderVenture(user?.id);
+
+  const currentStatus = venture ? (statusConfig[venture.review_status] || statusConfig.submitted) : statusConfig.submitted;
 
   return (
     <DashboardLayout>
@@ -57,58 +55,78 @@ export default function FounderDashboard() {
 
         {/* Venture Status Card */}
         <NeoCard className="p-5 lg:p-8">
-          <NeoCardHeader className="pb-4">
-            <div className="flex items-start justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 neo-pressed rounded-2xl flex items-center justify-center">
-                  <Rocket className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <NeoCardTitle className="text-xl">{ventureStatus.name}</NeoCardTitle>
-                  <p className="text-cool-grey text-sm capitalize">{ventureStatus.stage} stage · {ventureStatus.cohort}</p>
-                </div>
-              </div>
-              <Badge className={`${currentStatus.color} flex items-center gap-1.5 px-3 py-1.5`}>
-                {currentStatus.icon}
-                {currentStatus.label}
-              </Badge>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-cool-grey" />
             </div>
-          </NeoCardHeader>
-          <NeoCardContent>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-              <div className="neo-subtle rounded-2xl p-4 text-center">
-                <Video className="h-5 w-5 mx-auto mb-2 text-green-600" />
-                <p className="text-xs text-cool-grey">Pitch Video</p>
-                <p className="text-sm font-semibold text-green-600">Uploaded ✓</p>
-              </div>
-              <div className="neo-subtle rounded-2xl p-4 text-center">
-                <FileText className="h-5 w-5 mx-auto mb-2 text-green-600" />
-                <p className="text-xs text-cool-grey">Pitch Deck</p>
-                <p className="text-sm font-semibold text-green-600">Uploaded ✓</p>
-              </div>
-              <div className="neo-subtle rounded-2xl p-4 text-center">
-                <Users className="h-5 w-5 mx-auto mb-2 text-primary" />
-                <p className="text-xs text-cool-grey">Mentors</p>
-                <p className="text-sm font-semibold text-charcoal">2 Assigned</p>
-              </div>
-              <div className="neo-subtle rounded-2xl p-4 text-center">
-                <Calendar className="h-5 w-5 mx-auto mb-2 text-primary" />
-                <p className="text-xs text-cool-grey">Next Session</p>
-                <p className="text-sm font-semibold text-charcoal">Feb 12</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3 mt-5">
+          ) : !venture ? (
+            <div className="text-center py-8">
+              <p className="text-cool-grey mb-4">You haven&apos;t submitted a venture yet.</p>
               <Button onClick={() => navigate('/apply')} className="neo-extruded border-none">
-                <FileText className="h-4 w-4 mr-2" />
-                Update Application
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/messages')} className="neo-extruded border-none">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Message Mentor
+                <Rocket className="h-4 w-4 mr-2" />
+                Apply to Program
               </Button>
             </div>
-          </NeoCardContent>
+          ) : (
+            <>
+              <NeoCardHeader className="pb-4">
+                <div className="flex items-start justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 neo-pressed rounded-2xl flex items-center justify-center">
+                      <Rocket className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <NeoCardTitle className="text-xl">{venture.name}</NeoCardTitle>
+                      <p className="text-cool-grey text-sm capitalize">{venture.stage} stage · Submitted {formatDate(venture.created_at)}</p>
+                    </div>
+                  </div>
+                  <Badge className={`${currentStatus.color} flex items-center gap-1.5 px-3 py-1.5`}>
+                    {currentStatus.icon}
+                    {currentStatus.label}
+                  </Badge>
+                </div>
+              </NeoCardHeader>
+              <NeoCardContent>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+                  <div className="neo-subtle rounded-2xl p-4 text-center">
+                    <Video className="h-5 w-5 mx-auto mb-2 text-green-600" />
+                    <p className="text-xs text-cool-grey">Pitch Video</p>
+                    <p className={`text-sm font-semibold ${venture.pitch_video_url ? 'text-green-600' : 'text-cool-grey'}`}>
+                      {venture.pitch_video_url ? 'Uploaded ✓' : 'Not uploaded'}
+                    </p>
+                  </div>
+                  <div className="neo-subtle rounded-2xl p-4 text-center">
+                    <FileText className="h-5 w-5 mx-auto mb-2 text-green-600" />
+                    <p className="text-xs text-cool-grey">Pitch Deck</p>
+                    <p className={`text-sm font-semibold ${venture.pitch_deck_count > 0 ? 'text-green-600' : 'text-cool-grey'}`}>
+                      {venture.pitch_deck_count > 0 ? 'Uploaded ✓' : 'Not uploaded'}
+                    </p>
+                  </div>
+                  <div className="neo-subtle rounded-2xl p-4 text-center">
+                    <Users className="h-5 w-5 mx-auto mb-2 text-primary" />
+                    <p className="text-xs text-cool-grey">Mentors</p>
+                    <p className="text-sm font-semibold text-charcoal">—</p>
+                  </div>
+                  <div className="neo-subtle rounded-2xl p-4 text-center">
+                    <Calendar className="h-5 w-5 mx-auto mb-2 text-primary" />
+                    <p className="text-xs text-cool-grey">Next Session</p>
+                    <p className="text-sm font-semibold text-charcoal">—</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 mt-5">
+                  <Button onClick={() => navigate('/apply')} className="neo-extruded border-none">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Update Application
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate('/messages')} className="neo-extruded border-none">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Message Mentor
+                  </Button>
+                </div>
+              </NeoCardContent>
+            </>
+          )}
         </NeoCard>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

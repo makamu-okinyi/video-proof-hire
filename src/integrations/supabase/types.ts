@@ -1015,6 +1015,7 @@ export type Database = {
           pitch_video_thumbnail: string | null
           pitch_video_url: string | null
           problem_statement: string | null
+          review_status: string
           solution: string | null
           stage: Database["public"]["Enums"]["venture_stage"]
           tagline: string
@@ -1045,6 +1046,7 @@ export type Database = {
           pitch_video_thumbnail?: string | null
           pitch_video_url?: string | null
           problem_statement?: string | null
+          review_status?: string
           solution?: string | null
           stage?: Database["public"]["Enums"]["venture_stage"]
           tagline: string
@@ -1075,6 +1077,7 @@ export type Database = {
           pitch_video_thumbnail?: string | null
           pitch_video_url?: string | null
           problem_statement?: string | null
+          review_status?: string
           solution?: string | null
           stage?: Database["public"]["Enums"]["venture_stage"]
           tagline?: string
