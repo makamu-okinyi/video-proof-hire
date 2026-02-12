@@ -282,18 +282,20 @@ export default function AdminPanel() {
             <DialogHeader className="p-4 pb-0">
               <DialogTitle>Founder Pitch Video</DialogTitle>
             </DialogHeader>
-            <div className="p-4">
-              <div className="aspect-[9/16] max-h-[70vh] bg-black rounded-2xl overflow-hidden">
-                {selectedVideo && (
-                  <video
-                    src={selectedVideo}
-                    controls
-                    autoPlay
-                    playsInline
-                    preload="auto"
-                    className="w-full h-full object-contain"
-                  />
-                )}
+            <div className="p-4 flex items-center justify-center w-full">
+              <div className="w-full max-w-full md:max-w-2xl flex items-center justify-center">
+                <div className="aspect-video w-full max-w-full bg-black rounded-2xl overflow-hidden">
+                  {selectedVideo && (
+                    <video
+                      src={selectedVideo}
+                      controls
+                      autoPlay
+                      playsInline
+                      preload="auto"
+                      className="w-full h-full object-contain mx-auto"
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </DialogContent>

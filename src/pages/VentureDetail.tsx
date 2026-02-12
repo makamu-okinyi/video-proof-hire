@@ -322,22 +322,25 @@ export default function VentureDetail() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+            className="flex justify-center items-center"
           >
-            <Card>
+            <Card className="w-full max-w-full md:max-w-2xl">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Play className="h-5 w-5 text-primary" />
                   Pitch Video
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="aspect-video rounded-lg overflow-hidden bg-secondary">
-                  <video
-                    src={venture.pitch_video_url}
-                    poster={venture.pitch_video_thumbnail || undefined}
-                    controls
-                    className="w-full h-full object-cover"
-                  />
+              <CardContent className="flex items-center justify-center w-full">
+                <div className="w-full flex items-center justify-center">
+                  <div className="aspect-video w-full max-w-full rounded-lg overflow-hidden bg-secondary">
+                    <video
+                      src={venture.pitch_video_url}
+                      poster={venture.pitch_video_thumbnail || undefined}
+                      controls
+                      className="w-full h-full object-contain mx-auto"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
