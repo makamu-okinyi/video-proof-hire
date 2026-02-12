@@ -56,7 +56,7 @@ export function StatCard({ title, value, change, changeLabel = 'last year', icon
 }
 
 export function MiniBarChart({ data, className }: { data: number[]; className?: string }) {
-  const max = Math.max(...data);
+  const max = Math.max(...data, 1);
   
   return (
     <div className={cn("flex items-end gap-0.5", className)}>
