@@ -1,5 +1,3 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
@@ -42,24 +40,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
 };
 
 export default function FounderDashboard() {
-  const navigate = useNavigate();
-  const { profile, isLoading, isAuthenticated } = useAuth();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/auth');
-    }
-  }, [isAuthenticated, isLoading, navigate]);
-
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="h-full flex items-center justify-center">
-          <div className="neo-pressed px-8 py-4 rounded-2xl text-cool-grey animate-pulse">Loading...</div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const { profile } = useAuth();
 
   const currentStatus = statusConfig[ventureStatus.status] || statusConfig.under_review;
 
