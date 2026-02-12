@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -98,12 +99,29 @@ export function useAdminVentures() {
   const pendingQuery = useQuery({
     queryKey: ['admin-ventures-pending'],
     queryFn: fetchAdminVentures,
+    refetchInterval: 10000, // Poll every 10 seconds for real-time feel
   });
 
   const allQuery = useQuery({
     queryKey: ['admin-ventures-all'],
     queryFn: fetchAllAdminVentures,
+    refetchInterval: 10000, // Poll every 10 seconds
   });
+
+  // Supabase Realtime: refetch immediately when ventures change
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-ventures-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ventures' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['admin-ventures-pending'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-ventures-all'] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ ventureId, status }: { ventureId: string; status: 'shortlisted' | 'rejected' }) =>

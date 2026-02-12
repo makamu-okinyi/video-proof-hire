@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useAdminVentures } from '@/hooks/useAdminVentures';
 import { toast } from 'sonner';
 
-const chartData = [4, 7, 5, 9, 6, 8, 10, 7, 6, 9, 11, 8];
 
 const mentors = [
   { id: '1', name: 'Dr. Sarah Kimani', specialty: 'Strategy', available: true },
@@ -124,10 +123,10 @@ export default function AdminPanel() {
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatCard title="PENDING REVIEW" value={String(pendingCount)} change={0} changeLabel="this week" chart={<MiniBarChart data={chartData} className="h-8" />} />
-                  <StatCard title="TOTAL APPLICATIONS" value={String(allVentures.length)} change={0.12} changeLabel="this month" chart={<MiniBarChart data={chartData} className="h-8" />} />
-                  <StatCard title="SHORTLISTED" value={String(shortlistedCount)} change={0.08} changeLabel="this month" chart={<MiniBarChart data={chartData} className="h-8" />} />
-                  <StatCard title="REJECTED" value={String(rejectedCount)} change={-0.05} changeLabel="this month" chart={<MiniBarChart data={chartData} className="h-8" />} />
+                  <StatCard title="PENDING REVIEW" value={String(pendingCount)} change={0} changeLabel="this week" chart={<MiniBarChart data={applicationChartData.map(d => d.applications)} className="h-8" />} />
+                  <StatCard title="TOTAL APPLICATIONS" value={String(allVentures.length)} change={0.12} changeLabel="this month" chart={<MiniBarChart data={applicationChartData.map(d => d.applications)} className="h-8" />} />
+                  <StatCard title="SHORTLISTED" value={String(shortlistedCount)} change={0.08} changeLabel="this month" chart={<MiniBarChart data={applicationChartData.map(d => d.applications)} className="h-8" />} />
+                  <StatCard title="REJECTED" value={String(rejectedCount)} change={-0.05} changeLabel="this month" chart={<MiniBarChart data={applicationChartData.map(d => d.applications)} className="h-8" />} />
                 </div>
 
                 <NeoCard className="p-5 lg:p-8">
