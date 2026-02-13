@@ -74,13 +74,12 @@ export function useFounderVenture(userId: string | undefined) {
         fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useFounderVenture:realtime',message:'realtime payload received',data:{ventureId,status,hasNewRow:!!newRow},timestamp:Date.now(),hypothesisId:'J'})}).catch(()=>{});
         // #endregion
         if (status === 'shortlisted' || status === 'rejected') {
-          // Immediate local state update: Status Badge reflects change the millisecond Admin decides
           queryClient.setQueryData(['founder-venture', userId], (prev: FounderVenture | null | undefined) => {
             if (!prev || prev.id !== ventureId) return prev;
             return { ...prev, review_status: status };
           });
+          // Do NOT invalidate: refetch could overwrite with stale data. refetchInterval (5s) syncs.
         }
-        queryClient.invalidateQueries({ queryKey: ['founder-venture', userId] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
