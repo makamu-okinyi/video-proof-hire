@@ -8,15 +8,18 @@ export interface EmployerAnalytics {
 }
 
 async function fetchEmployerAnalytics(employerId: string | undefined): Promise<EmployerAnalytics> {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useEmployerAnalytics:fetch',message:'fetchEmployerAnalytics called',data:{employerId:employerId||'undefined',hasEmployerId:!!employerId},timestamp:Date.now(),hypothesisId:'G'})}).catch(()=>{});
+  // #endregion
   if (!employerId) return { activeJobs: 0, totalApplicants: 0, challenges: 0 };
 
-  const { count: jobsCount } = await supabase
+  const { count: jobsCount, error: jobsError } = await supabase
     .from('job_postings')
     .select('*', { count: 'exact', head: true })
     .eq('employer_id', employerId)
     .eq('is_active', true);
 
-  const { data: employerJobs } = await supabase
+  const { data: employerJobs, error: jobsDataError } = await supabase
     .from('job_postings')
     .select('id')
     .eq('employer_id', employerId);
@@ -36,11 +39,15 @@ async function fetchEmployerAnalytics(employerId: string | undefined): Promise<E
     .eq('employer_id', employerId)
     .eq('is_active', true);
 
-  return {
+  const result = {
     activeJobs: jobsCount ?? 0,
     totalApplicants: applicantsCount,
     challenges: challengesCount ?? 0,
   };
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useEmployerAnalytics:result',message:'analytics result',data:{employerId,result,jobIdsLength:jobIds.length,jobsError:jobsError?.message},timestamp:Date.now(),hypothesisId:'H'})}).catch(()=>{});
+  // #endregion
+  return result;
 }
 
 export function useEmployerAnalytics(employerId: string | undefined) {

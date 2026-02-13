@@ -12,6 +12,9 @@ const chartData = [4, 7, 5, 9, 6, 8, 10, 7, 6, 9, 11, 8];
 export default function EmployerDashboard() {
   const navigate = useNavigate();
   const { profile, user } = useAuth();
+  // #region agent log
+  if (user) fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'EmployerDashboard:render',message:'user id for analytics',data:{userId:user?.id,profileId:profile?.id},timestamp:Date.now(),hypothesisId:'K'})}).catch(()=>{});
+  // #endregion
   const { data: analytics } = useEmployerAnalytics(user?.id);
   
   return (
