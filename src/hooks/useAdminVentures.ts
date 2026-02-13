@@ -118,6 +118,9 @@ async function updateVentureReviewStatus(
       .update({ review_status: status })
       .eq('id', ventureId);
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAdminVentures:updateVentureReviewStatus',message:'supabase update result',data:{ventureId,status,hasError:!!error,errorMsg:error?.message},timestamp:Date.now(),hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
     if (error) throw error;
   } catch (err) {
     console.error('[useAdminVentures] updateVentureReviewStatus error:', err);
@@ -193,19 +196,28 @@ export function useAdminVentures() {
     mutationFn: ({ ventureId, status }: { ventureId: string; status: 'shortlisted' | 'rejected' }) =>
       updateVentureReviewStatus(ventureId, status),
     onMutate: async ({ ventureId, status }) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAdminVentures:onMutate:entry',message:'onMutate started',data:{ventureId,status},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       await queryClient.cancelQueries({ queryKey: ['admin-ventures-pending'] });
       await queryClient.cancelQueries({ queryKey: ['admin-ventures-all'] });
       const prevPending = queryClient.getQueryData<AdminVenture[]>(['admin-ventures-pending']);
       const prevAll = queryClient.getQueryData<AdminVenture[]>(['admin-ventures-all']);
+      const prevLen = (prevPending ?? []).length;
       queryClient.setQueryData(
         ['admin-ventures-pending'],
         (prev: AdminVenture[] | undefined) => (prev ?? []).filter((v) => v.id !== ventureId)
       );
+      const newPending = queryClient.getQueryData<AdminVenture[]>(['admin-ventures-pending']);
+      const newLen = (newPending ?? []).length;
       queryClient.setQueryData(
         ['admin-ventures-all'],
         (prev: AdminVenture[] | undefined) =>
           (prev ?? []).map((v) => (v.id === ventureId ? { ...v, review_status: status } : v))
       );
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAdminVentures:onMutate:afterSetQueryData',message:'setQueryData applied',data:{ventureId,prevLen,newLen,cacheUpdated:prevLen!==newLen},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       return { prevPending, prevAll };
     },
     onError: (_err, _vars, context) => {
@@ -213,8 +225,11 @@ export function useAdminVentures() {
       if (context?.prevAll) queryClient.setQueryData(['admin-ventures-all'], context.prevAll);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-ventures-pending'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-ventures-all'] });
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAdminVentures:onSettled',message:'skipping invalidate to preserve optimistic update',data:{},timestamp:Date.now(),hypothesisId:'E',runId:'post-fix'})}).catch(()=>{});
+      // #endregion
+      // Do NOT invalidate here: refetch can return stale data before DB propagates,
+      // overwriting our optimistic update. Realtime + refetchInterval sync instead.
     },
   });
 
@@ -224,18 +239,25 @@ export function useAdminVentures() {
   ) => {
     updateStatusMutation.mutate(variables, {
       onSuccess: () => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAdminVentures:onSuccess',message:'mutation success',data:{ventureId:variables.ventureId},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         toast.success(variables.status === 'shortlisted' ? 'Venture shortlisted' : 'Venture rejected', { icon: null });
         options?.onSuccess?.();
       },
-      onError: () => {
+      onError: (err) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAdminVentures:onError',message:'mutation error',data:{error:String(err)},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         toast.error('Failed to update status', { icon: null });
         options?.onError?.();
       },
     });
   };
 
+  const pendingVentures = pendingQuery.data ?? [];
   return {
-    pendingVentures: pendingQuery.data ?? [],
+    pendingVentures,
     allVentures: allQuery.data ?? [],
     isLoading: pendingQuery.isLoading || allQuery.isLoading,
     error: pendingQuery.error || allQuery.error,

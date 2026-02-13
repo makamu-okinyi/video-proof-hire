@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
 import { StatCard, MiniBarChart } from '@/components/dashboard/StatCard';
@@ -49,6 +49,7 @@ export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
+  const [removedVentureIds, setRemovedVentureIds] = useState<Set<string>>(new Set());
 
   const {
     pendingVentures,
@@ -59,14 +60,30 @@ export default function AdminPanel() {
     isUpdating,
   } = useAdminVentures();
 
-  const reviewQueueItems = (pendingVentures ?? []).filter((v) => v?.review_status === 'pending' || v?.review_status === 'submitted');
+  const baseQueueItems = (pendingVentures ?? []).filter((v) => v?.review_status === 'pending' || v?.review_status === 'submitted');
+  const reviewQueueItems = baseQueueItems.filter((v) => !removedVentureIds.has(v.id));
   const pendingCount = reviewQueueItems.length;
+
+  useEffect(() => {
+    const baseIds = new Set(baseQueueItems.map((v) => v.id));
+    setRemovedVentureIds((prev) => {
+      const next = new Set(prev);
+      next.forEach((id) => { if (!baseIds.has(id)) next.delete(id); });
+      return next.size === prev.size ? prev : next;
+    });
+  }, [baseQueueItems.length, baseQueueItems.map((v) => v.id).join(',')]);
   const shortlistedCount = allVentures?.filter((v) => v?.review_status === 'shortlisted').length ?? 0;
   const rejectedCount = allVentures?.filter((v) => v?.review_status === 'rejected').length ?? 0;
   const applicationChartData = buildApplicationChartData(allVentures ?? []);
 
   const handleAction = (ventureId: string, action: 'shortlisted' | 'rejected') => {
-    updateStatus({ ventureId, status: action });
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdminPanel.tsx:handleAction',message:'handleAction called',data:{ventureId,action,pendingCountBefore:reviewQueueItems.length},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    setRemovedVentureIds((prev) => new Set(prev).add(ventureId));
+    updateStatus({ ventureId, status: action }, {
+      onError: () => setRemovedVentureIds((prev) => { const n = new Set(prev); n.delete(ventureId); return n; }),
+    });
   };
 
   const tabs: { id: Tab; label: string }[] = [
@@ -285,7 +302,7 @@ export default function AdminPanel() {
                     autoPlay
                     playsInline
                     preload="auto"
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain mx-auto"
                   />
                 )}
               </div>

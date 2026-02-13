@@ -62,11 +62,17 @@ export function useFounderVenture(userId: string | undefined) {
 
   useEffect(() => {
     if (!ventureId || !userId) return;
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useFounderVenture:useEffect',message:'subscribing to ventures',data:{ventureId,userId},timestamp:Date.now(),hypothesisId:'I'})}).catch(()=>{});
+    // #endregion
     const channel = supabase
       .channel(`founder-venture-${ventureId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ventures', filter: `id=eq.${ventureId}` }, (payload) => {
         const newRow = payload.new as Record<string, unknown> | null;
         const status = newRow?.review_status as string | undefined;
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useFounderVenture:realtime',message:'realtime payload received',data:{ventureId,status,hasNewRow:!!newRow},timestamp:Date.now(),hypothesisId:'J'})}).catch(()=>{});
+        // #endregion
         if (status === 'shortlisted' || status === 'rejected') {
           // Immediate local state update: Status Badge reflects change the millisecond Admin decides
           queryClient.setQueryData(['founder-venture', userId], (prev: FounderVenture | null | undefined) => {

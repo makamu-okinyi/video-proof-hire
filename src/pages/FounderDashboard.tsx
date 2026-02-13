@@ -103,7 +103,7 @@ export default function FounderDashboard() {
                         src={venture.pitch_video_url}
                         controls
                         playsInline
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-contain mx-auto"
                       />
                     </div>
                   </div>
