@@ -71,8 +71,18 @@ export function useApplicantJobApplications(userId: string | undefined) {
           table: 'job_applications',
           filter: `applicant_id=eq.${userId}`,
         },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['applicant-job-applications', userId] });
+        (payload) => {
+          const row = payload.new as Record<string, unknown> | null;
+          if (!row?.id || !row?.status) return;
+          queryClient.setQueryData<ApplicantJobApplication[]>(
+            ['applicant-job-applications', userId],
+            (prev) => {
+              if (!prev) return prev;
+              return prev.map((app) =>
+                app.id === row.id ? { ...app, status: row.status as string } : app
+              );
+            }
+          );
         }
       )
       .subscribe();

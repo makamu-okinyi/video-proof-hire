@@ -143,7 +143,8 @@ export function useAdminVentures() {
         return simple.filter((v) => v.review_status === 'pending' || v.review_status === 'submitted');
       }
     },
-    refetchInterval: 10000, // Poll every 10 seconds for real-time feel
+    refetchInterval: false, // Realtime + optimistic update; polling could overwrite state
+    refetchOnWindowFocus: false,
   });
 
   const allQuery = useQuery({
@@ -156,7 +157,8 @@ export function useAdminVentures() {
         return fetchAdminVenturesSimple();
       }
     },
-    refetchInterval: 10000, // Poll every 10 seconds
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
   });
 
   // Supabase Realtime: subscribe to ventures changes and apply payload-based cache updates
@@ -181,9 +183,9 @@ export function useAdminVentures() {
                 v.id === ventureId ? { ...v, review_status: reviewStatus } : v
               )
           );
+          // Do NOT invalidate here: refetch can return stale data and overwrite our update.
+          // refetchInterval (10s) will eventually sync.
         }
-        queryClient.invalidateQueries({ queryKey: ['admin-ventures-pending'] });
-        queryClient.invalidateQueries({ queryKey: ['admin-ventures-all'] });
       })
       .subscribe();
 
