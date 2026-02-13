@@ -272,12 +272,12 @@ export default function AdminPanel() {
 
         {/* Video Modal */}
         <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
-          <DialogContent className="max-w-lg p-0 overflow-hidden rounded-3xl">
-            <DialogHeader className="p-4 pb-0">
+          <DialogContent className="max-w-lg p-0 overflow-hidden rounded-3xl flex flex-col items-center justify-center text-center">
+            <DialogHeader className="p-4 pb-0 w-full">
               <DialogTitle>Applicant Pitch Video</DialogTitle>
             </DialogHeader>
-            <div className="p-4 flex items-center justify-center w-full">
-              <div className="flex items-center justify-center w-full bg-black/5 rounded-xl overflow-hidden p-2">
+            <div className="p-4 w-full flex flex-col items-center justify-center text-center">
+              <div className="w-full max-w-2xl mx-auto aspect-video flex justify-center items-center bg-black rounded-xl overflow-hidden mt-4">
                 {selectedVideo && (
                   <video
                     src={selectedVideo}
@@ -285,7 +285,7 @@ export default function AdminPanel() {
                     autoPlay
                     playsInline
                     preload="auto"
-                    className="max-w-full aspect-video mx-auto object-contain"
+                    className="w-full h-full object-contain"
                   />
                 )}
               </div>

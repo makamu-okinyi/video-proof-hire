@@ -112,12 +112,17 @@ async function updateVentureReviewStatus(
   ventureId: string,
   status: 'shortlisted' | 'rejected'
 ): Promise<void> {
-  const { error } = await supabase
-    .from('ventures')
-    .update({ review_status: status })
-    .eq('id', ventureId);
+  try {
+    const { error } = await supabase
+      .from('ventures')
+      .update({ review_status: status })
+      .eq('id', ventureId);
 
-  if (error) throw error;
+    if (error) throw error;
+  } catch (err) {
+    console.error('[useAdminVentures] updateVentureReviewStatus error:', err);
+    throw err;
+  }
 }
 
 export function useAdminVentures() {

@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useFounderVenture } from '@/hooks/useFounderVenture';
+import { useApplicantJobApplications } from '@/hooks/useApplicantJobApplications';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
 import { 
-  Rocket, FileText, Users, Calendar, Bell, 
+  Rocket, FileText, Users, Calendar, Bell, Briefcase,
   Clock, CheckCircle, AlertCircle,
   Video, MessageSquare, Loader2
 } from 'lucide-react';
@@ -23,22 +24,28 @@ const announcements = [
   { id: '3', title: 'Workshop: Fundraising 101', message: 'Join us for an intensive workshop on raising your first round.', date: '2026-02-04', priority: 'normal' },
 ];
 
-const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  pending: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-600', icon: <Clock className="h-4 w-4" /> },
-  submitted: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-600', icon: <Clock className="h-4 w-4" /> },
-  shortlisted: { label: "Congratulations! You've been Shortlisted", color: 'bg-green-500/10 text-green-600', icon: <CheckCircle className="h-4 w-4" /> },
-  rejected: { label: 'Application Closed', color: 'bg-slate-500/10 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400', icon: <AlertCircle className="h-4 w-4" /> },
-  accepted: { label: 'Accepted', color: 'bg-primary/10 text-primary', icon: <CheckCircle className="h-4 w-4" /> },
+const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode; message: string }> = {
+  pending: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-600', icon: <Clock className="h-4 w-4" />, message: 'Update: Your application is currently under review.' },
+  submitted: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-600', icon: <Clock className="h-4 w-4" />, message: 'Update: Your application is currently under review.' },
+  shortlisted: { label: "Congratulations! You've been Shortlisted", color: 'bg-green-500/10 text-green-600', icon: <CheckCircle className="h-4 w-4" />, message: 'Update: Your application has been shortlisted for the next stage.' },
+  rejected: { label: 'Application Closed', color: 'bg-slate-500/10 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400', icon: <AlertCircle className="h-4 w-4" />, message: 'Update: This application has been closed.' },
+  accepted: { label: 'Accepted', color: 'bg-primary/10 text-primary', icon: <CheckCircle className="h-4 w-4" />, message: 'Update: Your application has been shortlisted for the next stage.' },
+  reviewed: { label: 'Reviewed', color: 'bg-blue-500/10 text-blue-600', icon: <CheckCircle className="h-4 w-4" />, message: 'Update: Your application has been reviewed.' },
 };
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function getJobStatusConfig(status: string) {
+  return statusConfig[status] || statusConfig.pending;
+}
+
 export default function FounderDashboard() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { data: venture, isLoading } = useFounderVenture(user?.id);
+  const { data: jobApplications } = useApplicantJobApplications(user?.id);
 
   const currentStatus = venture ? (statusConfig[venture.review_status] || statusConfig.submitted) : statusConfig.submitted;
 
@@ -85,17 +92,18 @@ export default function FounderDashboard() {
                     {currentStatus.label}
                   </Badge>
                 </div>
+                <p className="text-sm text-cool-grey mt-3">{currentStatus.message}</p>
               </NeoCardHeader>
               <NeoCardContent>
                 {venture.pitch_video_url && (
-                  <div className="mb-6 flex flex-col items-center justify-center w-full">
+                  <div className="mb-6 flex flex-col items-center justify-center w-full text-center">
                     <p className="text-sm font-medium text-cool-grey mb-2">Your Pitch Video</p>
-                    <div className="flex items-center justify-center w-full bg-black/5 rounded-xl overflow-hidden p-2">
+                    <div className="w-full max-w-2xl mx-auto aspect-video flex justify-center items-center bg-black rounded-xl overflow-hidden mt-4">
                       <video
                         src={venture.pitch_video_url}
                         controls
                         playsInline
-                        className="max-w-full aspect-video mx-auto object-contain"
+                        className="w-full h-full object-contain"
                       />
                     </div>
                   </div>
@@ -141,6 +149,75 @@ export default function FounderDashboard() {
               </NeoCardContent>
             </>
           )}
+        </NeoCard>
+
+        {/* My Applications */}
+        <NeoCard className="p-5 lg:p-6">
+          <NeoCardHeader>
+            <NeoCardTitle className="text-lg flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-primary" />
+              My Applications
+            </NeoCardTitle>
+            <p className="text-cool-grey text-sm mt-1">Track your venture and job applications</p>
+          </NeoCardHeader>
+          <NeoCardContent className="space-y-4 mt-4">
+            {venture && (
+              <div className="neo-subtle rounded-2xl p-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 neo-pressed rounded-xl flex items-center justify-center">
+                      <Rocket className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-charcoal">{venture.name}</p>
+                      <p className="text-xs text-cool-grey">Venture Application · {formatDate(venture.created_at)}</p>
+                    </div>
+                  </div>
+                  <Badge className={`${currentStatus.color} flex items-center gap-1.5 px-3 py-1`}>
+                    {currentStatus.icon}
+                    {currentStatus.label}
+                  </Badge>
+                </div>
+                <p className="text-sm text-cool-grey mt-3">{currentStatus.message}</p>
+              </div>
+            )}
+            {jobApplications && jobApplications.length > 0 ? (
+              jobApplications.map((app) => {
+                const cfg = getJobStatusConfig(app.status);
+                return (
+                  <div key={app.id} className="neo-subtle rounded-2xl p-4">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 neo-pressed rounded-xl flex items-center justify-center">
+                          <Briefcase className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-charcoal">{app.job?.title || 'Job'}</p>
+                          <p className="text-xs text-cool-grey">{app.job?.company_name || 'Company'} · {formatDate(app.created_at)}</p>
+                        </div>
+                      </div>
+                      <Badge className={`${cfg.color} flex items-center gap-1.5 px-3 py-1`}>
+                        {cfg.icon}
+                        {cfg.label}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-cool-grey mt-3">{cfg.message}</p>
+                  </div>
+                );
+              })
+            ) : null}
+            {(!venture && (!jobApplications || jobApplications.length === 0)) && (
+              <p className="text-cool-grey text-sm text-center py-4">No applications yet. Apply to a venture or job to get started.</p>
+            )}
+            {venture && (!jobApplications || jobApplications.length === 0) && (
+              <div className="text-center">
+                <Button variant="outline" size="sm" onClick={() => navigate('/jobs')} className="neo-extruded border-none">
+                  <Briefcase className="h-4 w-4 mr-2" />
+                  Browse Jobs
+                </Button>
+              </div>
+            )}
+          </NeoCardContent>
         </NeoCard>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
