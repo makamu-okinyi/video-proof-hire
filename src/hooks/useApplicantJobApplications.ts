@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface ApplicantJobApplication {
   id: string;
@@ -74,15 +75,19 @@ export function useApplicantJobApplications(userId: string | undefined) {
         (payload) => {
           const row = payload.new as Record<string, unknown> | null;
           if (!row?.id || !row?.status) return;
+          const status = row.status as string;
           queryClient.setQueryData<ApplicantJobApplication[]>(
             ['applicant-job-applications', userId],
             (prev) => {
               if (!prev) return prev;
               return prev.map((app) =>
-                app.id === row.id ? { ...app, status: row.status as string } : app
+                app.id === row.id ? { ...app, status } : app
               );
             }
           );
+          if (status === 'shortlisted') {
+            toast.info('Update: Your application has been shortlisted.', { icon: null });
+          }
         }
       )
       .subscribe();

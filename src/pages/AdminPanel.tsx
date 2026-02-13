@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useAdminVentures } from '@/hooks/useAdminVentures';
 
 
@@ -77,9 +77,6 @@ export default function AdminPanel() {
   const applicationChartData = buildApplicationChartData(allVentures ?? []);
 
   const handleAction = (ventureId: string, action: 'shortlisted' | 'rejected') => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/b7445b92-2b1f-49fa-93e9-b6a4f91b1bfc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdminPanel.tsx:handleAction',message:'handleAction called',data:{ventureId,action,pendingCountBefore:reviewQueueItems.length},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     setRemovedVentureIds((prev) => new Set(prev).add(ventureId));
     updateStatus({ ventureId, status: action }, {
       onError: () => setRemovedVentureIds((prev) => { const n = new Set(prev); n.delete(ventureId); return n; }),
@@ -289,12 +286,15 @@ export default function AdminPanel() {
 
         {/* Video Modal */}
         <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
-          <DialogContent className="max-w-lg p-0 overflow-hidden rounded-3xl !grid-cols-1 grid-rows-[auto_1fr]">
+          <DialogContent className="max-w-lg p-0 overflow-hidden rounded-3xl" aria-describedby="pitch-video-desc">
             <DialogHeader className="p-4 pb-0 w-full text-center">
               <DialogTitle>Applicant Pitch Video</DialogTitle>
+              <DialogDescription id="pitch-video-desc">
+                Watch the applicant&apos;s pitch video below.
+              </DialogDescription>
             </DialogHeader>
-            <div className="p-4 w-full flex flex-col items-center justify-center gap-4">
-              <div className="relative w-full max-w-2xl mx-auto aspect-video flex justify-center items-center bg-black rounded-xl overflow-hidden">
+            <div className="p-4 w-full flex flex-col items-center justify-center">
+              <div className="flex items-center justify-center w-full aspect-video bg-black rounded-2xl overflow-hidden mt-6 mx-auto">
                 {selectedVideo && (
                   <video
                     src={selectedVideo}
@@ -302,7 +302,7 @@ export default function AdminPanel() {
                     autoPlay
                     playsInline
                     preload="auto"
-                    className="max-w-full max-h-full w-auto h-auto object-contain"
+                    className="max-w-full max-h-full object-contain"
                   />
                 )}
               </div>
