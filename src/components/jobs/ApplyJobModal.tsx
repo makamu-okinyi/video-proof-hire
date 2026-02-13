@@ -106,15 +106,15 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-lg flex flex-col items-center justify-center text-center">
+        <DialogHeader className="w-full">
           <DialogTitle>Apply to {job.title}</DialogTitle>
           <DialogDescription>
             {job.company_name && `at ${job.company_name}`}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5">
+        <div className="space-y-5 w-full">
           {/* Video Portfolio Section */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
