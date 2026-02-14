@@ -108,20 +108,29 @@ async function fetchAdminVenturesSimple(): Promise<AdminVenture[]> {
   return data.map((v) => mapVentureToAdmin({ ...v, venture_founders: [] }));
 }
 
+/** Extracts a user-friendly message from Supabase/PostgREST errors (e.g. RLS permission denied) */
+function getErrorMessage(err: unknown): string {
+  if (err && typeof err === 'object' && 'message' in err) {
+    const msg = String((err as { message?: string }).message);
+    if (msg.includes('permission') || msg.includes('policy') || msg.includes('RLS'))
+      return 'Permission denied. Ensure your account has the Admin (employer) role.';
+    return msg;
+  }
+  return 'Failed to update status';
+}
+
 async function updateVentureReviewStatus(
   ventureId: string,
   status: 'shortlisted' | 'rejected'
 ): Promise<void> {
-  try {
-    const { error } = await supabase
-      .from('ventures')
-      .update({ review_status: status })
-      .eq('id', ventureId);
+  const { error } = await supabase
+    .from('ventures')
+    .update({ review_status: status })
+    .eq('id', ventureId);
 
-    if (error) throw error;
-  } catch (err) {
-    console.error('[useAdminVentures] updateVentureReviewStatus error:', err);
-    throw err;
+  if (error) {
+    console.error('[useAdminVentures] updateVentureReviewStatus error:', error.code, error.message);
+    throw error;
   }
 }
 
@@ -215,9 +224,7 @@ export function useAdminVentures() {
       if (context?.prevAll) queryClient.setQueryData(['admin-ventures-all'], context.prevAll);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-ventures-pending'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-ventures-all'] });
-      queryClient.invalidateQueries({ queryKey: ['employer-analytics'] });
+      // Do NOT invalidate: optimistic update + Realtime keep UI in sync; refetch can overwrite with stale data
     },
   });
 
@@ -230,8 +237,8 @@ export function useAdminVentures() {
         toast.success(variables.status === 'shortlisted' ? 'Venture shortlisted' : 'Venture rejected', { icon: null });
         options?.onSuccess?.();
       },
-      onError: () => {
-        toast.error('Failed to update status', { icon: null });
+      onError: (err) => {
+        toast.error(getErrorMessage(err), { icon: null });
         options?.onError?.();
       },
     });
