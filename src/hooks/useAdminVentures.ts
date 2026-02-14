@@ -123,10 +123,10 @@ async function updateVentureReviewStatus(
   ventureId: string,
   status: 'shortlisted' | 'rejected'
 ): Promise<void> {
-  const { error } = await supabase
-    .from('ventures')
-    .update({ review_status: status })
-    .eq('id', ventureId);
+  const { error } = await supabase.rpc('update_venture_review_status', {
+    p_venture_id: ventureId,
+    p_status: status,
+  });
 
   if (error) {
     console.error('[useAdminVentures] updateVentureReviewStatus error:', error.code, error.message);
