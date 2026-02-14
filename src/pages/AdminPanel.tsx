@@ -293,8 +293,8 @@ export default function AdminPanel() {
                 Watch the applicant&apos;s pitch video below.
               </DialogDescription>
             </DialogHeader>
-            <div className="p-4 w-full flex flex-col items-center justify-center">
-              <div className="flex items-center justify-center w-full aspect-video bg-black rounded-2xl overflow-hidden mt-6 mx-auto">
+            <div className="p-4 w-full">
+              <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden mt-2">
                 {selectedVideo && (
                   <video
                     src={selectedVideo}
@@ -302,7 +302,7 @@ export default function AdminPanel() {
                     autoPlay
                     playsInline
                     preload="auto"
-                    className="max-w-full max-h-full object-contain"
+                    className="absolute inset-0 w-full h-full object-contain"
                   />
                 )}
               </div>

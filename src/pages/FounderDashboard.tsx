@@ -98,12 +98,12 @@ export default function FounderDashboard() {
                 {venture.pitch_video_url && (
                   <div className="mb-6 flex flex-col items-center justify-center w-full text-center">
                     <p className="text-sm font-medium text-cool-grey mb-2">Your Pitch Video</p>
-                    <div className="flex items-center justify-center w-full aspect-video bg-black rounded-2xl overflow-hidden mt-6 mx-auto">
+                    <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden mt-2">
                       <video
                         src={venture.pitch_video_url}
                         controls
                         playsInline
-                        className="max-w-full max-h-full object-contain"
+                        className="absolute inset-0 w-full h-full object-contain"
                       />
                     </div>
                   </div>
