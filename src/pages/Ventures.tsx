@@ -18,6 +18,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Venture } from '@/types';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { cn } from '@/lib/utils';
+import { formatStage } from '@/lib/stageDisplay';
 
 const stageColors = {
   idea: 'bg-blue-500/10 text-blue-600',
@@ -269,7 +270,7 @@ function VentureCard({ venture, featured, index }: VentureCardProps) {
             stageColors[venture.stage]
           )}
         >
-          {venture.stage}
+          {formatStage(venture.stage)}
         </Badge>
 
         {venture.isFundraising && (

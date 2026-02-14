@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
-import { StatCard, MiniBarChart } from '@/components/dashboard/StatCard';
-import { PixelatedChart } from '@/components/dashboard/PixelatedChart';
+import { StatCard } from '@/components/dashboard/StatCard';
 import { 
   Users, FileText, Play, CheckCircle, X,
-  Calendar, Award, Loader2
+  Calendar, Award, Loader2, AlertCircle, ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PitchVideoModal } from '@/components/PitchVideoModal';
 import { useAdminVentures } from '@/hooks/useAdminVentures';
+import { formatStage } from '@/lib/stageDisplay';
 
 
 const mentors = [
@@ -48,7 +48,6 @@ function buildApplicationChartData(ventures: { created_at?: string }[]) {
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
-  const [timeframe, setTimeframe] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
   const [removedVentureIds, setRemovedVentureIds] = useState<Set<string>>(new Set());
 
   const {
@@ -75,6 +74,17 @@ export default function AdminPanel() {
   const shortlistedCount = allVentures?.filter((v) => v?.review_status === 'shortlisted').length ?? 0;
   const rejectedCount = allVentures?.filter((v) => v?.review_status === 'rejected').length ?? 0;
   const applicationChartData = buildApplicationChartData(allVentures ?? []);
+
+  const fiveDaysAgo = new Date();
+  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+  const pendingLongCount = (allVentures ?? []).filter(
+    (v) => (v?.review_status === 'pending' || v?.review_status === 'submitted') && new Date(v.created_at) < fiveDaysAgo
+  ).length;
+
+  const currentMonthIdx = new Date().getMonth();
+  const thisMonthApps = applicationChartData[currentMonthIdx]?.applications ?? 0;
+  const lastMonthApps = applicationChartData[currentMonthIdx - 1]?.applications ?? 0;
+  const monthOverMonthChange = lastMonthApps > 0 ? (thisMonthApps - lastMonthApps) / lastMonthApps : 0;
 
   const handleAction = (venture: { id: string; name: string; founder_id?: string | null }, action: 'shortlisted' | 'rejected') => {
     setRemovedVentureIds((prev) => new Set(prev).add(venture.id));
@@ -110,20 +120,42 @@ export default function AdminPanel() {
           <p className="text-cool-grey text-sm">Program management & application review dashboard.</p>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - unmistakable active state */}
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                activeTab === tab.id ? 'neo-pressed text-charcoal' : 'neo-flat text-cool-grey hover:text-charcoal'
+              className={`px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
+                activeTab === tab.id
+                  ? 'neo-pressed text-charcoal ring-2 ring-primary ring-offset-2 ring-offset-background'
+                  : 'neo-flat text-cool-grey hover:text-charcoal'
               }`}
             >
               {tab.label}
             </button>
           ))}
         </div>
+
+        {/* Urgency banner - product intelligence */}
+        {pendingLongCount > 0 && activeTab !== 'review' && (
+          <NeoCard className="p-4 border-l-4 border-l-amber-500 bg-amber-500/5">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+                <div>
+                  <p className="font-semibold text-charcoal">
+                    {pendingLongCount} application{pendingLongCount !== 1 ? 's' : ''} pending 5+ days
+                  </p>
+                  <p className="text-sm text-cool-grey">Review now to keep applicants engaged.</p>
+                </div>
+              </div>
+              <Button size="sm" onClick={() => setActiveTab('review')} className="bg-amber-500 hover:bg-amber-600 text-white shrink-0">
+                Review Queue <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          </NeoCard>
+        )}
 
         {/* Overview Tab */}
         {activeTab === 'overview' && (
@@ -135,30 +167,40 @@ export default function AdminPanel() {
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatCard title="PENDING REVIEW" value={String(pendingCount)} change={0} changeLabel="this week" chart={<MiniBarChart data={applicationChartData.map(d => d.applications)} className="h-8" />} />
-                  <StatCard title="TOTAL APPLICATIONS" value={String(allVentures.length)} change={0.12} changeLabel="this month" chart={<MiniBarChart data={applicationChartData.map(d => d.applications)} className="h-8" />} />
-                  <StatCard title="SHORTLISTED" value={String(shortlistedCount)} change={0.08} changeLabel="this month" chart={<MiniBarChart data={applicationChartData.map(d => d.applications)} className="h-8" />} />
-                  <StatCard title="REJECTED" value={String(rejectedCount)} change={-0.05} changeLabel="this month" chart={<MiniBarChart data={applicationChartData.map(d => d.applications)} className="h-8" />} />
+                  <StatCard title="PENDING REVIEW" value={String(pendingCount)} />
+                  <StatCard
+                    title="TOTAL APPLICATIONS"
+                    value={String(allVentures.length)}
+                    change={monthOverMonthChange}
+                    changeLabel="vs last month"
+                  />
+                  <StatCard title="SHORTLISTED" value={String(shortlistedCount)} />
+                  <StatCard title="REJECTED" value={String(rejectedCount)} />
                 </div>
 
-                <NeoCard className="p-5 lg:p-8">
-                  <NeoCardHeader className="flex-row items-center justify-between flex-wrap gap-4">
-                    <div>
-                      <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-1">Application Intake & Cohort Velocity</p>
-                      <NeoCardTitle className="text-xl">Total: <span className="font-bold">{allVentures.length}</span></NeoCardTitle>
-                    </div>
-                    <div className="flex gap-2">
-                      {(['weekly', 'monthly', 'yearly'] as const).map(tf => (
-                        <button key={tf} onClick={() => setTimeframe(tf)} className={`px-3 py-1.5 rounded-xl text-xs capitalize transition-all duration-300 ${timeframe === tf ? 'neo-pressed text-charcoal font-medium' : 'neo-flat text-cool-grey'}`}>
-                          {tf}
-                        </button>
-                      ))}
-                    </div>
-                  </NeoCardHeader>
-                  <NeoCardContent className="mt-4">
-                    <PixelatedChart data={applicationChartData} maxValue={Math.max(5, ...applicationChartData.map((d) => d.applications), 0)} pixelSize={8} activeIndex={new Date().getMonth()} />
-                  </NeoCardContent>
-                </NeoCard>
+                {applicationChartData.some(d => d.applications > 0) && (
+                  <NeoCard className="p-5 lg:p-8">
+                    <NeoCardHeader>
+                      <div>
+                        <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-1">Applications by month (this year)</p>
+                        <NeoCardTitle className="text-xl">Monthly intake trend</NeoCardTitle>
+                      </div>
+                    </NeoCardHeader>
+                    <NeoCardContent className="mt-4">
+                      <div className="flex items-end gap-1 h-24">
+                        {applicationChartData.map((d, i) => (
+                          <div key={d.label} className="flex-1 flex flex-col items-center gap-1">
+                            <div
+                              className="w-full max-w-[24px] bg-primary/80 rounded-t transition-all"
+                              style={{ height: `${Math.max(4, (d.applications / Math.max(1, ...applicationChartData.map(x => x.applications))) * 100)}%` }}
+                            />
+                            <span className="text-[10px] text-cool-grey">{d.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </NeoCardContent>
+                  </NeoCard>
+                )}
               </>
             )}
           </div>
@@ -172,10 +214,15 @@ export default function AdminPanel() {
                 <Loader2 className="h-8 w-8 animate-spin text-cool-grey" />
               </div>
             ) : pendingCount === 0 ? (
-              <NeoCard className="p-8 text-center">
-                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
-                <p className="text-charcoal font-semibold">All caught up!</p>
-                <p className="text-cool-grey text-sm">No pending applications to review.</p>
+              <NeoCard className="p-8 lg:p-12 text-center">
+                <div className="h-16 w-16 neo-pressed rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                </div>
+                <p className="text-charcoal font-semibold text-lg mb-1">All caught up</p>
+                <p className="text-cool-grey text-sm mb-4 max-w-sm mx-auto">
+                  Every application has been reviewed. New submissions will appear here when founders apply.
+                </p>
+                <p className="text-xs text-cool-grey">Review Queue is empty — you're ready for the next cohort.</p>
               </NeoCard>
             ) : (
               reviewQueueItems.map((venture) => (
@@ -187,7 +234,7 @@ export default function AdminPanel() {
                       </div>
                       <div>
                         <p className="font-semibold text-charcoal">{venture.name}</p>
-                        <p className="text-cool-grey text-sm">by {venture.founder_name || 'Unknown'} · {(venture.industry || []).join(', ') || '—'} · {venture.stage}</p>
+                        <p className="text-cool-grey text-sm">by {venture.founder_name || 'Unknown'} · {(venture.industry || []).join(', ') || '—'} · {formatStage(venture.stage)}</p>
                         <p className="text-cool-grey/60 text-xs">Submitted {formatDate(venture.created_at)}</p>
                       </div>
                     </div>

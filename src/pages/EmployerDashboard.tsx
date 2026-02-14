@@ -4,7 +4,7 @@ import { Settings, Briefcase, Plus, Trophy, TrendingUp, Edit2, Users } from 'luc
 import { Button } from '@/components/ui/button';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
-import { StatCard, MiniBarChart } from '@/components/dashboard/StatCard';
+import { StatCard } from '@/components/dashboard/StatCard';
 import { useAuth } from '@/context/AuthContext';
 import { useEmployerAnalytics } from '@/hooks/useEmployerAnalytics';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,27 +54,9 @@ export default function EmployerDashboard() {
 
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard
-            title="Active Jobs"
-            value={String(analytics?.activeJobs ?? 0)}
-            change={0}
-            changeLabel="this month"
-            chart={<MiniBarChart data={chartData} className="h-10" />}
-          />
-          <StatCard
-            title="Total Applicants"
-            value={String(analytics?.totalApplicants ?? 0)}
-            change={0}
-            changeLabel="this month"
-            chart={<MiniBarChart data={chartData} className="h-10" />}
-          />
-          <StatCard
-            title="Challenges"
-            value={String(analytics?.challenges ?? 0)}
-            change={0}
-            changeLabel="this month"
-            chart={<MiniBarChart data={chartData} className="h-10" />}
-          />
+          <StatCard title="Active Jobs" value={String(analytics?.activeJobs ?? 0)} />
+          <StatCard title="Total Applicants" value={String(analytics?.totalApplicants ?? 0)} />
+          <StatCard title="Challenges" value={String(analytics?.challenges ?? 0)} />
         </div>
 
         {/* Quick Actions */}

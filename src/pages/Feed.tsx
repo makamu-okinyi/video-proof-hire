@@ -4,20 +4,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useRoleBasedRedirect } from '@/components/auth/ProtectedRoute';
 import { useFeedStats } from '@/hooks/useFeedStats';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { StatCard, MiniBarChart } from '@/components/dashboard/StatCard';
-import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
-import { PixelatedChart } from '@/components/dashboard/PixelatedChart';
+import { StatCard } from '@/components/dashboard/StatCard';
 import { Rocket, Briefcase, Trophy, FileText } from 'lucide-react';
 
-function buildChartData(totalApps: number) {
-  const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-  const currentMonth = new Date().getMonth();
-  return months.map((label, i) => ({
-    label,
-    applications: i === currentMonth ? totalApps : 0,
-    velocity: i === currentMonth ? totalApps * 2 : 0,
-  }));
-}
 
 export default function Feed() {
   const navigate = useNavigate();
@@ -46,64 +35,30 @@ export default function Feed() {
 
   const totalApps = stats?.totalApplications ?? 0;
   const activeVentures = stats?.activeVentures ?? 0;
-  const chartData = [4, 7, 5, 9, 6, 8, 10, 7, 6, 9, 11, 8];
 
   return (
     <DashboardLayout>
       <div className="space-y-6 sm:space-y-8 p-4 sm:p-6 max-w-4xl mx-auto w-full overflow-x-hidden">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-charcoal mb-2">
-            Welcome back, {profile?.username || 'there'}
+            {profile?.username || 'there'}
           </h1>
           <p className="text-cool-grey text-sm sm:text-base">
             {isAdmin
-              ? 'Startup Garage program overview and cohort health metrics.'
-              : 'Here&apos;s what&apos;s happening with your ventures today.'}
+              ? 'Program overview and cohort metrics.'
+              : totalApps > 0 || activeVentures > 0
+                ? 'Your venture metrics and next actions.'
+                : 'Apply to the program or explore opportunities below.'}
           </p>
         </div>
 
         {statsLoading ? (
           <div className="neo-pressed px-8 py-6 rounded-2xl text-cool-grey animate-pulse">Loading stats...</div>
         ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <StatCard
-                title="TOTAL APPLICATIONS"
-                value={String(totalApps)}
-                change={0}
-                changeLabel="your submissions"
-                chart={<MiniBarChart data={chartData} className="h-10" />}
-              />
-              <StatCard
-                title="ACTIVE VENTURES"
-                value={`${activeVentures} Active`}
-                change={0}
-                changeLabel="yours"
-                chart={<MiniBarChart data={chartData} className="h-10" />}
-              />
-            </div>
-
-            <NeoCard className="p-4 sm:p-6 lg:p-8">
-              <NeoCardHeader className="flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-1">
-                    Application Intake & Cohort Velocity
-                  </p>
-                  <NeoCardTitle className="text-xl sm:text-2xl">
-                    Total Applications: <span className="font-bold">{totalApps}</span>
-                  </NeoCardTitle>
-                </div>
-              </NeoCardHeader>
-              <NeoCardContent className="mt-4">
-                <PixelatedChart
-                  data={buildChartData(totalApps)}
-                  maxValue={Math.max(totalApps, 5)}
-                  pixelSize={8}
-                  activeIndex={new Date().getMonth()}
-                />
-              </NeoCardContent>
-            </NeoCard>
-          </>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <StatCard title="TOTAL APPLICATIONS" value={String(totalApps)} />
+            <StatCard title="ACTIVE VENTURES" value={`${activeVentures}`} />
+          </div>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
