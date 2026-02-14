@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,10 +19,18 @@ const challengeSchema = z.object({
   skills_tags: z.array(z.string().max(50, "Skill must be less than 50 characters")).max(20, "Maximum 20 skill tags allowed"),
 });
 
+function formatDeadlineForInput(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 16);
+}
+
 export default function CreateChallenge() {
   const navigate = useNavigate();
+  const { challengeId } = useParams<{ challengeId: string }>();
   const { user } = useAuth();
-  
+  const isEdit = !!challengeId;
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [prizeDescription, setPrizeDescription] = useState('');
@@ -32,7 +40,31 @@ export default function CreateChallenge() {
   const [skillInput, setSkillInput] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(isEdit);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!challengeId || !user) return;
+    const fetchChallenge = async () => {
+      setLoadingData(true);
+      const { data, error } = await supabase
+        .from('challenges')
+        .select('*')
+        .eq('id', challengeId)
+        .eq('employer_id', user.id)
+        .maybeSingle();
+      setLoadingData(false);
+      if (error || !data) return;
+      setTitle(data.title || '');
+      setDescription(data.description || '');
+      setPrizeDescription(data.prize_description || '');
+      setPrizeAmount(data.prize_amount != null ? String(data.prize_amount) : '');
+      setDeadline(formatDeadlineForInput(data.deadline));
+      setIsFeatured(data.is_featured ?? false);
+      setSkills(Array.isArray(data.skills_tags) ? data.skills_tags : []);
+    };
+    fetchChallenge();
+  }, [challengeId, user?.id]);
 
   const addSkill = () => {
     const trimmedSkill = skillInput.trim();
@@ -78,20 +110,36 @@ export default function CreateChallenge() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('challenges').insert({
-        employer_id: user?.id,
-        title: validation.data.title,
-        description: validation.data.description,
-        prize_description: validation.data.prize_description,
-        prize_amount: prizeAmount ? parseInt(prizeAmount) : null,
-        deadline: deadline || null,
-        is_featured: isFeatured,
-        skills_tags: validation.data.skills_tags,
-      });
-
-      if (error) throw error;
-
-      toast.success('Challenge created!');
+      if (isEdit && challengeId) {
+        const { error } = await supabase
+          .from('challenges')
+          .update({
+            title: validation.data.title,
+            description: validation.data.description,
+            prize_description: validation.data.prize_description,
+            prize_amount: prizeAmount ? parseInt(prizeAmount) : null,
+            deadline: deadline || null,
+            is_featured: isFeatured,
+            skills_tags: validation.data.skills_tags,
+          })
+          .eq('id', challengeId)
+          .eq('employer_id', user?.id);
+        if (error) throw error;
+        toast.success('Challenge updated!');
+      } else {
+        const { error } = await supabase.from('challenges').insert({
+          employer_id: user?.id,
+          title: validation.data.title,
+          description: validation.data.description,
+          prize_description: validation.data.prize_description,
+          prize_amount: prizeAmount ? parseInt(prizeAmount) : null,
+          deadline: deadline || null,
+          is_featured: isFeatured,
+          skills_tags: validation.data.skills_tags,
+        });
+        if (error) throw error;
+        toast.success('Challenge created!');
+      }
       navigate('/employer');
     } catch (error) {
       console.error('Error creating challenge:', error);
@@ -117,9 +165,9 @@ export default function CreateChallenge() {
             variant="coral" 
             size="sm"
             onClick={handleSubmit}
-            disabled={loading || !title.trim() || !description.trim()}
+            disabled={loading || loadingData || !title.trim() || !description.trim()}
           >
-            {loading ? 'Publishing...' : 'Publish'}
+            {loading ? (isEdit ? 'Saving...' : 'Publishing...') : loadingData ? 'Loading...' : isEdit ? 'Save Changes' : 'Publish'}
           </Button>
         </div>
       </div>
@@ -127,8 +175,8 @@ export default function CreateChallenge() {
       {/* Form */}
       <div className="p-4 space-y-6 pb-12">
         <div>
-          <h1 className="text-2xl font-bold">Create Challenge</h1>
-          <p className="text-muted-foreground text-sm">Launch a competition to discover top talent</p>
+          <h1 className="text-2xl font-bold">{isEdit ? 'Edit Challenge' : 'Create Challenge'}</h1>
+          <p className="text-muted-foreground text-sm">{isEdit ? 'Update your challenge' : 'Launch a competition to discover top talent'}</p>
         </div>
 
         {/* Basic Info */}

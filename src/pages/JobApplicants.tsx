@@ -103,11 +103,11 @@ export default function JobApplicants() {
       .eq('id', applicationId);
 
     if (!error) {
-      setApplicants(applicants.map(a => 
+      setApplicants(applicants.map(a =>
         a.id === applicationId ? { ...a, status } : a
       ));
       toast.success(`Application ${status}`, { icon: null });
-      
+
       // Send email notification for status change (fire and forget)
       supabase.functions.invoke('send-notification', {
         body: {
@@ -121,7 +121,11 @@ export default function JobApplicants() {
         },
       }).catch(console.error);
     } else {
-      toast.error('Failed to update status', { icon: null });
+      console.error('[JobApplicants] updateStatus error:', error.code, error.message);
+      toast.error(error.message?.includes('policy') || error.message?.includes('permission')
+        ? 'Permission denied. Ensure you own this job.'
+        : `Failed to update: ${error.message}`, { icon: null });
+      fetchData(); // Refetch to ensure UI matches DB
     }
   };
 
