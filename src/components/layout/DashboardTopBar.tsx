@@ -1,6 +1,7 @@
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, Bell, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const routeLabels: Record<string, string> = {
   '/': 'Dashboard',
@@ -48,7 +49,9 @@ function getBreadcrumbs(pathname: string): { label: string; path: string }[] {
 
 export function DashboardTopBar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const breadcrumbs = getBreadcrumbs(location.pathname);
+  const { unreadCount } = useNotifications();
 
   return (
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-sm">
@@ -86,9 +89,17 @@ export function DashboardTopBar() {
           </div>
 
           {/* Notifications */}
-          <button className="neo-extruded p-3 rounded-2xl relative hover:shadow-neo-pressed transition-shadow">
+          <button
+            onClick={() => navigate('/notifications')}
+            className="neo-extruded p-3 rounded-2xl relative hover:shadow-neo-pressed transition-shadow"
+            aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+          >
             <Bell className="h-5 w-5 text-cool-grey" />
-            <span className="absolute top-2 right-2 h-2 w-2 bg-primary rounded-full" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold bg-primary text-primary-foreground rounded-full">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
           </button>
         </div>
       </div>

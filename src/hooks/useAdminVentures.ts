@@ -17,12 +17,14 @@ export interface AdminVenture {
   review_status: VentureReviewStatus;
   created_at: string;
   founder_name: string | null;
+  founder_id: string | null;
 }
 
 function mapVentureToAdmin(v: Record<string, unknown>): AdminVenture {
   const founders = (v.venture_founders as Array<Record<string, unknown>>) ?? [];
   const leadFounder = founders.find((f) => f.is_lead) ?? founders[0];
   const profiles = leadFounder?.profiles as Record<string, unknown> | undefined;
+  const founderId = leadFounder?.user_id ?? profiles?.id;
   return {
     id: String(v.id ?? ''),
     name: String(v.name ?? ''),
@@ -33,6 +35,7 @@ function mapVentureToAdmin(v: Record<string, unknown>): AdminVenture {
     review_status: (v.review_status as VentureReviewStatus) || 'submitted',
     created_at: String(v.created_at ?? ''),
     founder_name: profiles?.username ? String(profiles.username) : null,
+    founder_id: founderId ? String(founderId) : null,
   };
 }
 
@@ -229,12 +232,22 @@ export function useAdminVentures() {
   });
 
   const updateStatus = (
-    variables: { ventureId: string; status: 'shortlisted' | 'rejected' },
+    variables: { ventureId: string; status: 'shortlisted' | 'rejected'; founderId?: string; ventureName?: string },
     options?: { onSuccess?: () => void; onError?: () => void }
   ) => {
     updateStatusMutation.mutate(variables, {
-      onSuccess: () => {
+      onSuccess: async () => {
         toast.success(variables.status === 'shortlisted' ? 'Venture shortlisted' : 'Venture rejected', { icon: null });
+        if (variables.founderId) {
+          supabase.functions.invoke('notify-status-change', {
+            body: {
+              type: 'venture_status',
+              recipientId: variables.founderId,
+              status: variables.status,
+              data: { ventureId: variables.ventureId, ventureName: variables.ventureName },
+            },
+          }).catch(console.error);
+        }
         options?.onSuccess?.();
       },
       onError: (err) => {

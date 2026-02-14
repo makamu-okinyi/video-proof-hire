@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, X, Check } from 'lucide-react';
+import { ArrowLeft, Edit2, X, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,23 +8,64 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { skillsList } from '@/data/mockData';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_AVATAR_SIZE_MB = 5;
 
 export default function EditProfile() {
   const navigate = useNavigate();
-  const { user, profile, updateProfile } = useAuth();
+  const { user, profile, updateProfile, refreshProfile } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [editUsername, setEditUsername] = useState(profile?.username || '');
   const [editBio, setEditBio] = useState(profile?.bio || '');
   const [editSkills, setEditSkills] = useState<string[]>(profile?.skills || []);
+  const [editAvatar, setEditAvatar] = useState<string | null>(profile?.avatar || null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
     if (profile) {
       setEditUsername(profile.username || '');
       setEditBio(profile.bio || '');
       setEditSkills(profile.skills || []);
+      setEditAvatar(profile.avatar || null);
     }
   }, [profile]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      toast({ title: 'Invalid format', description: 'Use JPEG, PNG, WebP or GIF', variant: 'destructive' });
+      return;
+    }
+    if (file.size > MAX_AVATAR_SIZE_MB * 1024 * 1024) {
+      toast({ title: 'File too large', description: `Max ${MAX_AVATAR_SIZE_MB}MB`, variant: 'destructive' });
+      return;
+    }
+    setIsUploadingAvatar(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const fileName = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { contentType: file.type, upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
+      await updateProfile({ avatar: publicUrl });
+      setEditAvatar(publicUrl);
+      toast({ title: 'Photo updated', description: 'Your profile photo has been updated' });
+      refreshProfile();
+    } catch (err) {
+      console.error('Avatar upload error:', err);
+      toast({ title: 'Upload failed', description: (err as Error).message, variant: 'destructive' });
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = '';
+    }
+  };
 
   const handleSkillToggle = (skill: string) => {
     if (editSkills.includes(skill)) {
@@ -92,11 +133,18 @@ export default function EditProfile() {
 
       {/* Content */}
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
-        {/* Avatar */}
+        {/* Avatar - upload */}
         <div className="flex justify-center">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ALLOWED_AVATAR_TYPES.join(',')}
+            className="hidden"
+            onChange={handleAvatarUpload}
+          />
           <div className="relative">
             <img 
-              src={profile?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'} 
+              src={editAvatar || profile?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'} 
               alt={profile?.username || 'User'}
               className="h-24 w-24 rounded-full object-cover border-2 border-border"
             />
@@ -104,9 +152,14 @@ export default function EditProfile() {
               variant="secondary" 
               size="icon-sm" 
               className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
-              onClick={() => toast({ title: "Coming soon", description: "Avatar upload will be available soon" })}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingAvatar}
             >
-              <Edit2 className="h-4 w-4" />
+              {isUploadingAvatar ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Edit2 className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </div>

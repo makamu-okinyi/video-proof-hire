@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const applicantNavItems = [
   { icon: Home, label: 'Home', path: '/feed' },
@@ -31,6 +32,7 @@ export function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const { unreadCount } = useNotifications();
 
   const isEmployer = profile?.user_type === 'employer' || profile?.user_type === 'investor';
   const isFounder = profile?.user_type === 'founder' || profile?.user_type === 'talent';
@@ -68,19 +70,27 @@ export function BottomNav() {
           }
 
           const Icon = item.icon!;
+          const showNotifBadge = item.label === 'Alerts' && unreadCount > 0;
           
           return (
             <button
               key={`${item.label}-${index}`}
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg transition-all duration-200 min-w-0",
+                "flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg transition-all duration-200 min-w-0 relative",
                 isActive 
                   ? "text-primary" 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Icon className={cn("h-4 w-4", isActive && "scale-110")} />
+              <span className="relative inline-block">
+                <Icon className={cn("h-4 w-4", isActive && "scale-110")} />
+                {showNotifBadge && (
+                  <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 flex items-center justify-center text-[9px] font-bold bg-primary text-primary-foreground rounded-full">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </span>
               <span className="text-[9px] font-medium truncate">{item.label}</span>
             </button>
           );
