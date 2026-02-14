@@ -32,7 +32,7 @@ export function StatCard({ title, value, change, changeLabel = 'last year', icon
         )}
       </div>
       
-      {change !== undefined && (
+      {change !== undefined && change !== 0 && (
         <div className="flex items-center gap-2">
           {icon}
           <div className={cn(

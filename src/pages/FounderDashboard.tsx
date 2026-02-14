@@ -33,6 +33,8 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
   reviewed: { label: 'Reviewed', color: 'bg-blue-500/10 text-blue-600', icon: <CheckCircle className="h-4 w-4" />, message: 'Update: Your application has been reviewed.' },
 };
 
+import { formatStage } from '@/lib/stageDisplay';
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
@@ -84,7 +86,7 @@ export default function FounderDashboard() {
                     </div>
                     <div>
                       <NeoCardTitle className="text-xl">{venture.name}</NeoCardTitle>
-                      <p className="text-cool-grey text-sm capitalize">{venture.stage} stage · Submitted {formatDate(venture.created_at)}</p>
+                      <p className="text-cool-grey text-sm">{formatStage(venture.stage)} stage · Submitted {formatDate(venture.created_at)}</p>
                     </div>
                   </div>
                   <Badge className={`${currentStatus.color} flex items-center gap-1.5 px-3 py-1.5`}>

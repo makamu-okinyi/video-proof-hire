@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { formatStage } from '@/lib/stageDisplay';
 import {
   ArrowLeft,
   ExternalLink,
@@ -290,7 +291,7 @@ export default function VentureDetail() {
                 <Badge
                   className={cn('capitalize', stageColors[venture.stage])}
                 >
-                  {venture.stage}
+                  {formatStage(venture.stage)}
                 </Badge>
                 {venture.is_fundraising && (
                   <Badge className="bg-green-500/10 text-green-600 border-green-500/20">

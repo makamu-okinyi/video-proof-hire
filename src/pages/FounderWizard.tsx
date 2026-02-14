@@ -19,6 +19,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard } from '@/components/ui/neo-card';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { formatStage } from '@/lib/stageDisplay';
 
 const INDUSTRIES = [
   'FinTech', 'HealthTech', 'EdTech', 'AgriTech', 'CleanTech',
@@ -212,8 +213,13 @@ export default function FounderWizard() {
               <Label>Stage</Label>
               <div className="flex flex-wrap gap-2">
                 {(['idea', 'prototype', 'mvp', 'growth', 'scale'] as const).map(s => (
-                  <button key={s} onClick={() => updateFormData({ stage: s })} className={cn("px-4 py-2 rounded-xl text-sm capitalize transition-all", formData.stage === s ? "neo-pressed text-charcoal font-medium" : "neo-extruded text-cool-grey")}>
-                    {s}
+                  <button key={s} onClick={() => updateFormData({ stage: s })} className={cn(
+                    "px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                    formData.stage === s
+                      ? "neo-pressed text-charcoal ring-2 ring-primary/50 ring-offset-2 ring-offset-background"
+                      : "neo-extruded text-cool-grey hover:text-charcoal"
+                  )}>
+                    {formatStage(s)}
                   </button>
                 ))}
               </div>
@@ -339,7 +345,7 @@ export default function FounderWizard() {
             <div className="neo-subtle rounded-2xl p-5">
               <h3 className="font-bold text-xl text-charcoal mb-1">{formData.name}</h3>
               <p className="text-cool-grey text-sm">{formData.tagline}</p>
-              <Badge className="mt-2 capitalize">{formData.stage}</Badge>
+              <Badge className="mt-2">{formatStage(formData.stage)}</Badge>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><p className="text-cool-grey text-xs mb-1">Problem</p><p className="text-charcoal">{formData.problemStatement || '—'}</p></div>
@@ -368,8 +374,12 @@ export default function FounderWizard() {
         <div className="flex items-center gap-1 overflow-x-auto pb-2">
           {steps.map((s, i) => (
             <button key={s.id} onClick={() => i <= currentStepIndex && setCurrentStep(s.id)} className={cn(
-              "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-300",
-              i === currentStepIndex ? "neo-pressed text-charcoal" : i < currentStepIndex ? "text-primary" : "text-cool-grey"
+              "flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-300",
+              i === currentStepIndex
+                ? "neo-pressed text-charcoal ring-2 ring-primary ring-offset-2 ring-offset-background"
+                : i < currentStepIndex
+                  ? "text-primary hover:bg-primary/5"
+                  : "text-cool-grey opacity-70"
             )}>
               {s.icon}
               <span className="hidden sm:inline">{s.title}</span>
@@ -398,7 +408,11 @@ export default function FounderWizard() {
               )}
             </Button>
           ) : (
-            <Button onClick={goNext} disabled={!canProceed()}>
+            <Button
+              onClick={goNext}
+              disabled={!canProceed()}
+              className="min-w-[140px] bg-coral hover:bg-coral/90 text-white font-semibold shadow-lg"
+            >
               Next <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           )}

@@ -126,7 +126,7 @@ export default function Auth() {
         } else {
           // Successfully logged in - trigger redirect via useEffect
           setJustLoggedIn(true);
-          toast.success('Welcome back!');
+          // Removed passive "Welcome back" toast - no clear UX goal
         }
       } else {
         const { error } = await signup(email, password);
