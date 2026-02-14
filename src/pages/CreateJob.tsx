@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,8 +44,10 @@ const experienceLevels = [
 
 export default function CreateJob() {
   const navigate = useNavigate();
+  const { jobId } = useParams<{ jobId: string }>();
   const { user, profile } = useAuth();
-  
+  const isEdit = !!jobId;
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -61,7 +63,36 @@ export default function CreateJob() {
   const [benefits, setBenefits] = useState<string[]>([]);
   const [deadline, setDeadline] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(isEdit);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!jobId || !user) return;
+    const fetchJob = async () => {
+      setLoadingData(true);
+      const { data, error } = await supabase
+        .from('job_postings')
+        .select('*')
+        .eq('id', jobId)
+        .eq('employer_id', user.id)
+        .maybeSingle();
+      setLoadingData(false);
+      if (error || !data) return;
+      setTitle(data.title || '');
+      setDescription(data.description || '');
+      setLocation(data.location || '');
+      setSalaryMin(data.salary_min != null ? String(data.salary_min) : '');
+      setSalaryMax(data.salary_max != null ? String(data.salary_max) : '');
+      setJobType(data.job_type || 'full-time');
+      setExperienceLevel(data.experience_level || 'entry');
+      setCompanyName(data.company_name || profile?.username || '');
+      setCompanyLogo(data.company_logo || '');
+      setSkills(Array.isArray(data.skills_required) ? data.skills_required : []);
+      setBenefits(Array.isArray(data.benefits) ? data.benefits : []);
+      setDeadline(data.application_deadline ? data.application_deadline.slice(0, 10) : '');
+    };
+    fetchJob();
+  }, [jobId, user?.id, profile?.username]);
 
   const addSkill = () => {
     const trimmedSkill = skillInput.trim();
@@ -136,25 +167,46 @@ export default function CreateJob() {
         return isNaN(n) ? null : n;
       };
 
-      const { error } = await supabase.from('job_postings').insert({
-        employer_id: user?.id,
-        title: validation.data.title,
-        description: validation.data.description,
-        location: validation.data.location,
-        salary_min: parseSalary(salaryMin),
-        salary_max: parseSalary(salaryMax),
-        job_type: jobType,
-        experience_level: experienceLevel,
-        company_name: validation.data.company_name,
-        company_logo: validation.data.company_logo,
-        skills_required: validation.data.skills_required,
-        benefits: validation.data.benefits,
-        application_deadline: deadline || null,
-      });
-
-      if (error) throw error;
-
-      toast.success('Job posting created!', { icon: null });
+      if (isEdit && jobId) {
+        const { error } = await supabase
+          .from('job_postings')
+          .update({
+            title: validation.data.title,
+            description: validation.data.description,
+            location: validation.data.location,
+            salary_min: parseSalary(salaryMin),
+            salary_max: parseSalary(salaryMax),
+            job_type: jobType,
+            experience_level: experienceLevel,
+            company_name: validation.data.company_name,
+            company_logo: validation.data.company_logo,
+            skills_required: validation.data.skills_required,
+            benefits: validation.data.benefits,
+            application_deadline: deadline || null,
+          })
+          .eq('id', jobId)
+          .eq('employer_id', user?.id);
+        if (error) throw error;
+        toast.success('Job updated!', { icon: null });
+      } else {
+        const { error } = await supabase.from('job_postings').insert({
+          employer_id: user?.id,
+          title: validation.data.title,
+          description: validation.data.description,
+          location: validation.data.location,
+          salary_min: parseSalary(salaryMin),
+          salary_max: parseSalary(salaryMax),
+          job_type: jobType,
+          experience_level: experienceLevel,
+          company_name: validation.data.company_name,
+          company_logo: validation.data.company_logo,
+          skills_required: validation.data.skills_required,
+          benefits: validation.data.benefits,
+          application_deadline: deadline || null,
+        });
+        if (error) throw error;
+        toast.success('Job posting created!', { icon: null });
+      }
       navigate('/employer', { replace: true });
     } catch (error) {
       console.error('Error creating job:', error);
@@ -180,9 +232,9 @@ export default function CreateJob() {
             variant="coral" 
             size="sm"
             onClick={handleSubmit}
-            disabled={loading || !title.trim() || !description.trim()}
+            disabled={loading || loadingData || !title.trim() || !description.trim()}
           >
-            {loading ? 'Publishing...' : 'Publish'}
+            {loading ? (isEdit ? 'Saving...' : 'Publishing...') : loadingData ? 'Loading...' : isEdit ? 'Save Changes' : 'Publish'}
           </Button>
         </div>
       </div>
@@ -190,8 +242,8 @@ export default function CreateJob() {
       {/* Form */}
       <div className="p-4 space-y-6 pb-12">
         <div>
-          <h1 className="text-2xl font-bold">Create Job Posting</h1>
-          <p className="text-muted-foreground text-sm">Find your next hire through video portfolios</p>
+          <h1 className="text-2xl font-bold">{isEdit ? 'Edit Job Posting' : 'Create Job Posting'}</h1>
+          <p className="text-muted-foreground text-sm">{isEdit ? 'Update your job listing' : 'Find your next hire through video portfolios'}</p>
         </div>
 
         {/* Basic Info */}

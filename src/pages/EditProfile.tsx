@@ -63,6 +63,15 @@ export default function EditProfile() {
     return null;
   }
 
+  // Wait for profile to load so we don't show empty form on refresh
+  if (user && !profile) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground animate-pulse">Loading profile...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
