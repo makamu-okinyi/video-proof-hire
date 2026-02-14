@@ -108,7 +108,20 @@ export default function JobApplicants() {
       ));
       toast.success(`Application ${status}`, { icon: null });
 
-      // Send email notification for status change (fire and forget)
+      // In-app notification + auto-message + email (fire and forget)
+      supabase.functions.invoke('notify-status-change', {
+        body: {
+          type: 'job_status',
+          recipientId: applicantId,
+          status,
+          data: {
+            jobApplicationId: applicationId,
+            jobId: job?.id,
+            jobTitle: job?.title,
+            companyName: job?.company_name,
+          },
+        },
+      }).catch(console.error);
       supabase.functions.invoke('send-notification', {
         body: {
           type: 'application_status',

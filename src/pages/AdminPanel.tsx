@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { PitchVideoModal } from '@/components/PitchVideoModal';
 import { useAdminVentures } from '@/hooks/useAdminVentures';
 
 
@@ -76,11 +76,12 @@ export default function AdminPanel() {
   const rejectedCount = allVentures?.filter((v) => v?.review_status === 'rejected').length ?? 0;
   const applicationChartData = buildApplicationChartData(allVentures ?? []);
 
-  const handleAction = (ventureId: string, action: 'shortlisted' | 'rejected') => {
-    setRemovedVentureIds((prev) => new Set(prev).add(ventureId));
-    updateStatus({ ventureId, status: action }, {
-      onError: () => setRemovedVentureIds((prev) => { const n = new Set(prev); n.delete(ventureId); return n; }),
-    });
+  const handleAction = (venture: { id: string; name: string; founder_id?: string | null }, action: 'shortlisted' | 'rejected') => {
+    setRemovedVentureIds((prev) => new Set(prev).add(venture.id));
+    updateStatus(
+      { ventureId: venture.id, status: action, founderId: venture.founder_id ?? undefined, ventureName: venture.name },
+      { onError: () => setRemovedVentureIds((prev) => { const n = new Set(prev); n.delete(venture.id); return n; }) }
+    );
   };
 
   const tabs: { id: Tab; label: string }[] = [
@@ -208,7 +209,7 @@ export default function AdminPanel() {
                           <Button 
                             size="sm" 
                             className="bg-green-600 hover:bg-green-700 text-white" 
-                            onClick={() => handleAction(venture.id, 'shortlisted')}
+                            onClick={() => handleAction(venture, 'shortlisted')}
                             disabled={isUpdating}
                           >
                             <CheckCircle className="h-4 w-4 mr-1" /> Shortlist
@@ -216,7 +217,7 @@ export default function AdminPanel() {
                           <Button 
                             size="sm" 
                             variant="destructive" 
-                            onClick={() => handleAction(venture.id, 'rejected')}
+                            onClick={() => handleAction(venture, 'rejected')}
                             disabled={isUpdating}
                           >
                             <X className="h-4 w-4 mr-1" /> Reject
@@ -284,31 +285,13 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* Video Modal */}
-        <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
-          <DialogContent className="max-w-lg p-0 overflow-hidden rounded-3xl" aria-describedby="pitch-video-desc">
-            <DialogHeader className="p-4 pb-0 w-full text-center">
-              <DialogTitle>Applicant Pitch Video</DialogTitle>
-              <DialogDescription id="pitch-video-desc">
-                Watch the applicant&apos;s pitch video below.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="p-4 w-full">
-              <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden mt-2">
-                {selectedVideo && (
-                  <video
-                    src={selectedVideo}
-                    controls
-                    autoPlay
-                    playsInline
-                    preload="auto"
-                    className="absolute inset-0 w-full h-full object-contain"
-                  />
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Video Modal - custom to avoid zoom animation that caused centering flash */}
+        <PitchVideoModal
+          isOpen={!!selectedVideo}
+          onClose={() => setSelectedVideo(null)}
+          videoUrl={selectedVideo || ''}
+          title="Applicant Pitch Video"
+        />
       </div>
     </DashboardLayout>
   );
