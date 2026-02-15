@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { isAdminRole, isFounderRole } from '@/components/auth/ProtectedRoute';
-import { GolfBallLoader } from '@/components/ui/GolfBallLoader';
+import { RocketLoader } from '@/components/ui/RocketLoader';
 import Auth from './Auth';
 
 const Index = () => {
@@ -26,7 +26,7 @@ const Index = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <GolfBallLoader indeterminate label="Loading..." />
+        <RocketLoader indeterminate label="Loading..." />
       </div>
     );
   }

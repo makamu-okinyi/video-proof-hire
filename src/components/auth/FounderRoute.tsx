@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { GolfBallLoader } from '@/components/ui/GolfBallLoader';
+import { RocketLoader } from '@/components/ui/RocketLoader';
 
 const FOUNDER_ROLES = ['founder', 'talent'] as const;
 
@@ -31,7 +31,7 @@ export function FounderRoute({ children }: FounderRouteProps) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <GolfBallLoader indeterminate label="Loading..." />
+        <RocketLoader indeterminate label="Loading..." />
       </div>
     );
   }
@@ -39,7 +39,7 @@ export function FounderRoute({ children }: FounderRouteProps) {
   if (!isAuthenticated || !isFounderRole(profile?.user_type)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <GolfBallLoader indeterminate label="Redirecting..." />
+        <RocketLoader indeterminate label="Redirecting..." />
       </div>
     );
   }

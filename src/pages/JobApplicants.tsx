@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { StartConversationButton } from '@/components/messaging/StartConversationButton';
-import { GolfBallLoader } from '@/components/ui/GolfBallLoader';
+import { RocketLoader } from '@/components/ui/RocketLoader';
 interface Applicant {
   id: string;
   status: string;
@@ -218,7 +218,7 @@ export default function JobApplicants() {
       <div className="min-h-dvh flex flex-col items-center justify-center bg-slate-50">
         <div className="absolute inset-0 bg-slate-100/80" />
         <div className="relative z-10">
-          <GolfBallLoader indeterminate label="Loading applicants..." />
+          <RocketLoader indeterminate label="Loading applicants..." />
         </div>
       </div>
     );
