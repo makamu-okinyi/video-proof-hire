@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,29 +13,30 @@ import Index from "./pages/Index";
 import Feed from "./pages/Feed";
 import Jobs from "./pages/Jobs";
 import Challenges from "./pages/Challenges";
-import Create from "./pages/Create";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
-import EditProfile from "./pages/EditProfile";
-import EmployerDashboard from "./pages/EmployerDashboard";
-import EmployerSettings from "./pages/EmployerSettings";
-import CompanyProfileSettings from "./pages/CompanyProfileSettings";
-import AccountSettings from "./pages/AccountSettings";
-import MyShortlist from "./pages/MyShortlist";
-import CreateJob from "./pages/CreateJob";
-import CreateChallenge from "./pages/CreateChallenge";
-import JobApplicants from "./pages/JobApplicants";
-import ChallengeSubmissions from "./pages/ChallengeSubmissions";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Messages from "./pages/Messages";
 import UserProfile from "./pages/UserProfile";
 import Ventures from "./pages/Ventures";
 import VentureDetail from "./pages/VentureDetail";
-import FounderWizard from "./pages/FounderWizard";
-import FounderDashboard from "./pages/FounderDashboard";
-import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
+
+const Create = lazy(() => import("./pages/Create"));
+const EditProfile = lazy(() => import("./pages/EditProfile"));
+const EmployerDashboard = lazy(() => import("./pages/EmployerDashboard"));
+const EmployerSettings = lazy(() => import("./pages/EmployerSettings"));
+const CompanyProfileSettings = lazy(() => import("./pages/CompanyProfileSettings"));
+const AccountSettings = lazy(() => import("./pages/AccountSettings"));
+const MyShortlist = lazy(() => import("./pages/MyShortlist"));
+const CreateJob = lazy(() => import("./pages/CreateJob"));
+const CreateChallenge = lazy(() => import("./pages/CreateChallenge"));
+const JobApplicants = lazy(() => import("./pages/JobApplicants"));
+const ChallengeSubmissions = lazy(() => import("./pages/ChallengeSubmissions"));
+const FounderWizard = lazy(() => import("./pages/FounderWizard"));
+const FounderDashboard = lazy(() => import("./pages/FounderDashboard"));
+const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 
 const queryClient = new QueryClient();
 
@@ -46,6 +48,7 @@ const App = () => (
         <Sonner />
         <PWAUpdatePrompt />
         <BrowserRouter>
+          <Suspense fallback={<div className="min-h-dvh flex items-center justify-center bg-background"><div className="animate-pulse text-muted-foreground">Loading...</div></div>}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/feed" element={<Feed />} />
@@ -82,6 +85,7 @@ const App = () => (
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
