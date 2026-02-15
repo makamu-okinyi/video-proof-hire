@@ -169,11 +169,10 @@ export default function JobApplicants() {
         jobRole: job?.title || '—',
         videoPortfolioUrl: a.videos[0]?.video_url ?? null,
       }));
-      const [{ pdf }, { ApplicantDossierPDF }] = await Promise.all([
-        import('@react-pdf/renderer'),
-        import('@/components/admin/ApplicantDossierPDF'),
-      ]);
-      const blob = await pdf(<ApplicantDossierPDF applicants={rows} title={`Applicants — ${job?.title || 'Job'}`} />).toBlob();
+      const reactPdf = await import('@react-pdf/renderer');
+      const { ApplicantDossierPDF } = await import('@/components/admin/ApplicantDossierPDF');
+      const doc = <ApplicantDossierPDF applicants={rows} title={`Applicants — ${job?.title || 'Job'}`} />;
+      const blob = await reactPdf.pdf(doc).toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -181,10 +180,13 @@ export default function JobApplicants() {
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      requestAnimationFrame(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
       toast.success('Applicant dossier downloaded');
     } catch (err) {
+      console.error('PDF download error:', err);
       toast.error('Failed to generate dossier');
     } finally {
       setPdfLoading(false);

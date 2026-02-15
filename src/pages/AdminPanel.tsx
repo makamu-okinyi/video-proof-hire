@@ -103,24 +103,28 @@ export default function AdminPanel() {
       const applicants = (allVentures ?? []).map((v) => ({
         applicantName: v.founder_name || 'Unknown',
         jobRole: v.name,
-        videoPortfolioUrl: v.pitch_video_url,
+        videoPortfolioUrl: v.pitch_video_url || null,
       }));
-      const [{ pdf }, { ApplicantDossierPDF }] = await Promise.all([
-        import('@react-pdf/renderer'),
-        import('@/components/admin/ApplicantDossierPDF'),
-      ]);
-      const blob = await pdf(<ApplicantDossierPDF applicants={applicants} title="Applicant Dossier — Venture Engine" />).toBlob();
+      const reactPdf = await import('@react-pdf/renderer');
+      const { ApplicantDossierPDF } = await import('@/components/admin/ApplicantDossierPDF');
+      const doc = <ApplicantDossierPDF applicants={applicants} title="Applicant Dossier — Venture Engine" />;
+      const instance = reactPdf.pdf(doc);
+      const blob = await instance.toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `applicant-dossier-${new Date().toISOString().slice(0, 10)}.pdf`;
       a.style.display = 'none';
+      a.setAttribute('download', a.download);
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      requestAnimationFrame(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
       toast.success('Applicant dossier downloaded');
     } catch (err) {
+      console.error('PDF download error:', err);
       toast.error('Failed to generate dossier');
     } finally {
       setPdfLoading(false);
@@ -157,7 +161,7 @@ export default function AdminPanel() {
           <Button
             size="sm"
             variant="outline"
-            className="neo-extruded border-none shrink-0"
+            className="neo-extruded border-none shrink-0 pointer-events-auto"
             onClick={handleDownloadDossier}
             disabled={pdfLoading || !allVentures?.length}
           >
@@ -223,30 +227,6 @@ export default function AdminPanel() {
                   <StatCard title="SHORTLISTED" value={String(shortlistedCount)} />
                   <StatCard title="REJECTED" value={String(rejectedCount)} />
                 </div>
-
-                {applicationChartData.some(d => d.applications > 0) && (
-                  <NeoCard className="p-5 lg:p-8 rounded-[2px]">
-                    <NeoCardHeader>
-                      <div>
-                        <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-1">Applications by month (this year)</p>
-                        <NeoCardTitle className="text-xl">Monthly intake trend</NeoCardTitle>
-                      </div>
-                    </NeoCardHeader>
-                    <NeoCardContent className="mt-4">
-                      <div className="flex items-end gap-1 h-24">
-                        {applicationChartData.map((d, i) => (
-                          <div key={d.label} className="flex-1 flex flex-col items-center gap-1">
-                            <div
-                              className="w-full max-w-[24px] bg-primary/80 rounded-t transition-all"
-                              style={{ height: `${Math.max(4, (d.applications / Math.max(1, ...applicationChartData.map(x => x.applications))) * 100)}%` }}
-                            />
-                            <span className="text-[10px] text-cool-grey">{d.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </NeoCardContent>
-                  </NeoCard>
-                )}
               </>
             )}
           </div>
