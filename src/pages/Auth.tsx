@@ -70,20 +70,29 @@ export default function Auth() {
 
   // Handle authentication state changes and redirects
   useEffect(() => {
-    if (!isLoading && isAuthenticated && profile) {
+    if (!isLoading && isAuthenticated) {
       // If user has incomplete profile (new Google OAuth user), show onboarding
-      if (profileNeedsCompletion) {
+      if (profile && profileNeedsCompletion) {
         setStep('userType');
         return;
       }
-      
-      // Redirect to appropriate page based on user type
-      // This handles: login, Google OAuth return for existing users
-      if (justLoggedIn || location.search.includes('code=') || location.hash.includes('access_token')) {
+
+      // Redirect when: just logged in, OAuth callback, or profile loaded (with role)
+      const shouldRedirect = justLoggedIn || location.search.includes('code=') || location.hash.includes('access_token');
+      if (shouldRedirect && profile) {
         const destination = (profile.user_type === 'employer' || profile.user_type === 'investor') ? '/admin' : 
                           profile.user_type === 'founder' ? '/founder' : '/feed';
         navigate(destination, { replace: true });
         setJustLoggedIn(false);
+        return;
+      }
+      // Fallback: if authenticated but profile slow/null, redirect to feed after brief wait
+      if (shouldRedirect && !profile) {
+        const t = setTimeout(() => {
+          navigate('/feed', { replace: true });
+          setJustLoggedIn(false);
+        }, 500);
+        return () => clearTimeout(t);
       }
     }
   }, [isAuthenticated, isLoading, profile, navigate, location.search, location.hash, profileNeedsCompletion, justLoggedIn]);
