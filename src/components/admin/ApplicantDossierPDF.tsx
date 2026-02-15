@@ -3,16 +3,9 @@ import {
   Page,
   Text,
   View,
-  Font,
   StyleSheet,
   Link,
 } from '@react-pdf/renderer';
-
-// Register JetBrains Mono for technical authority
-Font.register({
-  family: 'JetBrains Mono',
-  src: 'https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.8/files/jetbrains-mono-latin-400-normal.woff',
-});
 
 const styles = StyleSheet.create({
   page: {
@@ -42,7 +35,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#cbd5e1',
-    fontFamily: 'JetBrains Mono',
+    fontFamily: 'Helvetica',
     fontSize: 8,
   },
   col1: { width: '28%' },

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { GolfBallLoader } from '@/components/ui/GolfBallLoader';
 
 const EMPLOYER_ROLES = ['employer', 'investor'] as const;
 
@@ -26,9 +27,7 @@ export function EmployerRoute() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="neo-pressed px-8 py-4 rounded-2xl text-cool-grey animate-pulse">
-          Loading...
-        </div>
+        <GolfBallLoader indeterminate label="Loading..." />
       </div>
     );
   }
@@ -36,7 +35,7 @@ export function EmployerRoute() {
   if (!isAuthenticated || !isEmployerRole(profile?.user_type)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="neo-pressed px-8 py-4 rounded-2xl text-cool-grey animate-pulse">Redirecting...</div>
+        <GolfBallLoader indeterminate label="Redirecting..." />
       </div>
     );
   }
