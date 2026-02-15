@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { ThemeProvider } from "next-themes";
 import { GolfBallLoader } from "@/components/ui/GolfBallLoader";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -51,10 +52,11 @@ const App = () => (
         <Sonner />
         <PWAUpdatePrompt />
         <BrowserRouter>
+          <ErrorBoundary>
           <Suspense fallback={
-            <div className="min-h-dvh flex flex-col items-center justify-center bg-slate-50">
+            <div className="min-h-dvh flex flex-col items-center justify-center bg-[hsl(210,40%,98%)]">
               <div className="absolute inset-0 bg-slate-100/80" />
-              <div className="relative z-10">
+              <div className="relative z-10 pointer-events-auto">
                 <GolfBallLoader indeterminate label="Loading Donjo..." />
               </div>
             </div>
@@ -96,6 +98,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           </Suspense>
+          </ErrorBoundary>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

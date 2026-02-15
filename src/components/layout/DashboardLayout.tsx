@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardTopBar } from './DashboardTopBar';
 import { OrganicBackground } from './OrganicBackground';
@@ -8,6 +8,10 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+  // Theme sync: ensure light theme on mount to avoid loader/UI conflict during initial render
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+  }, []);
   return (
     <div className="min-h-screen min-h-dvh flex relative overflow-x-hidden w-full max-w-full">
       {/* Organic Abstract Background */}
