@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft, Loader2 } from 'lucide-react';
+import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft, Loader2, Fingerprint, ChevronDown } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Logo } from '@/components/ui/Logo';
@@ -46,8 +47,14 @@ export default function Auth() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   const { user, login, signup, signInWithOAuth, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
+
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setDarkMode(isDark);
+  }, []);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -385,7 +392,7 @@ export default function Auth() {
               Join our cohort program, get mentorship, and pitch to investors.
             </p>
             <button 
-              className="w-full bg-primary text-primary-foreground py-3 rounded-2xl font-medium hover:bg-primary/90 transition-all duration-300 flex items-center justify-center gap-2"
+              className="w-full bg-primary text-primary-foreground py-3 rounded-2xl font-medium hover:bg-primary/90 transition-all duration-300 flex items-center justify-center gap-2 pointer-events-auto"
               onClick={() => { setUserType('talent'); setIsLogin(false); setStep('login'); }}
             >
               Apply Now
@@ -405,7 +412,7 @@ export default function Auth() {
               </div>
             </div>
             <button 
-              className="w-full neo-extruded py-3 rounded-2xl font-medium text-charcoal hover:shadow-neo-pressed transition-all duration-300 flex items-center justify-center gap-2"
+              className="w-full neo-extruded py-3 rounded-2xl font-medium text-charcoal hover:shadow-neo-pressed transition-all duration-300 flex items-center justify-center gap-2 pointer-events-auto"
               onClick={() => { setUserType('employer'); setIsLogin(false); setStep('login'); }}
             >
               Admin Login
@@ -423,7 +430,7 @@ export default function Auth() {
           </div>
           
           <button 
-            className="w-full py-3 text-cool-grey hover:text-charcoal transition-colors font-medium"
+            className="w-full py-3 text-cool-grey hover:text-charcoal transition-colors font-medium pointer-events-auto"
             onClick={() => { setIsLogin(true); setStep('login'); }}
           >
             Sign in to my account
@@ -433,150 +440,175 @@ export default function Auth() {
     </div>
   );
 
-  const renderLoginSignup = () => (
-    <div className="flex flex-col min-h-screen px-6 py-8 animate-fade-in">
-      {/* Back Button */}
-      <button 
-        onClick={() => setStep('welcome')}
-        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
-      >
-        <ChevronLeft className="h-5 w-5" />
-        <span>Back</span>
-      </button>
+  const renderLoginSignup = () => {
+    const handleBiometricClick = () => {
+      toast.info('Biometric hardware sync pending...');
+    };
 
-      <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
-        <div className="space-y-2 mb-8">
-          <h2 className="text-3xl font-bold text-charcoal">
-            {isLogin ? 'Welcome back' : userType === 'employer' ? 'Admin Access' : 'Applicant Application'}
-          </h2>
-          <p className="text-cool-grey">
-            {isLogin 
-              ? 'Sign in to your Startup Garage account' 
-              : userType === 'employer'
-                ? 'Access the program management dashboard'
-                : 'Create your account to submit your video portfolio'}
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          {/* Email */}
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="pl-12 h-14 text-base"
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col animate-fade-in">
+        {/* Header - design1 layout */}
+        <div className="flex items-center justify-between px-6 py-4 gap-4">
+          <button
+            type="button"
+            onClick={() => setStep('welcome')}
+            className="neo-medical-extruded px-4 py-2.5 text-sm font-medium text-slate-700 hover:opacity-90 pointer-events-auto"
+          >
+            UI Series
+          </button>
+          <div className="flex-1 flex justify-center">
+            <div className="relative">
+              <select className="neo-medical-extruded px-4 py-2.5 text-sm font-medium text-slate-700 appearance-none cursor-pointer pointer-events-auto bg-transparent pr-8 min-w-[120px]" defaultValue="en">
+                <option value="en">English</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 neo-medical-extruded px-4 py-2.5 rounded-[2px] pointer-events-auto">
+            <span className="text-sm font-medium text-slate-700">Dark Mode</span>
+            <Switch
+              checked={darkMode}
+              onCheckedChange={(checked) => {
+                setDarkMode(checked);
+                document.documentElement.classList.toggle('dark', checked);
+              }}
+              className="data-[state=checked]:bg-emerald-500"
             />
           </div>
+        </div>
 
-          {/* Password */}
-          <div className="space-y-2">
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-12 pr-12 h-14 text-base"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
-            </div>
-            {/* Password strength indicator - only show during signup */}
-            {!isLogin && <PasswordStrengthIndicator password={password} />}
-            {/* Forgot password link - only show during login */}
-            {isLogin && (
-              <button
-                type="button"
-                onClick={() => {
-                  setResetEmail(email);
-                  setResetEmailSent(false);
-                  setStep('forgotPassword');
-                }}
-                className="text-sm text-muted-foreground hover:text-coral transition-colors"
-              >
-                Forgot password?
-              </button>
-            )}
-          </div>
-
-          {/* Submit */}
-          <Button 
-            variant="hero" 
-            size="xl" 
-            className="w-full mt-6"
-            onClick={handleAuth}
-            disabled={loading || !email || !password}
-          >
-            {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Continue'}
-            <ArrowRight className="h-5 w-5 ml-2" />
-          </Button>
-
-          {/* Divider */}
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">or continue with</span>
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 max-w-md mx-auto w-full">
+          {/* Avatar / Logo - design1 central */}
+          <div className="mb-8 flex justify-center">
+            <div className="w-20 h-20 neo-medical-extruded rounded-full flex items-center justify-center p-1 ring-2 ring-slate-200">
+              <Logo size="lg" className="object-contain" />
             </div>
           </div>
 
-          {/* Google Sign In */}
-          <Button 
-            variant="outline" 
-            size="xl" 
-            className="w-full"
-            onClick={handleGoogleSignIn}
-            disabled={loading || googleLoading}
-          >
-            {googleLoading ? (
-              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-            ) : (
-              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+          <div className="w-full space-y-4">
+            {/* Phone number, email or username */}
+            <div className="space-y-1.5">
+              <label className="text-sm text-slate-600">Phone number, email or username</label>
+              <div className="neo-medical-pressed rounded-[2px]">
+                <Input
+                  type="email"
+                  placeholder=""
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-12 rounded-[2px] border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 pl-4"
                 />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-            )}
-            {googleLoading ? 'Connecting...' : 'Continue with Google'}
-          </Button>
+              </div>
+            </div>
 
-          {/* Toggle */}
-          <p className="text-center text-muted-foreground pt-4">
-            {isLogin ? "Don't have an account? " : 'Already have an account? '}
-            <button 
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-foreground font-medium hover:text-coral transition-colors"
+            {/* Password */}
+            <div className="space-y-1.5">
+              <label className="text-sm text-slate-600">Password</label>
+              <div className="neo-medical-pressed rounded-[2px] relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder=""
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-12 rounded-[2px] border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 pl-4 pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 pointer-events-auto"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+              {!isLogin && <PasswordStrengthIndicator password={password} />}
+            </div>
+
+            {/* Log in - Emerald-500 for success/active */}
+            <Button
+              variant="default"
+              className="w-full h-14 rounded-[2px] bg-emerald-500 hover:bg-emerald-600 text-white font-semibold shadow-none border-0 mt-4"
+              onClick={handleAuth}
+              disabled={loading || !email || !password}
             >
-              {isLogin ? 'Sign up' : 'Sign in'}
-            </button>
-          </p>
+              {loading ? 'Loading...' : isLogin ? 'Log in' : 'Continue'}
+              {!loading && <ArrowRight className="h-5 w-5 ml-2" />}
+            </Button>
+
+            {/* Forgot your login details? Get help login in. */}
+            {isLogin && (
+              <p className="text-center text-sm text-slate-600 mt-2">
+                Forgot your login details?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetEmail(email);
+                    setResetEmailSent(false);
+                    setStep('forgotPassword');
+                  }}
+                  className="font-medium text-slate-800 hover:text-emerald-600 pointer-events-auto"
+                >
+                  Get help login in.
+                </button>
+              </p>
+            )}
+
+            {/* Biometric - Fingerprint icon */}
+            <div className="flex justify-center py-4">
+              <button
+                type="button"
+                onClick={handleBiometricClick}
+                className="w-16 h-16 neo-medical-extruded rounded-full flex items-center justify-center text-slate-600 hover:text-emerald-500 transition-colors pointer-events-auto"
+              >
+                <Fingerprint className="h-8 w-8" />
+              </button>
+            </div>
+
+            {/* Don't have an account? Sign up */}
+            <p className="text-center text-sm text-slate-600 pt-2">
+              {isLogin ? "Don't have an account? " : 'Already have an account? '}
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="font-medium text-slate-800 hover:text-emerald-600 pointer-events-auto"
+              >
+                {isLogin ? 'Sign up' : 'Sign in'}
+              </button>
+            </p>
+          </div>
+
+          {/* Google Sign In - below main form, secondary */}
+          <div className="mt-8 w-full">
+            <div className="relative py-2">
+              <span className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-slate-300" />
+              </span>
+              <span className="relative flex justify-center text-xs uppercase">
+                <span className="bg-slate-50 px-2 text-slate-500">or continue with</span>
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full mt-4 rounded-[2px] neo-medical-extruded border-slate-200"
+              onClick={handleGoogleSignIn}
+              disabled={loading || googleLoading}
+            >
+              {googleLoading ? (
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              ) : (
+                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+              )}
+              {googleLoading ? 'Connecting...' : 'Continue with Google'}
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderForgotPassword = () => (
     <div className="flex flex-col min-h-screen px-6 py-8 animate-fade-in">

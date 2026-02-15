@@ -165,6 +165,19 @@
 }
 
 @layer utilities {
+  /* Medical White neumorphic (White/Slate-50 theme) - 2px radius Industrial-Chic */
+  .neo-medical-extruded {
+    background: hsl(210 40% 98%);
+    box-shadow: 4px 4px 8px hsl(220 15% 75%), -4px -4px 8px hsl(0 0% 100%);
+    border-radius: 2px;
+  }
+
+  .neo-medical-pressed {
+    background: hsl(210 40% 96%);
+    box-shadow: inset 3px 3px 6px hsl(220 15% 78%), inset -3px -3px 6px hsl(0 0% 100%);
+    border-radius: 2px;
+  }
+
   /* Neomorphic utilities */
   .neo-extruded {
     background: hsl(var(--neo-bg));

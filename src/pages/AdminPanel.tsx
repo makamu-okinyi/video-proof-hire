@@ -4,14 +4,16 @@ import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/componen
 import { StatCard } from '@/components/dashboard/StatCard';
 import { 
   Users, FileText, Play, CheckCircle, X,
-  Calendar, Award, Loader2, AlertCircle, ArrowRight
+  Calendar, Award, Loader2, AlertCircle, ArrowRight, Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PitchVideoModal } from '@/components/PitchVideoModal';
 import { useAdminVentures } from '@/hooks/useAdminVentures';
 import { formatStage } from '@/lib/stageDisplay';
-
+import { pdf } from '@react-pdf/renderer';
+import { ApplicantDossierPDF } from '@/components/admin/ApplicantDossierPDF';
+import { toast } from 'sonner';
 
 const mentors = [
   { id: '1', name: 'Dr. Sarah Kimani', specialty: 'Strategy', available: true },
@@ -94,6 +96,30 @@ export default function AdminPanel() {
     );
   };
 
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const handleDownloadDossier = async () => {
+    setPdfLoading(true);
+    try {
+      const applicants = (allVentures ?? []).map((v) => ({
+        applicantName: v.founder_name || 'Unknown',
+        jobRole: v.name,
+        videoPortfolioUrl: v.pitch_video_url,
+      }));
+      const blob = await pdf(<ApplicantDossierPDF applicants={applicants} title="Applicant Dossier — Venture Engine" />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `applicant-dossier-${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Applicant dossier downloaded');
+    } catch (err) {
+      toast.error('Failed to generate dossier');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'review', label: `Review Queue (${pendingCount})` },
@@ -115,9 +141,21 @@ export default function AdminPanel() {
     <DashboardLayout>
       <div className="space-y-6 max-w-6xl mx-auto w-full overflow-x-hidden px-1 sm:px-0">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-charcoal mb-1">Venture Engine</h1>
-          <p className="text-cool-grey text-sm">Program management & application review dashboard.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-charcoal mb-1">Venture Engine</h1>
+            <p className="text-cool-grey text-sm">Program management & application review dashboard.</p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="neo-extruded border-none shrink-0"
+            onClick={handleDownloadDossier}
+            disabled={pdfLoading || !allVentures?.length}
+          >
+            {pdfLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            Download Applicant Dossier
+          </Button>
         </div>
 
         {/* Tabs - unmistakable active state */}
@@ -126,7 +164,7 @@ export default function AdminPanel() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
+              className={`px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-300 pointer-events-auto ${
                 activeTab === tab.id
                   ? 'neo-pressed text-charcoal ring-2 ring-primary ring-offset-2 ring-offset-background'
                   : 'neo-flat text-cool-grey hover:text-charcoal'
