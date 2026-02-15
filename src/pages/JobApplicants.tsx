@@ -246,7 +246,7 @@ export default function JobApplicants() {
             variant="outline"
             onClick={handleDownloadDossier}
             disabled={pdfLoading || applicants.length === 0}
-            className="shrink-0 pointer-events-auto"
+            className="shrink-0 pointer-events-auto rounded-[2px]"
           >
             {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             <span className="hidden sm:inline ml-1">Download</span>

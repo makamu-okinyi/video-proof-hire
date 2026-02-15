@@ -54,8 +54,8 @@ const App = () => (
         <BrowserRouter>
           <ErrorBoundary>
           <Suspense fallback={
-            <div className="min-h-dvh flex flex-col items-center justify-center bg-[hsl(210,40%,98%)]">
-              <div className="absolute inset-0 bg-slate-100/80" />
+            <div className="min-h-dvh flex flex-col items-center justify-center bg-[hsl(210,40%,98%)] rounded-[2px]">
+              <div className="absolute inset-0 bg-slate-100/80 rounded-[2px]" />
               <div className="relative z-10 pointer-events-auto">
                 <GolfBallLoader indeterminate label="Loading Donjo..." />
               </div>

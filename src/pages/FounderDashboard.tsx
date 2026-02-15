@@ -7,8 +7,9 @@ import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/componen
 import { 
   Rocket, FileText, Users, Calendar, Bell, Briefcase,
   Clock, CheckCircle, AlertCircle,
-  Video, MessageSquare, Loader2
+  Video, MessageSquare
 } from 'lucide-react';
+import { GolfBallLoader } from '@/components/ui/GolfBallLoader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -66,7 +67,7 @@ export default function FounderDashboard() {
         <NeoCard className="p-5 lg:p-8">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-cool-grey" />
+              <GolfBallLoader indeterminate label="Loading..." />
             </div>
           ) : !venture ? (
             <div className="text-center py-8">
