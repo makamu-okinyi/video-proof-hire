@@ -1,13 +1,31 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, ArrowLeft, User, Bell, Shield } from 'lucide-react';
+import { ArrowLeft, User, Bell, Shield, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/context/AuthContext';
+import { getStoredCredentialForUser } from '@/lib/webauthn';
+import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { BottomNav } from '@/components/layout/BottomNav';
 
 export default function AccountSettings() {
   const navigate = useNavigate();
+  const { user, registerWebAuthn } = useAuth();
+  const [bioLoading, setBioLoading] = useState(false);
+  const hasBiometric = user ? !!getStoredCredentialForUser(user.id) : false;
+
+  const handleEnableFingerprint = async () => {
+    setBioLoading(true);
+    try {
+      const { error } = await registerWebAuthn();
+      if (error) toast.error(error.message);
+      else toast.success('Fingerprint enabled. You can sign in with it next time.');
+    } finally {
+      setBioLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -69,9 +87,29 @@ export default function AccountSettings() {
             <CardDescription>Manage security settings</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button variant="outline" className="w-full justify-start">
+            <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/reset-password')}>
               Change Password
             </Button>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="flex items-center gap-2">
+                  <Fingerprint className="h-4 w-4" />
+                  Fingerprint / Biometric
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {hasBiometric ? 'Enabled — sign in with fingerprint on login' : 'Enable passwordless sign-in'}
+                </p>
+              </div>
+              <Button
+                variant={hasBiometric ? 'secondary' : 'default'}
+                size="sm"
+                disabled={bioLoading || hasBiometric}
+                onClick={handleEnableFingerprint}
+                className="pointer-events-auto"
+              >
+                {bioLoading ? '...' : hasBiometric ? 'Enabled' : 'Enable'}
+              </Button>
+            </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="2fa">Two-factor authentication</Label>
               <Switch id="2fa" />

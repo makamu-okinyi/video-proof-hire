@@ -1,4 +1,6 @@
 import { lazy, Suspense } from "react";
+import { ThemeProvider } from "next-themes";
+import { GolfBallLoader } from "@/components/ui/GolfBallLoader";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -42,13 +44,14 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="donjo-theme">
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <PWAUpdatePrompt />
         <BrowserRouter>
-          <Suspense fallback={<div className="min-h-dvh flex items-center justify-center bg-background"><div className="animate-pulse text-muted-foreground">Loading...</div></div>}>
+          <Suspense fallback={<div className="min-h-dvh flex items-center justify-center bg-background"><GolfBallLoader indeterminate /></div>}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/feed" element={<Feed />} />
@@ -89,6 +92,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
