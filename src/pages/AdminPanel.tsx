@@ -99,12 +99,13 @@ export default function AdminPanel() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const handleDownloadDossier = async () => {
     setPdfLoading(true);
+    const applicants = (allVentures ?? []).map((v) => ({
+      applicantName: v.founder_name || 'Unknown',
+      jobRole: v.name,
+      videoPortfolioUrl: v.pitch_video_url || null,
+    }));
+    const filename = `applicant-dossier-${new Date().toISOString().slice(0, 10)}`;
     try {
-      const applicants = (allVentures ?? []).map((v) => ({
-        applicantName: v.founder_name || 'Unknown',
-        jobRole: v.name,
-        videoPortfolioUrl: v.pitch_video_url || null,
-      }));
       const reactPdf = await import('@react-pdf/renderer');
       const { ApplicantDossierPDF } = await import('@/components/admin/ApplicantDossierPDF');
       const doc = <ApplicantDossierPDF applicants={applicants} title="Applicant Dossier — Venture Engine" />;
@@ -113,9 +114,8 @@ export default function AdminPanel() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `applicant-dossier-${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.download = `${filename}.pdf`;
       a.style.display = 'none';
-      a.setAttribute('download', a.download);
       document.body.appendChild(a);
       a.click();
       requestAnimationFrame(() => {
@@ -125,7 +125,27 @@ export default function AdminPanel() {
       toast.success('Applicant dossier downloaded');
     } catch (err) {
       console.error('PDF download error:', err);
-      toast.error('Failed to generate dossier');
+      // Fallback: CSV download when PDF fails (e.g. network, renderer issues)
+      try {
+        const header = 'Applicant Name,Job Role,Video Portfolio\n';
+        const rows = applicants.map((a) => `"${(a.applicantName || '').replace(/"/g, '""')}","${(a.jobRole || '').replace(/"/g, '""')}","${a.videoPortfolioUrl || ''}"`).join('\n');
+        const csvBlob = new Blob([header + rows], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(csvBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filename}.csv`;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        requestAnimationFrame(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+        toast.success('Downloaded as CSV (PDF unavailable)');
+      } catch (fallbackErr) {
+        console.error('CSV fallback error:', fallbackErr);
+        toast.error('Failed to generate download');
+      }
     } finally {
       setPdfLoading(false);
     }
