@@ -9,7 +9,7 @@ interface GolfBallLoaderProps {
   indeterminate?: boolean;
 }
 
-export function GolfBallLoader({ progress = 0, label = 'Loading', className = '', indeterminate }: GolfBallLoaderProps) {
+export const GolfBallLoader = ({ progress = 0, label = 'Loading', className = '', indeterminate }: GolfBallLoaderProps) => {
   const [loopProgress, setLoopProgress] = useState(0);
   useEffect(() => {
     if (!indeterminate) return;
@@ -91,4 +91,4 @@ export function GolfBallLoader({ progress = 0, label = 'Loading', className = ''
       <span className="font-mono text-base font-medium text-charcoal">{label}</span>
     </div>
   );
-}
+};

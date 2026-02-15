@@ -12,7 +12,7 @@ import { PitchVideoModal } from '@/components/PitchVideoModal';
 import { useAdminVentures } from '@/hooks/useAdminVentures';
 import { formatStage } from '@/lib/stageDisplay';
 import { toast } from 'sonner';
-import { SystemHealthGauge, EngagementFluxChart, MetricCard } from '@/components/admin/MedicalChicAnalytics';
+import { GolfBallLoader } from '@/components/ui/GolfBallLoader';
 import { SystemHealthGauge, EngagementFluxChart, MetricCard } from '@/components/admin/MedicalChicAnalytics';
 
 const mentors = [
