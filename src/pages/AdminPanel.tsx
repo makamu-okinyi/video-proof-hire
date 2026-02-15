@@ -4,7 +4,7 @@ import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/componen
 import { StatCard } from '@/components/dashboard/StatCard';
 import { 
   Users, FileText, Play, CheckCircle, X,
-  Calendar, Award, Loader2, AlertCircle, ArrowRight, Download
+  Calendar, Award, Loader2, AlertCircle, ArrowRight, Download, Eye, Rocket
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,7 @@ import { useAdminVentures } from '@/hooks/useAdminVentures';
 import { formatStage } from '@/lib/stageDisplay';
 import { toast } from 'sonner';
 import { RocketLoader } from '@/components/ui/RocketLoader';
-import { SystemHealthGauge, EngagementFluxChart, MetricCard, PipelineVelocityGauge, SkillRadarChart, GeospatialHeatmap } from '@/components/admin/MedicalChicAnalytics';
+import { SystemHealthGauge, EngagementFluxChart, MetricCard, PipelineVelocityGauge, SkillRadarChart, GeospatialHeatmap, ApplicationVelocityChart, CohortCompositionDonut } from '@/components/admin/MedicalChicAnalytics';
 
 const mentors = [
   { id: '1', name: 'Dr. Sarah Kimani', specialty: 'Strategy', available: true },
@@ -171,7 +171,7 @@ export default function AdminPanel() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-6xl mx-auto w-full overflow-x-hidden px-1 sm:px-0">
+      <div className="space-y-6 max-w-[1400px] mx-auto w-full overflow-x-hidden px-1 sm:px-0">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -207,45 +207,154 @@ export default function AdminPanel() {
           ))}
         </div>
 
-        {/* Urgency banner - product intelligence */}
-        {pendingLongCount > 0 && activeTab !== 'review' && (
-          <NeoCard className="p-4 border-l-4 border-l-amber-500 bg-amber-500/5">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
-                <div>
-                  <p className="font-semibold text-charcoal">
-                    {pendingLongCount} application{pendingLongCount !== 1 ? 's' : ''} pending 5+ days
-                  </p>
-                  <p className="text-sm text-cool-grey">Review now to keep applicants engaged.</p>
-                </div>
-              </div>
-              <Button size="sm" onClick={() => setActiveTab('review')} className="bg-amber-500 hover:bg-amber-600 text-white shrink-0">
-                Review Queue <ArrowRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          </NeoCard>
-        )}
-
-        {/* Overview Tab */}
+        {/* Overview Tab - Right Rail Layout */}
         {activeTab === 'overview' && (
-          <div className="space-y-6">
+          <div className="space-y-4 max-w-[1400px] mx-auto">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-16">
                 <RocketLoader indeterminate label="Loading overview..." />
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Alert Banner - slim, above stats */}
+                {(pendingLongCount > 0 || pendingCount >= 3) && (
+                  <div className="rounded-[2px] px-4 py-3 flex items-center justify-between gap-4 flex-wrap pointer-events-auto" style={{ background: 'linear-gradient(90deg, #2563eb 0%, #3b82f6 100%)', color: 'white' }}>
+                    <div className="flex items-center gap-3">
+                      {pendingLongCount > 0 ? (
+                        <AlertCircle className="h-5 w-5 shrink-0" />
+                      ) : (
+                        <Rocket className="h-5 w-5 shrink-0" />
+                      )}
+                      <span className="font-medium text-sm">
+                        {pendingLongCount > 0
+                          ? `⚠️ ${pendingLongCount} pending review${pendingLongCount !== 1 ? 's' : ''} overdue 5+ days. Review now to keep applicants engaged.`
+                          : '🚀 Cohort 3 applications are open. You have pending reviews to process.'}
+                      </span>
+                    </div>
+                    <Button size="sm" onClick={() => setActiveTab('review')} className="bg-white text-blue-600 hover:bg-white/90 shrink-0 rounded-[2px] pointer-events-auto">
+                      Review Queue <ArrowRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* 4 Stats Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   <StatCard title="PENDING REVIEW" value={String(pendingCount)} />
-                  <StatCard
-                    title="TOTAL APPLICATIONS"
-                    value={String(allVentures.length)}
-                    change={monthOverMonthChange}
-                    changeLabel="vs last month"
-                  />
+                  <StatCard title="TOTAL APPLICATIONS" value={String(allVentures?.length ?? 0)} change={monthOverMonthChange} changeLabel="vs last month" />
                   <StatCard title="SHORTLISTED" value={String(shortlistedCount)} />
                   <StatCard title="REJECTED" value={String(rejectedCount)} />
+                </div>
+
+                {/* 70/30 Right Rail Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+                  {/* Left Column - 70%: Velocity Chart + Recent Submissions */}
+                  <div className="space-y-4 min-w-0">
+                    <NeoCard className="p-4 lg:p-5 rounded-[2px] pointer-events-auto">
+                      <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-3">Application Velocity</p>
+                      <p className="text-sm text-cool-grey mb-3">Applications per day (last 30 days)</p>
+                      <ApplicationVelocityChart
+                        data={(() => {
+                          const ventures = allVentures ?? [];
+                          const now = new Date();
+                          return Array.from({ length: 30 }, (_, i) => {
+                            const d = new Date(now);
+                            d.setDate(d.getDate() - (29 - i));
+                            const count = ventures.filter((v) => new Date(v.created_at).toDateString() === d.toDateString()).length;
+                            return { day: d.getDate(), applications: count };
+                          });
+                        })()}
+                      />
+                    </NeoCard>
+
+                    <NeoCard className="p-4 lg:p-5 rounded-[2px] pointer-events-auto overflow-hidden">
+                      <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-3">Recent Submissions</p>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm" style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                          <thead>
+                            <tr className="border-b border-border">
+                              <th className="text-left py-2 px-2 font-semibold text-charcoal">Startup</th>
+                              <th className="text-left py-2 px-2 font-semibold text-charcoal">Sector</th>
+                              <th className="text-left py-2 px-2 font-semibold text-charcoal">Date</th>
+                              <th className="text-left py-2 px-2 font-semibold text-charcoal">Status</th>
+                              <th className="text-right py-2 px-2 font-semibold text-charcoal">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(allVentures ?? []).slice(0, 8).map((v) => (
+                              <tr key={v.id} className="border-b border-border/50 last:border-0">
+                                <td className="py-2 px-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-8 w-8 neo-subtle rounded-[2px] flex items-center justify-center shrink-0">
+                                      <FileText className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <span className="font-medium text-charcoal truncate max-w-[120px]">{v.name}</span>
+                                  </div>
+                                </td>
+                                <td className="py-2 px-2 text-cool-grey text-xs">{(v.industry || ['—'])[0]}</td>
+                                <td className="py-2 px-2 text-cool-grey text-xs">{formatDate(v.created_at)}</td>
+                                <td className="py-2 px-2">
+                                  <Badge className={`text-[10px] ${
+                                    v.review_status === 'shortlisted' ? 'bg-green-500/10 text-green-600' :
+                                    v.review_status === 'rejected' ? 'bg-red-500/10 text-red-600' :
+                                    'bg-amber-500/10 text-amber-600'
+                                  }`}>{v.review_status}</Badge>
+                                </td>
+                                <td className="py-2 px-2 text-right">
+                                  <Button size="icon" variant="ghost" className="h-8 w-8 rounded-[2px] pointer-events-auto" onClick={() => v.pitch_video_url && setSelectedVideo(v.pitch_video_url)} disabled={!v.pitch_video_url}>
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                            {(allVentures ?? []).length === 0 && (
+                              <tr><td colSpan={5} className="py-8 text-center text-cool-grey text-sm">No submissions yet</td></tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </NeoCard>
+                  </div>
+
+                  {/* Right Rail - 30%: Cohort Donut + Mentor Activity */}
+                  <div className="space-y-4 lg:min-w-[300px]">
+                    <NeoCard className="p-4 rounded-[2px] pointer-events-auto">
+                      <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-3">Cohort Composition</p>
+                      <p className="text-sm text-cool-grey mb-3">Applicants by sector</p>
+                      <CohortCompositionDonut
+                        data={(() => {
+                          const ventures = allVentures ?? [];
+                          const counts: Record<string, number> = { Fintech: 0, AgriTech: 0, Health: 0, EdTech: 0, Other: 0 };
+                          ventures.forEach((v) => {
+                            const ind = (v.industry || [])[0]?.toLowerCase() || '';
+                            if (ind.includes('fin') || ind.includes('pay') || ind.includes('bank')) counts.Fintech++;
+                            else if (ind.includes('agri') || ind.includes('farm') || ind.includes('food')) counts.AgriTech++;
+                            else if (ind.includes('health') || ind.includes('med')) counts.Health++;
+                            else if (ind.includes('edu') || ind.includes('learn')) counts.EdTech++;
+                            else counts.Other++;
+                          });
+                          return Object.entries(counts).filter(([, n]) => n > 0).map(([name, value]) => ({ name, value }));
+                        })()}
+                      />
+                    </NeoCard>
+
+                    <NeoCard className="p-4 rounded-[2px] pointer-events-auto">
+                      <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-3">Mentor Activity</p>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {mentors.map((m) => (
+                          <div key={m.id} className="flex items-center gap-2 py-2 border-b border-border/50 last:border-0">
+                            <div className="h-8 w-8 neo-subtle rounded-[2px] flex items-center justify-center shrink-0">
+                              <Users className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-charcoal truncate">{m.name}</p>
+                              <p className="text-[10px] text-cool-grey">Reviewed 2 ventures this week</p>
+                            </div>
+                            <Badge className={m.available ? 'bg-green-500/10 text-green-600 text-[10px]' : 'bg-red-500/10 text-red-600 text-[10px]'}>{m.available ? 'Active' : 'Busy'}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </NeoCard>
+                  </div>
                 </div>
               </>
             )}
