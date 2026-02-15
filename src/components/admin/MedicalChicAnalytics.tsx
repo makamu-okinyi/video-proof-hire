@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 import { cn } from '@/lib/utils';
 
 const GAUGE_R = 48;
@@ -94,6 +94,70 @@ export function GeospatialHeatmap({ regionCounts }: { regionCounts?: Record<stri
     </div>
   );
 }
+
+/** Application Velocity - smooth gradient area chart, 30 days */
+export function ApplicationVelocityChart({ data }: { data: { day: number; applications: number }[] }) {
+  return (
+    <div className="h-56 w-full pointer-events-auto rounded-[2px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="velocityGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.5} />
+              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" className="stroke-muted/50" vertical={false} />
+          <XAxis dataKey="day" tick={{ fontFamily: JETBRAINS, fontSize: 10 }} stroke="hsl(var(--cool-grey))" />
+          <YAxis tick={{ fontFamily: JETBRAINS, fontSize: 10 }} stroke="hsl(var(--cool-grey))" />
+          <Tooltip contentStyle={{ fontFamily: JETBRAINS, fontSize: 12, borderRadius: '2px' }} formatter={(v: number) => [v, 'Applications']} />
+          <Area type="monotone" dataKey="applications" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#velocityGradient)" />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/** Cohort Composition - donut chart by sector (Fintech, AgriTech, Health, etc.) */
+export function CohortCompositionDonut({ data }: { data: { name: string; value: number }[] }) {
+  const COLORS = ['#ea580c', '#16a34a', '#2563eb', '#7c3aed', '#64748b'];
+  const chartData = data.length ? data : [{ name: 'No data', value: 1 }];
+  const total = data.reduce((s, d) => s + d.value, 0);
+  return (
+    <div className="h-48 w-full pointer-events-auto rounded-[2px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="50%"
+            innerRadius={48}
+            outerRadius={64}
+            paddingAngle={2}
+            dataKey="value"
+          >
+            {chartData.map((_, i) => (
+              <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="none" />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={{ fontFamily: JETBRAINS, fontSize: 11, borderRadius: '2px' }}
+            formatter={(value: number) => [total ? `${value} (${Math.round((value / total) * 100)}%)` : value, '']}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2">
+        {chartData.filter((d) => d.name !== 'No data').map((d, i) => (
+          <span key={d.name} className="text-[10px]" style={{ fontFamily: JETBRAINS }}>
+            <span className="inline-block w-2 h-2 rounded-sm mr-1 align-middle" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+            {d.name}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_R;
 
 /** System Health circular gauge (7/10 mood tracker style) */
