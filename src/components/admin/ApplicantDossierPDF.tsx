@@ -7,10 +7,14 @@ import {
   Link,
 } from '@react-pdf/renderer';
 
+// Built-in PDF fonts: Helvetica, Times-Roman, Courier (no registration needed)
+// Inter requires Font.register - use Helvetica for reliability (no network/CORS issues)
+const PDF_FONT = 'Helvetica';
+
 const styles = StyleSheet.create({
   page: {
     padding: 30,
-    fontFamily: 'Inter',
+    fontFamily: PDF_FONT,
     fontSize: 10,
   },
   title: {
@@ -26,7 +30,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#e2e8f0',
     padding: 8,
-    fontFamily: 'Inter',
+    fontFamily: PDF_FONT,
     fontWeight: 'bold',
     fontSize: 9,
   },
@@ -35,7 +39,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#cbd5e1',
-    fontFamily: 'Helvetica',
+    fontFamily: PDF_FONT,
     fontSize: 8,
   },
   col1: { width: '28%' },

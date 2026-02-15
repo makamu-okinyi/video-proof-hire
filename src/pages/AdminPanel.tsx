@@ -181,7 +181,7 @@ export default function AdminPanel() {
           <Button
             size="sm"
             variant="outline"
-            className="neo-extruded border-none shrink-0 pointer-events-auto"
+            className="neo-extruded border-none shrink-0 pointer-events-auto rounded-[2px]"
             onClick={handleDownloadDossier}
             disabled={pdfLoading || !allVentures?.length}
           >
