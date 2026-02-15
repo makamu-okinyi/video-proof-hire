@@ -44,14 +44,21 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="donjo-theme">
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="donjo-theme" forcedTheme="light">
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <PWAUpdatePrompt />
         <BrowserRouter>
-          <Suspense fallback={<div className="min-h-dvh flex items-center justify-center bg-background"><GolfBallLoader indeterminate /></div>}>
+          <Suspense fallback={
+            <div className="min-h-dvh flex flex-col items-center justify-center bg-slate-50">
+              <div className="absolute inset-0 bg-slate-100/80" />
+              <div className="relative z-10">
+                <GolfBallLoader indeterminate label="Loading Donjo..." />
+              </div>
+            </div>
+          }>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/feed" element={<Feed />} />

@@ -114,7 +114,10 @@ export default function AdminPanel() {
       const a = document.createElement('a');
       a.href = url;
       a.download = `applicant-dossier-${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success('Applicant dossier downloaded');
     } catch (err) {
@@ -204,8 +207,8 @@ export default function AdminPanel() {
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-cool-grey" />
+              <div className="flex flex-col items-center justify-center py-16">
+                <GolfBallLoader indeterminate label="Loading overview..." />
               </div>
             ) : (
               <>
@@ -253,8 +256,8 @@ export default function AdminPanel() {
         {activeTab === 'analytics' && (
           <div className="space-y-6">
             {isLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-cool-grey" />
+              <div className="flex flex-col items-center justify-center py-16">
+                <GolfBallLoader indeterminate label="Loading analytics..." />
               </div>
             ) : (
               <>
@@ -314,8 +317,8 @@ export default function AdminPanel() {
         {activeTab === 'review' && (
           <div className="space-y-4">
             {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-cool-grey" />
+              <div className="flex flex-col items-center justify-center py-16">
+                <GolfBallLoader indeterminate label="Loading review queue..." />
               </div>
             ) : pendingCount === 0 ? (
               <NeoCard className="p-8 lg:p-12 text-center">

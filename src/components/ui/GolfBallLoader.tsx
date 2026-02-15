@@ -21,12 +21,12 @@ export function GolfBallLoader({ progress = 0, label = 'Loading', className = ''
   const pct = indeterminate ? loopProgress : Math.min(100, Math.max(0, progress));
 
   return (
-    <div className={`flex flex-col items-center gap-4 ${className}`}>
-      <div className="relative w-full max-w-[280px]">
+    <div className={`flex flex-col items-center gap-6 ${className}`}>
+      <div className="relative w-full max-w-[420px] min-w-[320px] px-4">
         {/* Percentage indicator */}
         <div
           className="absolute -top-8 left-0 flex flex-col items-center transition-all duration-300"
-          style={{ left: `calc(${pct}% - 20px)` }}
+          style={{ left: `calc(${pct}% - 24px)` }}
         >
           <span className="font-mono text-sm font-medium text-charcoal dark:text-charcoal">
             {Math.round(pct)}%
@@ -35,7 +35,7 @@ export function GolfBallLoader({ progress = 0, label = 'Loading', className = ''
         </div>
 
         {/* Grass track */}
-        <div className="relative h-10 w-full overflow-hidden rounded-[2px]">
+        <div className="relative h-14 w-full overflow-hidden rounded-[2px]">
           <div
             className="absolute inset-0 rounded-[2px]"
             style={{
@@ -62,9 +62,9 @@ export function GolfBallLoader({ progress = 0, label = 'Loading', className = ''
 
         {/* Golf ball */}
         <motion.div
-          className="absolute top-1/2 h-7 w-7 -translate-y-1/2"
+          className="absolute top-1/2 h-10 w-10 -translate-y-1/2 -translate-x-1/2"
           initial={{ left: '2%' }}
-          animate={{ left: `${pct}%` }}
+          animate={{ left: `calc(${pct}% - 20px)` }}
           transition={{ type: 'tween', duration: 0.3 }}
         >
           <div
@@ -88,7 +88,7 @@ export function GolfBallLoader({ progress = 0, label = 'Loading', className = ''
           </div>
         </motion.div>
       </div>
-      <span className="font-mono text-sm text-cool-grey">{label}</span>
+      <span className="font-mono text-base font-medium text-charcoal">{label}</span>
     </div>
   );
 }

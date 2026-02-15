@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft, Loader2, Fingerprint, ChevronDown } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { useTheme } from 'next-themes';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
@@ -49,9 +47,6 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState('');
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [bioLoading, setBioLoading] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const darkMode = theme === 'dark';
-
   const { user, login, signup, signInWithOAuth, signInWithWebAuthn, registerWebAuthn, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -468,14 +463,6 @@ export default function Auth() {
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
             </div>
-          </div>
-          <div className="flex items-center gap-2 neo-medical-extruded px-4 py-2.5 rounded-[2px] pointer-events-auto">
-            <span className="text-sm font-medium text-slate-700">Dark Mode</span>
-            <Switch
-              checked={darkMode}
-              onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
-              className="data-[state=checked]:bg-emerald-500"
-            />
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Play, Eye, CheckCircle, XCircle, Clock, User } from 'lucide-react';
+import { ChevronLeft, Play, Eye, CheckCircle, XCircle, Clock, User, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { StartConversationButton } from '@/components/messaging/StartConversationButton';
+import { GolfBallLoader } from '@/components/ui/GolfBallLoader';
 interface Applicant {
   id: string;
   status: string;
@@ -45,6 +46,7 @@ export default function JobApplicants() {
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -159,10 +161,43 @@ export default function JobApplicants() {
     });
   };
 
+  const handleDownloadDossier = async () => {
+    setPdfLoading(true);
+    try {
+      const rows = applicants.map((a) => ({
+        applicantName: `@${a.applicant.username || 'user'}`,
+        jobRole: job?.title || '—',
+        videoPortfolioUrl: a.videos[0]?.video_url ?? null,
+      }));
+      const [{ pdf }, { ApplicantDossierPDF }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('@/components/admin/ApplicantDossierPDF'),
+      ]);
+      const blob = await pdf(<ApplicantDossierPDF applicants={rows} title={`Applicants — ${job?.title || 'Job'}`} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `applicants-${job?.title?.replace(/\s+/g, '-') || 'job'}-${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('Applicant dossier downloaded');
+    } catch (err) {
+      toast.error('Failed to generate dossier');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground animate-pulse">Loading applicants...</p>
+      <div className="min-h-dvh flex flex-col items-center justify-center bg-slate-50">
+        <div className="absolute inset-0 bg-slate-100/80" />
+        <div className="relative z-10">
+          <GolfBallLoader indeterminate label="Loading applicants..." />
+        </div>
       </div>
     );
   }
@@ -171,17 +206,29 @@ export default function JobApplicants() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => navigate('/employer')}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <h1 className="font-semibold">{job?.title || 'Job'}</h1>
-            <p className="text-xs text-muted-foreground">{applicants.length} applicants</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => navigate('/employer')}
+              className="text-muted-foreground hover:text-foreground shrink-0"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div className="min-w-0">
+              <h1 className="font-semibold truncate">{job?.title || 'Job'}</h1>
+              <p className="text-xs text-muted-foreground">{applicants.length} applicants</p>
+            </div>
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleDownloadDossier}
+            disabled={pdfLoading || applicants.length === 0}
+            className="shrink-0 pointer-events-auto"
+          >
+            {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <span className="hidden sm:inline ml-1">Download</span>
+          </Button>
         </div>
       </div>
 
