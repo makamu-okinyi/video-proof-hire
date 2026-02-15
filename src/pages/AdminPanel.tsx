@@ -11,8 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { PitchVideoModal } from '@/components/PitchVideoModal';
 import { useAdminVentures } from '@/hooks/useAdminVentures';
 import { formatStage } from '@/lib/stageDisplay';
-import { pdf } from '@react-pdf/renderer';
-import { ApplicantDossierPDF } from '@/components/admin/ApplicantDossierPDF';
 import { toast } from 'sonner';
 
 const mentors = [
@@ -105,6 +103,10 @@ export default function AdminPanel() {
         jobRole: v.name,
         videoPortfolioUrl: v.pitch_video_url,
       }));
+      const [{ pdf }, { ApplicantDossierPDF }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('@/components/admin/ApplicantDossierPDF'),
+      ]);
       const blob = await pdf(<ApplicantDossierPDF applicants={applicants} title="Applicant Dossier — Venture Engine" />).toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
