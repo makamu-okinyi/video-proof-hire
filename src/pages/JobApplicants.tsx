@@ -163,12 +163,13 @@ export default function JobApplicants() {
 
   const handleDownloadDossier = async () => {
     setPdfLoading(true);
+    const rows = applicants.map((a) => ({
+      applicantName: `@${a.applicant.username || 'user'}`,
+      jobRole: job?.title || '—',
+      videoPortfolioUrl: a.videos[0]?.video_url ?? null,
+    }));
+    const filename = `applicants-${job?.title?.replace(/\s+/g, '-') || 'job'}-${new Date().toISOString().slice(0, 10)}`;
     try {
-      const rows = applicants.map((a) => ({
-        applicantName: `@${a.applicant.username || 'user'}`,
-        jobRole: job?.title || '—',
-        videoPortfolioUrl: a.videos[0]?.video_url ?? null,
-      }));
       const reactPdf = await import('@react-pdf/renderer');
       const { ApplicantDossierPDF } = await import('@/components/admin/ApplicantDossierPDF');
       const doc = <ApplicantDossierPDF applicants={rows} title={`Applicants — ${job?.title || 'Job'}`} />;
@@ -176,7 +177,7 @@ export default function JobApplicants() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `applicants-${job?.title?.replace(/\s+/g, '-') || 'job'}-${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.download = `${filename}.pdf`;
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
@@ -187,7 +188,26 @@ export default function JobApplicants() {
       toast.success('Applicant dossier downloaded');
     } catch (err) {
       console.error('PDF download error:', err);
-      toast.error('Failed to generate dossier');
+      try {
+        const header = 'Applicant Name,Job Role,Video Portfolio\n';
+        const csvRows = rows.map((r) => `"${(r.applicantName || '').replace(/"/g, '""')}","${(r.jobRole || '').replace(/"/g, '""')}","${r.videoPortfolioUrl || ''}"`).join('\n');
+        const csvBlob = new Blob([header + csvRows], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(csvBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filename}.csv`;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        requestAnimationFrame(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+        toast.success('Downloaded as CSV (PDF unavailable)');
+      } catch (fallbackErr) {
+        console.error('CSV fallback error:', fallbackErr);
+        toast.error('Failed to generate download');
+      }
     } finally {
       setPdfLoading(false);
     }
