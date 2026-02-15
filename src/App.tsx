@@ -44,7 +44,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="donjo-theme" forcedTheme="light">
+    <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false} storageKey="donjo-theme">
     <AuthProvider>
       <TooltipProvider>
         <Toaster />

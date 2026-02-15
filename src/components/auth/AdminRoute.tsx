@@ -38,7 +38,11 @@ export function AdminRoute({ children }: AdminRouteProps) {
   }
 
   if (!isAuthenticated || !isAdminRole(profile?.user_type)) {
-    return null;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="neo-pressed px-8 py-4 rounded-2xl text-cool-grey animate-pulse">Redirecting...</div>
+      </div>
+    );
   }
 
   return <>{children}</>;
