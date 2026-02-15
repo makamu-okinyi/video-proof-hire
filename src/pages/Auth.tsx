@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft, Loader2, Fingerprint, ChevronDown } from 'lucide-react';
-import { GolfBallLoader } from '@/components/ui/GolfBallLoader';
+import { RocketLoader } from '@/components/ui/RocketLoader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Logo } from '@/components/ui/Logo';
@@ -293,7 +293,7 @@ export default function Auth() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <GolfBallLoader indeterminate label="Loading..." />
+        <RocketLoader indeterminate label="Loading..." />
       </div>
     );
   }
@@ -303,7 +303,7 @@ export default function Auth() {
     if (!profile) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-background">
-          <GolfBallLoader indeterminate label="Loading your account..." />
+          <RocketLoader indeterminate label="Loading your account..." />
         </div>
       );
     }

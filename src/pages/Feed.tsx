@@ -5,7 +5,7 @@ import { useRoleBasedRedirect } from '@/components/auth/ProtectedRoute';
 import { useFeedStats } from '@/hooks/useFeedStats';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { GolfBallLoader } from '@/components/ui/GolfBallLoader';
+import { RocketLoader } from '@/components/ui/RocketLoader';
 import { Rocket, Briefcase, Trophy, FileText } from 'lucide-react';
 
 
@@ -28,7 +28,7 @@ export default function Feed() {
     return (
       <DashboardLayout>
         <div className="min-h-[50vh] flex items-center justify-center">
-          <GolfBallLoader indeterminate label="Loading..." />
+          <RocketLoader indeterminate label="Loading..." />
         </div>
       </DashboardLayout>
     );
@@ -54,7 +54,7 @@ export default function Feed() {
         </div>
 
         {statsLoading ? (
-          <div className="flex justify-center py-8"><GolfBallLoader indeterminate label="Loading stats..." /></div>
+          <div className="flex justify-center py-8"><RocketLoader indeterminate label="Loading stats..." /></div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <StatCard title="TOTAL APPLICATIONS" value={String(totalApps)} />
