@@ -1,6 +1,7 @@
 import React, { createContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from '@/integrations/supabase/client';
 import type { Session, User, Provider } from '@supabase/supabase-js';
+import * as webauthn from '@/lib/webauthn';
 
 interface Profile {
   id: string;
@@ -31,6 +32,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ error: Error | null }>;
   signup: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithOAuth: (provider: Provider, redirectTo?: string) => Promise<{ error: Error | null; url?: string | null }>;
+  signInWithWebAuthn: () => Promise<{ error: Error | null }>;
+  registerWebAuthn: () => Promise<{ error: Error | null }>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -140,6 +143,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
+  const signInWithWebAuthn = async () => {
+    const result = await webauthn.authenticateWebAuthn();
+    if (!result.ok || !result.assertion) return { error: new Error('Biometric auth failed or cancelled') };
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const fnUrl = `${supabaseUrl}/functions/v1/webauthn-verify`;
+    try {
+      const payload = {
+        credentialId: result.credentialId,
+        clientDataJSON: result.clientDataJSON ? btoa(String.fromCharCode(...new Uint8Array(result.clientDataJSON))) : null,
+        authenticatorData: result.authenticatorData ? btoa(String.fromCharCode(...new Uint8Array(result.authenticatorData))) : null,
+        signature: result.signature ? btoa(String.fromCharCode(...new Uint8Array(result.signature))) : null,
+        userHandle: result.userHandle ? btoa(String.fromCharCode(...new Uint8Array(result.userHandle))) : null,
+      };
+      const res = await fetch(fnUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${anonKey}` },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: new Error(data.error || 'Verification failed') };
+      if (data.access_token && data.refresh_token) {
+        await supabase.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token });
+        return { error: null };
+      }
+      return { error: new Error('No session returned') };
+    } catch (err) {
+      return { error: err instanceof Error ? err : new Error('Biometric sign-in failed') };
+    }
+  };
+
+  const registerWebAuthn = async () => {
+    if (!user?.id || !user?.email) return { error: new Error('Not logged in') };
+    const result = await webauthn.registerWebAuthn(user.id, user.email);
+    return result.ok ? { error: null } : { error: new Error(result.error) };
+  };
+
   const signInWithOAuth = async (provider: Provider, redirectTo?: string) => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -168,7 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshProfile = async () => { if (user) await fetchProfile(user.id); };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, isAuthenticated: !!session, isLoading, login, signup, signInWithOAuth, logout, updateProfile, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, isAuthenticated: !!session, isLoading, login, signup, signInWithOAuth, signInWithWebAuthn, registerWebAuthn, logout, updateProfile, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

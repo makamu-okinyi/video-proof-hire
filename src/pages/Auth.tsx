@@ -8,6 +8,7 @@ import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useTheme } from 'next-themes';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
@@ -47,14 +48,11 @@ export default function Auth() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetEmailSent, setResetEmailSent] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [bioLoading, setBioLoading] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const darkMode = theme === 'dark';
 
-  const { user, login, signup, signInWithOAuth, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
-
-  useEffect(() => {
-    const isDark = document.documentElement.classList.contains('dark');
-    setDarkMode(isDark);
-  }, []);
+  const { user, login, signup, signInWithOAuth, signInWithWebAuthn, registerWebAuthn, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -215,6 +213,18 @@ export default function Auth() {
       toast.error('An unexpected error occurred');
     }
     setLoading(false);
+  };
+
+  const handleBiometricClick = async () => {
+    setBioLoading(true);
+    try {
+      const { error } = await signInWithWebAuthn();
+      if (error) {
+        toast.info('Use password to sign in, or enable fingerprint after logging in.');
+      }
+    } finally {
+      setBioLoading(false);
+    }
   };
 
   const handleUserTypeSelect = (type: UserType) => {
@@ -440,12 +450,7 @@ export default function Auth() {
     </div>
   );
 
-  const renderLoginSignup = () => {
-    const handleBiometricClick = () => {
-      toast.info('Biometric hardware sync pending...');
-    };
-
-    return (
+  const renderLoginSignup = () => (
       <div className="min-h-screen bg-slate-50 flex flex-col animate-fade-in">
         {/* Header - design1 layout */}
         <div className="flex items-center justify-between px-6 py-4 gap-4">
@@ -468,10 +473,7 @@ export default function Auth() {
             <span className="text-sm font-medium text-slate-700">Dark Mode</span>
             <Switch
               checked={darkMode}
-              onCheckedChange={(checked) => {
-                setDarkMode(checked);
-                document.documentElement.classList.toggle('dark', checked);
-              }}
+              onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
               className="data-[state=checked]:bg-emerald-500"
             />
           </div>
@@ -551,14 +553,15 @@ export default function Auth() {
               </p>
             )}
 
-            {/* Biometric - Fingerprint icon */}
+            {/* Biometric - Fingerprint icon (WebAuthn + password fallback) */}
             <div className="flex justify-center py-4">
               <button
                 type="button"
                 onClick={handleBiometricClick}
-                className="w-16 h-16 neo-medical-extruded rounded-full flex items-center justify-center text-slate-600 hover:text-emerald-500 transition-colors pointer-events-auto"
+                disabled={bioLoading}
+                className="w-16 h-16 neo-medical-extruded rounded-[2px] flex items-center justify-center text-slate-600 hover:text-emerald-500 transition-colors pointer-events-auto disabled:opacity-50"
               >
-                <Fingerprint className="h-8 w-8" />
+                {bioLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : <Fingerprint className="h-8 w-8" />}
               </button>
             </div>
 
@@ -608,7 +611,6 @@ export default function Auth() {
         </div>
       </div>
     );
-  };
 
   const renderForgotPassword = () => (
     <div className="flex flex-col min-h-screen px-6 py-8 animate-fade-in">

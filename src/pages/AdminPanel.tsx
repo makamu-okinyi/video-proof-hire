@@ -12,6 +12,8 @@ import { PitchVideoModal } from '@/components/PitchVideoModal';
 import { useAdminVentures } from '@/hooks/useAdminVentures';
 import { formatStage } from '@/lib/stageDisplay';
 import { toast } from 'sonner';
+import { SystemHealthGauge, EngagementFluxChart, MetricCard } from '@/components/admin/MedicalChicAnalytics';
+import { SystemHealthGauge, EngagementFluxChart, MetricCard } from '@/components/admin/MedicalChicAnalytics';
 
 const mentors = [
   { id: '1', name: 'Dr. Sarah Kimani', specialty: 'Strategy', available: true },
@@ -19,7 +21,7 @@ const mentors = [
   { id: '3', name: 'Aisha Mohamed', specialty: 'Product', available: false },
 ];
 
-type Tab = 'overview' | 'review' | 'mentors' | 'cohorts';
+type Tab = 'overview' | 'analytics' | 'review' | 'mentors' | 'cohorts';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -124,6 +126,7 @@ export default function AdminPanel() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
+    { id: 'analytics', label: 'Analytics' },
     { id: 'review', label: `Review Queue (${pendingCount})` },
     { id: 'mentors', label: 'Mentors' },
     { id: 'cohorts', label: 'Cohorts' },
@@ -166,7 +169,7 @@ export default function AdminPanel() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-300 pointer-events-auto ${
+              className={`px-4 py-2.5 rounded-[2px] text-sm font-semibold whitespace-nowrap transition-all duration-300 pointer-events-auto ${
                 activeTab === tab.id
                   ? 'neo-pressed text-charcoal ring-2 ring-primary ring-offset-2 ring-offset-background'
                   : 'neo-flat text-cool-grey hover:text-charcoal'
@@ -219,7 +222,7 @@ export default function AdminPanel() {
                 </div>
 
                 {applicationChartData.some(d => d.applications > 0) && (
-                  <NeoCard className="p-5 lg:p-8">
+                  <NeoCard className="p-5 lg:p-8 rounded-[2px]">
                     <NeoCardHeader>
                       <div>
                         <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-1">Applications by month (this year)</p>
@@ -241,6 +244,67 @@ export default function AdminPanel() {
                     </NeoCardContent>
                   </NeoCard>
                 )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Analytics Tab - Medical-Chic */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-cool-grey" />
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <NeoCard className="p-6 rounded-[2px]">
+                    <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-4">System Health</p>
+                    <SystemHealthGauge
+                      value={(allVentures?.length ? (shortlistedCount / allVentures.length) * 10 : 0)}
+                      max={10}
+                      label="Application Success Rate"
+                    />
+                  </NeoCard>
+                  <NeoCard className="p-6 rounded-[2px]">
+                    <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-4">Engagement Flux</p>
+                    <p className="text-sm text-cool-grey mb-2">Daily Active Applicants</p>
+                    <EngagementFluxChart
+                      data={(() => {
+                        const days = 7;
+                        const now = new Date();
+                        return Array.from({ length: days }, (_, i) => {
+                          const d = new Date(now);
+                          d.setDate(d.getDate() - (days - 1 - i));
+                          return {
+                            date: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+                            applicants: (allVentures ?? []).filter((v) =>
+                              new Date(v.created_at).toDateString() === d.toDateString()
+                            ).length,
+                          };
+                        });
+                      })()}
+                    />
+                  </NeoCard>
+                </div>
+                <NeoCard className="p-6 rounded-[2px]">
+                  <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-4">Metric Cards</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
+                    <MetricCard
+                      label="Profile Completion"
+                      value={allVentures?.filter((v) => v.founder_name && v.pitch_video_url).length ?? 0}
+                      max={allVentures?.length ?? 1}
+                      change={12.2}
+                    />
+                    <MetricCard
+                      label="Video Quality Score"
+                      value={shortlistedCount * 10}
+                      max={(allVentures?.length ?? 0) * 10 || 100}
+                      change={-2.4}
+                    />
+                  </div>
+                </NeoCard>
               </>
             )}
           </div>
