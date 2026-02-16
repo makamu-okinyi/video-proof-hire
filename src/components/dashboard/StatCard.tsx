@@ -15,7 +15,7 @@ export function StatCard({ title, value, change, changeLabel = 'last year', icon
   const isPositive = change && change > 0;
   
   return (
-    <div className="neo-extruded p-6 rounded-3xl">
+    <div className="glass-panel p-6 rounded-3xl text-[#1e293b]">
       <div className="flex items-start justify-between mb-4">
         <div>
           <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-2">
