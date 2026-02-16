@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
+import { AuthBackground } from '@/components/auth/AuthBackground';
 
 // Validation schemas
 const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
@@ -372,7 +373,7 @@ export default function Auth() {
 
   const renderWelcome = () => (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 animate-fade-in">
-      <div className="glass-panel w-full max-w-md space-y-8 p-8 rounded-2xl">
+      <div className="soft-ui-card w-full max-w-md space-y-8 p-8">
         {/* Logo */}
         <div className="text-center space-y-4">
           <Logo size="xl" className="justify-center" />
@@ -395,9 +396,9 @@ export default function Auth() {
           <p className="text-center text-sm text-cool-grey mb-2">Select your role to continue</p>
           
           {/* Applicant Option - Primary CTA */}
-          <div className="glass-panel p-5 rounded-3xl space-y-3">
+          <div className="soft-ui-card p-5 space-y-3">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 bg-white/60 rounded-2xl flex items-center justify-center">
+              <div className="h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center">
                 <User className="h-6 w-6 text-primary" />
               </div>
               <div>
@@ -429,7 +430,7 @@ export default function Auth() {
               </div>
             </div>
             <button 
-              className="w-full glass-panel py-3 rounded-2xl font-medium text-[#1e293b] hover:opacity-90 transition-all duration-300 flex items-center justify-center gap-2 pointer-events-auto"
+              className="w-full soft-ui-card py-3 font-medium text-[#1e293b] hover:opacity-90 transition-all duration-300 flex items-center justify-center gap-2 pointer-events-auto"
               onClick={() => { setUserType('employer'); setIsLogin(false); setStep('login'); }}
             >
               Admin Login
@@ -865,7 +866,8 @@ export default function Auth() {
   );
 
   return (
-    <div className="bg-background min-h-screen relative">
+    <div className="min-h-screen relative">
+      <AuthBackground />
       {/* Google OAuth Loading Overlay */}
       {googleLoading && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center">

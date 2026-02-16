@@ -21,7 +21,7 @@ export function StatCard({ title, value, change, changeLabel = 'last year', icon
           <p className="text-xs font-semibold text-cool-grey uppercase tracking-wider mb-2">
             {title}
           </p>
-          <p className="text-3xl font-bold text-charcoal">
+          <p className="text-3xl font-bold text-charcoal font-mono" data-analytics>
             {value}
           </p>
         </div>
