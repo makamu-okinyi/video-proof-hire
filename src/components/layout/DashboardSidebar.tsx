@@ -122,8 +122,8 @@ export function DashboardSidebar() {
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-medium transition-all duration-300",
           active
-            ? "bg-white/50 text-[#1e293b]"
-            : "text-cool-grey hover:text-[#1e293b] hover:bg-white/40",
+            ? "neo-pressed text-charcoal"
+            : "text-cool-grey hover:text-charcoal hover:bg-secondary/50",
           isCollapsed && "justify-center px-2"
         )}
       >
@@ -150,7 +150,7 @@ export function DashboardSidebar() {
       {/* Logo Section */}
       <div className={cn("p-6 pb-4", isCollapsed && "p-4 pb-2")}>
         <div className={cn("flex items-center gap-3", isCollapsed && "justify-center")}>
-          <div className="h-12 w-12 glass-panel rounded-2xl flex items-center justify-center flex-shrink-0">
+          <div className="h-12 w-12 neo-extruded rounded-2xl flex items-center justify-center flex-shrink-0">
             <Rocket className="h-6 w-6 text-primary" />
           </div>
           {!isCollapsed && (
@@ -166,7 +166,7 @@ export function DashboardSidebar() {
       <div className="hidden lg:flex justify-end px-4 mb-2">
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="glass-panel p-2 rounded-xl hover:opacity-90 transition-all duration-300"
+          className="neo-subtle p-2 rounded-xl hover:neo-pressed transition-all duration-300"
         >
           {isCollapsed ? (
             <ChevronRight className="h-4 w-4 text-cool-grey" />
@@ -208,11 +208,11 @@ export function DashboardSidebar() {
 
       {/* User Section */}
       <div className={cn("p-4 border-t border-border/30", isCollapsed && "p-2")}>
-        <div className={cn("glass-panel p-4 rounded-2xl", isCollapsed && "p-2")}>
+        <div className={cn("neo-subtle p-4 rounded-2xl", isCollapsed && "p-2")}>
           <div className={cn("flex items-center gap-3 mb-3", isCollapsed && "flex-col mb-2")}>
             <div
               className={cn(
-                "rounded-full flex items-center justify-center flex-shrink-0 bg-white/60",
+                "neo-pressed rounded-full flex items-center justify-center flex-shrink-0",
                 isCollapsed ? "h-8 w-8" : "h-10 w-10"
               )}
             >
@@ -251,7 +251,7 @@ export function DashboardSidebar() {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed top-4 left-4 z-50 lg:hidden glass-panel p-3 rounded-2xl"
+        className="fixed top-4 left-4 z-50 lg:hidden neo-extruded p-3 rounded-2xl"
       >
         <Menu className="h-5 w-5 text-charcoal" />
       </button>
@@ -267,9 +267,12 @@ export function DashboardSidebar() {
       {/* Sidebar - Mobile Drawer */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full w-72 glass-panel z-50 transition-transform duration-300 ease-in-out lg:hidden rounded-r-3xl",
+          "fixed left-0 top-0 h-full w-72 neo-extruded z-50 transition-transform duration-300 ease-in-out lg:hidden rounded-r-3xl",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
+        style={{
+          boxShadow: isOpen ? '8px 0 24px rgba(0,0,0,0.1)' : 'none'
+        }}
       >
         <button
           onClick={() => setIsOpen(false)}
@@ -283,7 +286,7 @@ export function DashboardSidebar() {
       {/* Sidebar - Desktop Fixed */}
       <aside 
         className={cn(
-          "hidden lg:block fixed left-0 top-0 h-full glass-panel rounded-none rounded-r-3xl z-40 transition-all duration-300 ease-in-out",
+          "hidden lg:block fixed left-0 top-0 h-full neo-extruded rounded-none rounded-r-3xl z-40 transition-all duration-300 ease-in-out",
           isCollapsed ? "w-20" : "w-72"
         )}
       >
