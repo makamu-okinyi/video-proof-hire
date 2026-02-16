@@ -2,13 +2,14 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 interface NeoCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'glass' | 'extruded' | 'pressed' | 'subtle' | 'flat';
+  variant?: 'glass' | 'depth' | 'extruded' | 'pressed' | 'subtle' | 'flat';
 }
 
 const NeoCard = React.forwardRef<HTMLDivElement, NeoCardProps>(
   ({ className, variant = 'glass', ...props }, ref) => {
     const variantClasses = {
       glass: 'glass-panel',
+      depth: 'donjo-depth-card',
       extruded: 'neo-extruded',
       pressed: 'neo-pressed',
       subtle: 'neo-subtle',

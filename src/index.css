@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -146,7 +146,7 @@
   body {
     @apply text-foreground antialiased;
     background: transparent;
-    font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-text-size-adjust: 100%;
     overflow-x: hidden;
     min-height: 100dvh;
@@ -155,9 +155,14 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     @apply tracking-tight;
     color: hsl(var(--charcoal));
+  }
+
+  /* Numeric analytics - JetBrains Mono */
+  .font-mono, [data-analytics] {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
 
   html {
@@ -234,15 +239,49 @@
     color: hsl(var(--charcoal));
   }
 
-  /* Glassmorphism panel - Organic Modern aesthetic */
-  /* Glassy effect over high-res background stack */
+  /* Soft UI card - Login/Auth (pure white, dual soft shadows, 12px radius) */
+  .soft-ui-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow:
+      6px 6px 12px rgba(0, 0, 0, 0.04),
+      -6px -6px 12px rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+  }
+
+  /* Depth texture cards - low-poly crystalline (cards/modals) */
+  .donjo-depth-card {
+    background: #ffffff;
+    background-image: url(/images/low-poly-depth.png);
+    background-size: cover;
+    border-radius: 12px;
+    box-shadow:
+      6px 6px 12px rgba(0, 0, 0, 0.04),
+      -6px -6px 12px rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+  }
+
+  /* Glassmorphism panel - Premium Minimalist */
   .glass-panel {
-    background: rgba(255, 255, 255, 0.70);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow:
+      6px 6px 12px rgba(0, 0, 0, 0.04),
+      -6px -6px 12px rgba(255, 255, 255, 0.8);
     color: #1e293b;
+  }
+
+  /* Technical buttons - 2px radius. Use .btn-technical or rounded-[2px] */
+  .btn-technical {
+    border-radius: 2px;
+    pointer-events: auto;
+  }
+
+  /* Fix trackpad - all interactive elements */
+  button, [role="button"], a, input, select, textarea {
+    pointer-events: auto;
   }
 
   /* Dashboard cards - glassy effect over sharp background */

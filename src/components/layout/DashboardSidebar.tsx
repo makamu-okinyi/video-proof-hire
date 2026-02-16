@@ -207,8 +207,13 @@ export function DashboardSidebar() {
       </nav>
 
       {/* User Section */}
-      <div className={cn("p-4 border-t border-border/30", isCollapsed && "p-2")}>
-        <div className={cn("neo-subtle p-4 rounded-2xl", isCollapsed && "p-2")}>
+      <div className={cn("p-4 border-t border-border/30 relative", isCollapsed && "p-2")}>
+        {/* Adidas stripes - athletic Venture accent */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-12 opacity-[0.12] pointer-events-none bg-repeat-x bg-center"
+          style={{ backgroundImage: 'url(/images/adidas-stripes.png)', backgroundSize: 'auto 100%' }}
+        />
+        <div className={cn("neo-subtle p-4 rounded-2xl relative z-10", isCollapsed && "p-2")}>
           <div className={cn("flex items-center gap-3 mb-3", isCollapsed && "flex-col mb-2")}>
             <div
               className={cn(
