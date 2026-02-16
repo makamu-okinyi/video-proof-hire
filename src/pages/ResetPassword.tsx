@@ -89,17 +89,17 @@ export default function ResetPassword() {
 
   if (checkingSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="glass-panel p-8 rounded-2xl animate-pulse text-[#64748b]">Loading...</div>
       </div>
     );
   }
 
   if (!isValidSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-6">
-        <div className="w-full max-w-sm space-y-6 text-center">
-          <h1 className="text-2xl font-bold">Invalid or Expired Link</h1>
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="glass-panel w-full max-w-sm space-y-6 text-center p-8 rounded-2xl">
+          <h1 className="text-2xl font-bold text-[#1e293b]">Invalid or Expired Link</h1>
           <p className="text-muted-foreground">
             This password reset link is invalid or has expired. Please request a new one.
           </p>
@@ -118,8 +118,8 @@ export default function ResetPassword() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-6 animate-fade-in">
-        <div className="w-full max-w-sm space-y-6 text-center">
+      <div className="min-h-screen flex items-center justify-center px-6 animate-fade-in">
+        <div className="glass-panel w-full max-w-sm space-y-6 text-center p-8 rounded-2xl">
           <div className="flex justify-center">
             <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
               <CheckCircle className="h-8 w-8 text-green-500" />
@@ -146,8 +146,8 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-6 py-12 animate-fade-in">
-      <div className="w-full max-w-sm space-y-8">
+    <div className="min-h-screen flex items-center justify-center px-6 py-12 animate-fade-in">
+      <div className="glass-panel w-full max-w-sm space-y-8 p-8 rounded-2xl">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold">Reset Password</h1>
           <p className="text-muted-foreground">Enter your new password below</p>

@@ -292,8 +292,10 @@ export default function Auth() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <RocketLoader indeterminate label="Loading..." />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="glass-panel p-8 rounded-2xl">
+          <RocketLoader indeterminate label="Loading..." />
+        </div>
       </div>
     );
   }
@@ -370,7 +372,7 @@ export default function Auth() {
 
   const renderWelcome = () => (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 animate-fade-in">
-      <div className="w-full max-w-md space-y-8">
+      <div className="glass-panel w-full max-w-md space-y-8 p-8 rounded-2xl">
         {/* Logo */}
         <div className="text-center space-y-4">
           <Logo size="xl" className="justify-center" />
@@ -381,10 +383,10 @@ export default function Auth() {
         </div>
 
         {/* Hero Visual - Neomorphic */}
-        <div className="relative h-48 w-full neo-extruded rounded-3xl overflow-hidden">
+        <div className="relative h-48 w-full glass-panel rounded-3xl overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-24 h-36 rounded-2xl neo-pressed transform rotate-6 animate-float" />
-            <div className="absolute w-24 h-36 rounded-2xl neo-subtle transform -rotate-6 animate-float" style={{ animationDelay: '0.5s' }} />
+            <div className="w-24 h-36 rounded-2xl bg-white/60 transform rotate-6 animate-float" />
+            <div className="absolute w-24 h-36 rounded-2xl bg-white/40 transform -rotate-6 animate-float" style={{ animationDelay: '0.5s' }} />
           </div>
         </div>
 
@@ -393,9 +395,9 @@ export default function Auth() {
           <p className="text-center text-sm text-cool-grey mb-2">Select your role to continue</p>
           
           {/* Applicant Option - Primary CTA */}
-          <div className="neo-extruded p-5 rounded-3xl space-y-3">
+          <div className="glass-panel p-5 rounded-3xl space-y-3">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 neo-pressed rounded-2xl flex items-center justify-center">
+              <div className="h-12 w-12 bg-white/60 rounded-2xl flex items-center justify-center">
                 <User className="h-6 w-6 text-primary" />
               </div>
               <div>
@@ -416,9 +418,9 @@ export default function Auth() {
           </div>
           
           {/* Admin/Program Manager Option */}
-          <div className="neo-subtle p-5 rounded-3xl space-y-3">
+          <div className="glass-panel p-5 rounded-3xl space-y-3">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 neo-pressed rounded-2xl flex items-center justify-center">
+              <div className="h-12 w-12 bg-white/60 rounded-2xl flex items-center justify-center">
                 <Briefcase className="h-6 w-6 text-charcoal" />
               </div>
               <div>
@@ -427,7 +429,7 @@ export default function Auth() {
               </div>
             </div>
             <button 
-              className="w-full neo-extruded py-3 rounded-2xl font-medium text-charcoal hover:shadow-neo-pressed transition-all duration-300 flex items-center justify-center gap-2 pointer-events-auto"
+              className="w-full glass-panel py-3 rounded-2xl font-medium text-[#1e293b] hover:opacity-90 transition-all duration-300 flex items-center justify-center gap-2 pointer-events-auto"
               onClick={() => { setUserType('employer'); setIsLogin(false); setStep('login'); }}
             >
               Admin Login
@@ -440,7 +442,7 @@ export default function Auth() {
               <span className="w-full border-t border-border/30" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-cool-grey">existing user?</span>
+              <span className="px-2 text-cool-grey">existing user?</span>
             </div>
           </div>
           
@@ -456,19 +458,19 @@ export default function Auth() {
   );
 
   const renderLoginSignup = () => (
-      <div className="min-h-screen bg-slate-50 flex flex-col animate-fade-in">
+      <div className="min-h-screen flex flex-col animate-fade-in">
         {/* Header - design1 layout */}
         <div className="flex items-center justify-between px-6 py-4 gap-4">
           <button
             type="button"
             onClick={() => setStep('welcome')}
-            className="neo-medical-extruded px-4 py-2.5 text-sm font-medium text-slate-700 hover:opacity-90 pointer-events-auto"
+            className="glass-panel px-4 py-2.5 text-sm font-medium text-[#1e293b] hover:opacity-90 pointer-events-auto"
           >
             UI Series
           </button>
           <div className="flex-1 flex justify-center">
             <div className="relative">
-              <select className="neo-medical-extruded px-4 py-2.5 text-sm font-medium text-slate-700 appearance-none cursor-pointer pointer-events-auto bg-transparent pr-8 min-w-[120px]" defaultValue="en">
+              <select className="glass-panel px-4 py-2.5 text-sm font-medium text-[#1e293b] appearance-none cursor-pointer pointer-events-auto bg-transparent pr-8 min-w-[120px]" defaultValue="en">
                 <option value="en">English</option>
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
@@ -477,9 +479,10 @@ export default function Auth() {
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 max-w-md mx-auto w-full">
+          <div className="glass-panel w-full p-8 rounded-2xl space-y-6">
           {/* Avatar / Logo - design1 central */}
-          <div className="mb-8 flex justify-center">
-            <div className="w-20 h-20 neo-medical-extruded rounded-full flex items-center justify-center p-1 ring-2 ring-slate-200">
+          <div className="mb-4 flex justify-center">
+            <div className="w-20 h-20 glass-panel rounded-full flex items-center justify-center p-1 ring-2 ring-white/40">
               <Logo size="lg" className="object-contain" />
             </div>
           </div>
@@ -488,7 +491,7 @@ export default function Auth() {
             {/* Phone number, email or username */}
             <div className="space-y-1.5">
               <label className="text-sm text-slate-600">Phone number, email or username</label>
-              <div className="neo-medical-pressed rounded-[2px]">
+              <div className="glass-panel rounded-[2px]">
                 <Input
                   type="email"
                   placeholder=""
@@ -502,7 +505,7 @@ export default function Auth() {
             {/* Password */}
             <div className="space-y-1.5">
               <label className="text-sm text-slate-600">Password</label>
-              <div className="neo-medical-pressed rounded-[2px] relative">
+              <div className="glass-panel rounded-[2px] relative">
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   placeholder=""
@@ -556,7 +559,7 @@ export default function Auth() {
                 type="button"
                 onClick={handleBiometricClick}
                 disabled={bioLoading}
-                className="w-16 h-16 neo-medical-extruded rounded-[2px] flex items-center justify-center text-slate-600 hover:text-emerald-500 transition-colors pointer-events-auto disabled:opacity-50"
+                className="w-16 h-16 glass-panel rounded-[2px] flex items-center justify-center text-[#64748b] hover:text-emerald-500 transition-colors pointer-events-auto disabled:opacity-50"
               >
                 {bioLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : <Fingerprint className="h-8 w-8" />}
               </button>
@@ -575,20 +578,21 @@ export default function Auth() {
             </p>
           </div>
 
+          </div>
           {/* Google Sign In - below main form, secondary */}
-          <div className="mt-8 w-full">
+          <div className="mt-6 w-full">
             <div className="relative py-2">
               <span className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-slate-300" />
               </span>
               <span className="relative flex justify-center text-xs uppercase">
-                <span className="bg-slate-50 px-2 text-slate-500">or continue with</span>
+                <span className="px-2 text-[#64748b]">or continue with</span>
               </span>
             </div>
             <Button
               variant="outline"
               size="lg"
-              className="w-full mt-4 rounded-[2px] neo-medical-extruded border-slate-200"
+              className="w-full mt-4 rounded-[2px] glass-panel"
               onClick={handleGoogleSignIn}
               disabled={loading || googleLoading}
             >
@@ -617,16 +621,17 @@ export default function Auth() {
           setStep('login');
           setResetEmailSent(false);
         }}
-        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
+        className="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] transition-colors mb-8 pointer-events-auto"
       >
         <ChevronLeft className="h-5 w-5" />
         <span>Back to login</span>
       </button>
 
       <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
-        {resetEmailSent ? (
-          // Success state
-          <div className="space-y-6 text-center animate-fade-in">
+        <div className="glass-panel p-8 rounded-2xl space-y-6">
+          {resetEmailSent ? (
+            // Success state
+            <div className="space-y-6 text-center animate-fade-in">
             <div className="flex justify-center">
               <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
                 <Mail className="h-8 w-8 text-green-500" />
@@ -662,10 +667,10 @@ export default function Auth() {
                 </button>
               </p>
             </div>
-          </div>
-        ) : (
-          // Form state
-          <>
+            </div>
+          ) : (
+            // Form state
+            <>
             <div className="space-y-2 mb-8">
               <h2 className="text-3xl font-bold">Forgot password?</h2>
               <p className="text-muted-foreground">
@@ -698,8 +703,9 @@ export default function Auth() {
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
             </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

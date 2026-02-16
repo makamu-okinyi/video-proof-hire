@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { ThemeProvider } from "next-themes";
 import { RocketLoader } from "@/components/ui/RocketLoader";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { OrganicBackground } from "@/components/layout/OrganicBackground";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,11 +53,11 @@ const App = () => (
         <Sonner />
         <PWAUpdatePrompt />
         <BrowserRouter>
+          <OrganicBackground />
           <ErrorBoundary>
           <Suspense fallback={
-            <div className="min-h-dvh flex flex-col items-center justify-center bg-[hsl(210,40%,98%)] rounded-[2px]">
-              <div className="absolute inset-0 bg-slate-100/80 rounded-[2px]" />
-              <div className="relative z-10 pointer-events-auto">
+            <div className="min-h-dvh flex flex-col items-center justify-center">
+              <div className="glass-panel p-8 rounded-2xl">
                 <RocketLoader indeterminate label="Loading Donjo..." />
               </div>
             </div>

@@ -144,7 +144,8 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply text-foreground antialiased;
+    background: transparent;
     font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-text-size-adjust: 100%;
     overflow-x: hidden;
