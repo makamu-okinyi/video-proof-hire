@@ -235,7 +235,7 @@
   }
 
   /* Glassmorphism panel - Organic Modern aesthetic */
-  /* Use over busy organic textures for readability */
+  /* Glassy effect over high-res background stack */
   .glass-panel {
     background: rgba(255, 255, 255, 0.70);
     backdrop-filter: blur(12px);
@@ -243,6 +243,19 @@
     border: 1px solid rgba(255, 255, 255, 0.4);
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
     color: #1e293b;
+  }
+
+  /* Dashboard cards - glassy effect over sharp background */
+  .donjo-card,
+  [data-donjo-card] {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Chromebook sharpness - prevent blurring of background images */
+  .donjo-bg-stack {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
   }
 
   .glass-panel .text-charcoal,
