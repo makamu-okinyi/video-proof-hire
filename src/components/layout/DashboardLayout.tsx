@@ -1,7 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardTopBar } from './DashboardTopBar';
-import { OrganicBackground } from './OrganicBackground';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -14,9 +13,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }, []);
   return (
     <div className="min-h-screen min-h-dvh flex relative overflow-x-hidden w-full max-w-full">
-      {/* Organic Abstract Background */}
-      <OrganicBackground />
-      
       {/* Sidebar */}
       <DashboardSidebar />
       

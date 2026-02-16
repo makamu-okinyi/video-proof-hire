@@ -25,8 +25,10 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <RocketLoader indeterminate label="Loading..." />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="glass-panel p-8 rounded-2xl">
+          <RocketLoader indeterminate label="Loading..." />
+        </div>
       </div>
     );
   }
