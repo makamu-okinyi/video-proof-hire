@@ -169,6 +169,10 @@ export default function CreateJob() {
         return isNaN(n) ? null : n;
       };
 
+      const videoPromptField = videoPrompt.trim()
+        ? { video_prompt: videoPrompt.trim() }
+        : {};
+
       if (isEdit && jobId) {
         const { error } = await supabase
           .from('job_postings')
@@ -185,7 +189,7 @@ export default function CreateJob() {
             skills_required: validation.data.skills_required,
             benefits: validation.data.benefits,
             application_deadline: deadline || null,
-            video_prompt: videoPrompt.trim() || null,
+            ...videoPromptField,
           })
           .eq('id', jobId)
           .eq('employer_id', user?.id);
@@ -206,7 +210,7 @@ export default function CreateJob() {
           skills_required: validation.data.skills_required,
           benefits: validation.data.benefits,
           application_deadline: deadline || null,
-          video_prompt: videoPrompt.trim() || null,
+          ...videoPromptField,
         });
         if (error) throw error;
         toast.success('Job posting created!', { icon: null });
