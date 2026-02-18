@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -10,10 +11,19 @@ interface PitchVideoModalProps {
 }
 
 /**
- * Custom modal for pitch video - avoids Dialog zoom animation which causes
- * video centering to flash only on close. Uses fade-only + stable dimensions.
+ * Custom modal for pitch video - uses fade-only animation and auto-detects
+ * the video's native aspect ratio to avoid stretching/compressing.
  */
 export function PitchVideoModal({ isOpen, onClose, videoUrl, title = 'Applicant Pitch Video' }: PitchVideoModalProps) {
+  const [aspectRatio, setAspectRatio] = useState('16/9');
+
+  const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const v = e.currentTarget;
+    if (v.videoWidth && v.videoHeight) {
+      setAspectRatio(`${v.videoWidth}/${v.videoHeight}`);
+    }
+  };
+
   return createPortal(
     <AnimatePresence>
       {isOpen && (
@@ -30,7 +40,7 @@ export function PitchVideoModal({ isOpen, onClose, videoUrl, title = 'Applicant 
             role="dialog"
             aria-modal="true"
             aria-labelledby="pitch-video-title"
-            className="fixed left-1/2 top-1/2 z-50 w-[min(90vw,560px)] -translate-x-1/2 -translate-y-1/2"
+            className="fixed left-1/2 top-1/2 z-50 w-[min(90vw,640px)] -translate-x-1/2 -translate-y-1/2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -51,12 +61,8 @@ export function PitchVideoModal({ isOpen, onClose, videoUrl, title = 'Applicant 
                 </button>
               </div>
               <div
-                className="bg-black"
-                style={{
-                  aspectRatio: '16/9',
-                  width: '100%',
-                  minHeight: 0,
-                }}
+                className="bg-black max-h-[75vh] overflow-hidden"
+                style={{ aspectRatio, width: '100%', minHeight: 0 }}
               >
                 <video
                   src={videoUrl}
@@ -64,6 +70,7 @@ export function PitchVideoModal({ isOpen, onClose, videoUrl, title = 'Applicant 
                   autoPlay
                   playsInline
                   preload="auto"
+                  onLoadedMetadata={handleLoadedMetadata}
                   className="w-full h-full object-contain"
                   style={{ display: 'block' }}
                 />
