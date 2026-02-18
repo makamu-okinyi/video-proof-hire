@@ -31,25 +31,26 @@ async function fetchFounderVentures(userId: string): Promise<FounderVenture[]> {
 
   if (ventureError || !ventures?.length) return [];
 
-  const results: FounderVenture[] = [];
-  for (const v of ventures) {
-    const { count } = await supabase
-      .from('pitch_decks')
-      .select('*', { count: 'exact', head: true })
-      .eq('venture_id', v.id);
+  // Batch pitch_deck counts in a single query instead of N+1
+  const { data: deckRows } = await supabase
+    .from('pitch_decks')
+    .select('venture_id')
+    .in('venture_id', ventureIds);
 
-    results.push({
-      id: v.id,
-      name: v.name,
-      stage: v.stage,
-      review_status: v.review_status || 'submitted',
-      pitch_video_url: v.pitch_video_url,
-      pitch_deck_count: count ?? 0,
-      created_at: v.created_at,
-    });
+  const deckCounts: Record<string, number> = {};
+  for (const row of deckRows ?? []) {
+    deckCounts[row.venture_id] = (deckCounts[row.venture_id] || 0) + 1;
   }
 
-  return results;
+  return ventures.map(v => ({
+    id: v.id,
+    name: v.name,
+    stage: v.stage,
+    review_status: v.review_status || 'submitted',
+    pitch_video_url: v.pitch_video_url,
+    pitch_deck_count: deckCounts[v.id] ?? 0,
+    created_at: v.created_at,
+  }));
 }
 
 export function useFounderVentures(userId: string | undefined) {
@@ -59,7 +60,8 @@ export function useFounderVentures(userId: string | undefined) {
     queryKey: ['founder-ventures', userId],
     queryFn: () => (userId ? fetchFounderVentures(userId) : Promise.resolve([])),
     enabled: !!userId,
-    refetchInterval: 5000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
   });
 
   const ventureIds = (query.data ?? []).map(v => v.id);
@@ -67,23 +69,22 @@ export function useFounderVentures(userId: string | undefined) {
   useEffect(() => {
     if (!ventureIds.length || !userId) return;
 
-    const channels = ventureIds.map(ventureId =>
-      supabase
-        .channel(`founder-venture-${ventureId}`)
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ventures', filter: `id=eq.${ventureId}` }, (payload) => {
-          const newRow = payload.new as Record<string, unknown> | null;
-          const status = newRow?.review_status as string | undefined;
-          if (status) {
-            queryClient.setQueryData<FounderVenture[]>(['founder-ventures', userId], (prev) => {
-              if (!prev) return prev;
-              return prev.map(v => v.id === ventureId ? { ...v, review_status: status } : v);
-            });
-          }
-        })
-        .subscribe()
-    );
+    const channel = supabase
+      .channel(`founder-ventures-${userId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ventures' }, (payload) => {
+        const newRow = payload.new as Record<string, unknown> | null;
+        const ventureId = newRow?.id as string | undefined;
+        const status = newRow?.review_status as string | undefined;
+        if (ventureId && status && ventureIds.includes(ventureId)) {
+          queryClient.setQueryData<FounderVenture[]>(['founder-ventures', userId], (prev) => {
+            if (!prev) return prev;
+            return prev.map(v => v.id === ventureId ? { ...v, review_status: status } : v);
+          });
+        }
+      })
+      .subscribe();
 
-    return () => { channels.forEach(ch => supabase.removeChannel(ch)); };
+    return () => { supabase.removeChannel(channel); };
   }, [ventureIds.join(','), userId, queryClient]);
 
   return query;

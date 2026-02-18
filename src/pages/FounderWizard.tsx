@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, ArrowRight, Rocket, Users, Lightbulb, Target,
@@ -71,15 +71,73 @@ const steps: { id: WizardStep; title: string; icon: React.ReactNode }[] = [
 
 export default function FounderWizard() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editVentureId = searchParams.get('edit');
+  const isEdit = !!editVentureId;
+
   const { user, isAuthenticated } = useAuth();
   const [currentStep, setCurrentStep] = useState<WizardStep>('basics');
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingEdit, setIsLoadingEdit] = useState(isEdit);
   const [pitchVideoBlob, setPitchVideoBlob] = useState<Blob | null>(null);
   const [pitchDeckFile, setPitchDeckFile] = useState<File | null>(null);
+  const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null);
 
   const { uploading: videoUploading, uploadVideo } = useVideoUpload();
   const { uploading: deckUploading, uploadDeck } = usePitchDeckUpload();
+
+  // Load existing venture for edit mode
+  useEffect(() => {
+    if (!editVentureId || !user) return;
+    (async () => {
+      setIsLoadingEdit(true);
+      const { data, error } = await supabase
+        .from('ventures')
+        .select('*')
+        .eq('id', editVentureId)
+        .maybeSingle();
+
+      if (error || !data) {
+        toast.error('Could not load venture');
+        setIsLoadingEdit(false);
+        return;
+      }
+
+      const d = data as Record<string, unknown>;
+      setFormData({
+        name: (d.name as string) || '',
+        tagline: (d.tagline as string) || '',
+        description: (d.description as string) || '',
+        problemStatement: (d.problem_statement as string) || '',
+        solution: (d.solution as string) || '',
+        marketSize: (d.market_size as string) || '',
+        traction: (d.traction as string) || '',
+        businessModel: (d.business_model as string) || '',
+        stage: ((d.stage as string) || 'idea') as FormData['stage'],
+        industry: Array.isArray(d.industry) ? d.industry as string[] : [],
+        techStack: Array.isArray(d.tech_stack) ? d.tech_stack as string[] : [],
+        websiteUrl: (d.website_url as string) || '',
+        githubUrl: (d.github_url as string) || '',
+        demoUrl: (d.demo_url as string) || '',
+        founderTitle: 'CEO & Founder',
+      });
+      setExistingVideoUrl((d.pitch_video_url as string) || null);
+
+      // Load founder title
+      const { data: founderRow } = await supabase
+        .from('venture_founders')
+        .select('title')
+        .eq('venture_id', editVentureId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (founderRow?.title) {
+        setFormData(prev => ({ ...prev, founderTitle: founderRow.title }));
+      }
+
+      setIsLoadingEdit(false);
+    })();
+  }, [editVentureId, user?.id]);
 
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
 
@@ -97,10 +155,10 @@ export default function FounderWizard() {
   const canProceed = (): boolean => {
     switch (currentStep) {
       case 'basics': return formData.name.length >= 2 && formData.tagline.length >= 10;
-      case 'problem': return formData.problemStatement.length >= 20;
+      case 'problem': return formData.problemStatement.length >= 10;
       case 'team': return formData.founderTitle.length >= 2;
-      case 'tech': return formData.industry.length >= 1;
-      case 'pitch': return true; // Video is encouraged but not required
+      case 'tech': return formData.industry.length > 0;
+      case 'pitch': return true;
       case 'review': return true;
       default: return false;
     }
@@ -125,61 +183,91 @@ export default function FounderWizard() {
 
     setIsSubmitting(true);
     try {
-      // Upload video if provided
-      let videoUrl: string | null = null;
+      let videoUrl: string | null = existingVideoUrl;
       if (pitchVideoBlob) {
         videoUrl = await uploadVideo(pitchVideoBlob, user.id);
         if (!videoUrl) throw new Error('Video upload failed');
       }
 
-      // Create venture (review_status defaults to 'submitted' for admin review)
-      const { data: venture, error: ventureError } = await supabase
-        .from('ventures')
-        .insert({
-          name: formData.name,
-          tagline: formData.tagline,
-          description: formData.description || null,
-          problem_statement: formData.problemStatement || null,
-          solution: formData.solution || null,
-          market_size: formData.marketSize || null,
-          traction: formData.traction || null,
-          business_model: formData.businessModel || null,
-          stage: formData.stage,
-          industry: formData.industry,
-          tech_stack: formData.techStack,
-          website_url: formData.websiteUrl || null,
-          github_url: formData.githubUrl || null,
-          demo_url: formData.demoUrl || null,
-          pitch_video_url: videoUrl,
-          review_status: 'submitted',
-        })
-        .select()
-        .single();
+      if (isEdit && editVentureId) {
+        // UPDATE existing venture
+        const { error: ventureError } = await supabase
+          .from('ventures')
+          .update({
+            name: formData.name,
+            tagline: formData.tagline,
+            description: formData.description || null,
+            problem_statement: formData.problemStatement || null,
+            solution: formData.solution || null,
+            market_size: formData.marketSize || null,
+            traction: formData.traction || null,
+            business_model: formData.businessModel || null,
+            stage: formData.stage,
+            industry: formData.industry,
+            tech_stack: formData.techStack,
+            website_url: formData.websiteUrl || null,
+            github_url: formData.githubUrl || null,
+            demo_url: formData.demoUrl || null,
+            pitch_video_url: videoUrl,
+          })
+          .eq('id', editVentureId);
 
-      if (ventureError) {
-        console.error('[FounderWizard] Venture insert error:', ventureError);
-        throw ventureError;
+        if (ventureError) throw ventureError;
+
+        // Update founder title
+        await supabase
+          .from('venture_founders')
+          .update({ title: formData.founderTitle })
+          .eq('venture_id', editVentureId)
+          .eq('user_id', user.id);
+
+        if (pitchDeckFile) {
+          await uploadDeck(pitchDeckFile, editVentureId, user.id);
+        }
+
+        toast.success('Application updated!');
+        navigate('/founder');
+      } else {
+        // INSERT new venture
+        const { data: venture, error: ventureError } = await supabase
+          .from('ventures')
+          .insert({
+            name: formData.name,
+            tagline: formData.tagline,
+            description: formData.description || null,
+            problem_statement: formData.problemStatement || null,
+            solution: formData.solution || null,
+            market_size: formData.marketSize || null,
+            traction: formData.traction || null,
+            business_model: formData.businessModel || null,
+            stage: formData.stage,
+            industry: formData.industry,
+            tech_stack: formData.techStack,
+            website_url: formData.websiteUrl || null,
+            github_url: formData.githubUrl || null,
+            demo_url: formData.demoUrl || null,
+            pitch_video_url: videoUrl,
+            review_status: 'submitted',
+          })
+          .select()
+          .single();
+
+        if (ventureError) throw ventureError;
+
+        const { error: founderError } = await supabase
+          .from('venture_founders')
+          .insert({ venture_id: venture.id, user_id: user.id, role: 'lead', title: formData.founderTitle, is_lead: true });
+        if (founderError) throw founderError;
+
+        if (pitchDeckFile) {
+          await uploadDeck(pitchDeckFile, venture.id, user.id);
+        }
+
+        await supabase.rpc('update_user_role', { new_role: 'founder' });
+
+        toast.success('Application submitted!');
+        navigate('/founder');
       }
-
-      // Add founder
-      const { error: founderError } = await supabase
-        .from('venture_founders')
-        .insert({ venture_id: venture.id, user_id: user.id, role: 'lead', title: formData.founderTitle, is_lead: true });
-      if (founderError) {
-        console.error('[FounderWizard] Venture founder insert error:', founderError);
-        throw founderError;
-      }
-
-      // Upload pitch deck if provided
-      if (pitchDeckFile) {
-        await uploadDeck(pitchDeckFile, venture.id, user.id);
-      }
-
-      // Update user role to founder
-      await supabase.rpc('update_user_role', { new_role: 'founder' });
-
-      toast.success('Application submitted! 🎉');
-      navigate('/founder');
     } catch (error: unknown) {
       console.error('[FounderWizard] Submit error:', error);
       const msg = error instanceof Error ? error.message : 'Failed to submit. Please try again.';
@@ -313,6 +401,16 @@ export default function FounderWizard() {
               </ol>
             </div>
 
+            {existingVideoUrl && !pitchVideoBlob && (
+              <div className="neo-subtle rounded-2xl p-4 text-center">
+                <Check className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                <p className="font-medium text-charcoal">Existing video attached</p>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => setExistingVideoUrl(null)}>
+                  Replace Video
+                </Button>
+              </div>
+            )}
+
             {pitchVideoBlob ? (
               <div className="neo-subtle rounded-2xl p-4 text-center">
                 <Check className="h-8 w-8 text-green-600 mx-auto mb-2" />
@@ -322,9 +420,9 @@ export default function FounderWizard() {
                   Replace Video
                 </Button>
               </div>
-            ) : (
+            ) : !existingVideoUrl ? (
               <VideoPitchRecorder onVideoReady={setPitchVideoBlob} maxDuration={60} />
-            )}
+            ) : null}
 
             {/* Pitch Deck Upload */}
             <div className="space-y-2 pt-4 border-t border-border/30">
@@ -362,7 +460,7 @@ export default function FounderWizard() {
               <div><p className="text-cool-grey text-xs mb-1">Problem</p><p className="text-charcoal">{formData.problemStatement || '—'}</p></div>
               <div><p className="text-cool-grey text-xs mb-1">Solution</p><p className="text-charcoal">{formData.solution || '—'}</p></div>
               <div><p className="text-cool-grey text-xs mb-1">Role</p><p className="text-charcoal">{formData.founderTitle}</p></div>
-              <div><p className="text-cool-grey text-xs mb-1">Video</p><p className={pitchVideoBlob ? "text-green-600" : "text-amber-600"}>{pitchVideoBlob ? 'Uploaded ✓' : 'Not provided'}</p></div>
+              <div><p className="text-cool-grey text-xs mb-1">Video</p><p className={pitchVideoBlob || existingVideoUrl ? "text-green-600" : "text-amber-600"}>{pitchVideoBlob || existingVideoUrl ? 'Attached ✓' : 'Not provided'}</p></div>
             </div>
             {formData.industry.length > 0 && (
               <div>
@@ -378,9 +476,26 @@ export default function FounderWizard() {
     }
   };
 
+  if (isLoadingEdit) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto space-y-6">
+        {/* Header */}
+        {isEdit && (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3 text-center">
+            <p className="text-sm font-medium text-amber-700">Editing your application — changes will be saved when you submit.</p>
+          </div>
+        )}
+
         {/* Progress */}
         <div className="flex items-center gap-1 overflow-x-auto pb-2">
           {steps.map((s, i) => (
@@ -413,9 +528,9 @@ export default function FounderWizard() {
           {currentStep === 'review' ? (
             <Button onClick={handleSubmit} disabled={isSubmitting || videoUploading || deckUploading} className="min-w-[140px]">
               {isSubmitting || videoUploading || deckUploading ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
               ) : (
-                <><Check className="h-4 w-4 mr-2" /> Submit Application</>
+                <><Check className="h-4 w-4 mr-2" /> {isEdit ? 'Save Changes' : 'Submit Application'}</>
               )}
             </Button>
           ) : (

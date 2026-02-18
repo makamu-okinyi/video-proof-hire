@@ -91,7 +91,7 @@ export default function CreateJob() {
       setSkills(Array.isArray(data.skills_required) ? data.skills_required : []);
       setBenefits(Array.isArray(data.benefits) ? data.benefits : []);
       setDeadline(data.application_deadline ? data.application_deadline.slice(0, 10) : '');
-      setVideoPrompt(data.video_prompt || '');
+      setVideoPrompt((data as Record<string, unknown>)?.video_prompt as string || '');
     };
     fetchJob();
   }, [jobId, user?.id, profile?.username]);
@@ -169,10 +169,6 @@ export default function CreateJob() {
         return isNaN(n) ? null : n;
       };
 
-      const videoPromptField = videoPrompt.trim()
-        ? { video_prompt: videoPrompt.trim() }
-        : {};
-
       if (isEdit && jobId) {
         const { error } = await supabase
           .from('job_postings')
@@ -189,7 +185,6 @@ export default function CreateJob() {
             skills_required: validation.data.skills_required,
             benefits: validation.data.benefits,
             application_deadline: deadline || null,
-            ...videoPromptField,
           })
           .eq('id', jobId)
           .eq('employer_id', user?.id);
@@ -210,7 +205,6 @@ export default function CreateJob() {
           skills_required: validation.data.skills_required,
           benefits: validation.data.benefits,
           application_deadline: deadline || null,
-          ...videoPromptField,
         });
         if (error) throw error;
         toast.success('Job posting created!', { icon: null });
@@ -445,7 +439,7 @@ export default function CreateJob() {
           />
         </div>
 
-        {/* Video Prompt */}
+        {/* Video Prompt — hidden until DB migration is deployed
         <div className="space-y-2">
           <label className="text-sm font-medium">Video Pitch Guidance <span className="text-muted-foreground text-xs">(optional)</span></label>
           <p className="text-xs text-muted-foreground">Tell applicants what to include in their video pitch. This will be shown when they apply.</p>
@@ -458,6 +452,7 @@ export default function CreateJob() {
           />
           <p className="text-xs text-muted-foreground text-right">{videoPrompt.length}/1,000</p>
         </div>
+        */}
       </div>
     </div>
   );

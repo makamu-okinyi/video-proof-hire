@@ -63,7 +63,7 @@ export default function CreateChallenge() {
       setDeadline(formatDeadlineForInput(data.deadline));
       setIsFeatured(data.is_featured ?? false);
       setSkills(Array.isArray(data.skills_tags) ? data.skills_tags : []);
-      setVideoPrompt(data.video_prompt || '');
+      setVideoPrompt((data as Record<string, unknown>)?.video_prompt as string || '');
     };
     fetchChallenge();
   }, [challengeId, user?.id]);
@@ -112,10 +112,6 @@ export default function CreateChallenge() {
     setLoading(true);
 
     try {
-      const videoPromptField = videoPrompt.trim()
-        ? { video_prompt: videoPrompt.trim() }
-        : {};
-
       if (isEdit && challengeId) {
         const { error } = await supabase
           .from('challenges')
@@ -127,7 +123,6 @@ export default function CreateChallenge() {
             deadline: deadline || null,
             is_featured: isFeatured,
             skills_tags: validation.data.skills_tags,
-            ...videoPromptField,
           })
           .eq('id', challengeId)
           .eq('employer_id', user?.id);
@@ -143,7 +138,6 @@ export default function CreateChallenge() {
           deadline: deadline || null,
           is_featured: isFeatured,
           skills_tags: validation.data.skills_tags,
-          ...videoPromptField,
         });
         if (error) throw error;
         toast.success('Challenge created!');

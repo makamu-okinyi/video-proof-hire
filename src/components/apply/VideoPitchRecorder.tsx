@@ -40,7 +40,7 @@ export function VideoPitchRecorder({ onVideoReady, maxDuration = 60 }: VideoPitc
   const {
     inputRef: fileInputRef, handleFileChange, fileUrl: uploadedUrl,
     file: uploadedFile, error: uploadError, openFilePicker, clearFile,
-  } = useFileUpload({ accept: 'video/*', maxSizeMB: 100 });
+  } = useFileUpload({ accept: 'video/*', maxSizeMB: 25 });
 
   useEffect(() => {
     if (uploadedUrl && uploadedFile) {
@@ -103,7 +103,7 @@ export function VideoPitchRecorder({ onVideoReady, maxDuration = 60 }: VideoPitc
           <button onClick={openFilePicker} className="neo-extruded rounded-2xl p-6 text-center hover:shadow-neo-pressed transition-all duration-300">
             <Upload className="h-8 w-8 mx-auto mb-2 text-primary" />
             <p className="font-medium text-charcoal text-sm">Upload Video</p>
-            <p className="text-xs text-cool-grey mt-1">Max {maxDuration}s, 100MB</p>
+            <p className="text-xs text-cool-grey mt-1">Max {maxDuration}s, 25MB</p>
           </button>
         </div>
       </div>
