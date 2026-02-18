@@ -27,6 +27,7 @@ interface ApplyJobModalProps {
     id: string;
     title: string;
     company_name: string | null;
+    video_prompt?: string | null;
   };
 }
 
@@ -163,6 +164,17 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
             {/* Content - scrollable */}
             <ScrollArea className="flex-1">
               <div className="p-4 space-y-5">
+                {/* Video Guidance from Employer */}
+                {job.video_prompt && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-[2px] p-3 space-y-1.5">
+                    <p className="text-sm font-medium text-emerald-400 flex items-center gap-2">
+                      <Video className="h-4 w-4" />
+                      Video Pitch Guidance
+                    </p>
+                    <p className="text-sm text-slate-300 whitespace-pre-line">{job.video_prompt}</p>
+                  </div>
+                )}
+
                 {/* Video Portfolio Section */}
                 <div className="space-y-2 pointer-events-auto z-50 relative">
                   <Label className="flex items-center gap-2 text-slate-200 font-sans">

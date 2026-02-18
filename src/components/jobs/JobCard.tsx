@@ -21,6 +21,7 @@ interface JobPosting {
   skills_required: string[] | null;
   salary_min: number | null;
   salary_max: number | null;
+  video_prompt?: string | null;
   created_at: string;
 }
 

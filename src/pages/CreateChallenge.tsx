@@ -39,6 +39,7 @@ export default function CreateChallenge() {
   const [isFeatured, setIsFeatured] = useState(false);
   const [skillInput, setSkillInput] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
+  const [videoPrompt, setVideoPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(isEdit);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -62,6 +63,7 @@ export default function CreateChallenge() {
       setDeadline(formatDeadlineForInput(data.deadline));
       setIsFeatured(data.is_featured ?? false);
       setSkills(Array.isArray(data.skills_tags) ? data.skills_tags : []);
+      setVideoPrompt(data.video_prompt || '');
     };
     fetchChallenge();
   }, [challengeId, user?.id]);
@@ -121,6 +123,7 @@ export default function CreateChallenge() {
             deadline: deadline || null,
             is_featured: isFeatured,
             skills_tags: validation.data.skills_tags,
+            video_prompt: videoPrompt.trim() || null,
           })
           .eq('id', challengeId)
           .eq('employer_id', user?.id);
@@ -136,6 +139,7 @@ export default function CreateChallenge() {
           deadline: deadline || null,
           is_featured: isFeatured,
           skills_tags: validation.data.skills_tags,
+          video_prompt: videoPrompt.trim() || null,
         });
         if (error) throw error;
         toast.success('Challenge created!');
@@ -274,6 +278,20 @@ export default function CreateChallenge() {
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
           />
+        </div>
+
+        {/* Video Prompt */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Video Submission Guidance <span className="text-muted-foreground text-xs">(optional)</span></label>
+          <p className="text-xs text-muted-foreground">Tell participants what to include in their video submission. This will be shown when they submit an entry.</p>
+          <Textarea
+            placeholder="e.g. In your video, please demonstrate: your solution approach, a working demo, and explain the technical decisions you made."
+            value={videoPrompt}
+            onChange={(e) => setVideoPrompt(e.target.value)}
+            rows={4}
+            maxLength={1000}
+          />
+          <p className="text-xs text-muted-foreground text-right">{videoPrompt.length}/1,000</p>
         </div>
 
         {/* Featured Toggle */}

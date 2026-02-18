@@ -106,6 +106,7 @@ export type Database = {
           skills_tags: string[] | null
           title: string
           updated_at: string
+          video_prompt: string | null
         }
         Insert: {
           created_at?: string
@@ -121,6 +122,7 @@ export type Database = {
           skills_tags?: string[] | null
           title: string
           updated_at?: string
+          video_prompt?: string | null
         }
         Update: {
           created_at?: string
@@ -136,6 +138,7 @@ export type Database = {
           skills_tags?: string[] | null
           title?: string
           updated_at?: string
+          video_prompt?: string | null
         }
         Relationships: [
           {
@@ -505,6 +508,7 @@ export type Database = {
           skills_required: string[] | null
           title: string
           updated_at: string
+          video_prompt: string | null
           views: number
         }
         Insert: {
@@ -526,6 +530,7 @@ export type Database = {
           skills_required?: string[] | null
           title: string
           updated_at?: string
+          video_prompt?: string | null
           views?: number
         }
         Update: {
@@ -547,6 +552,7 @@ export type Database = {
           skills_required?: string[] | null
           title?: string
           updated_at?: string
+          video_prompt?: string | null
           views?: number
         }
         Relationships: [

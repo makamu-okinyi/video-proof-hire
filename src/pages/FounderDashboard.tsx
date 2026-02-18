@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useFounderVenture } from '@/hooks/useFounderVenture';
+import { useFounderVentures, FounderVenture } from '@/hooks/useFounderVenture';
 import { useApplicantJobApplications } from '@/hooks/useApplicantJobApplications';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
@@ -44,13 +44,91 @@ function getJobStatusConfig(status: string) {
   return statusConfig[status] || statusConfig.pending;
 }
 
+function VentureCard({ venture, navigate }: { venture: FounderVenture; navigate: ReturnType<typeof useNavigate> }) {
+  const currentStatus = statusConfig[venture.review_status] || statusConfig.submitted;
+
+  return (
+    <NeoCard className="p-5 lg:p-8">
+      <NeoCardHeader className="pb-4">
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 neo-pressed rounded-2xl flex items-center justify-center">
+              <Rocket className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <NeoCardTitle className="text-xl">{venture.name}</NeoCardTitle>
+              <p className="text-cool-grey text-sm">{formatStage(venture.stage)} stage · Submitted {formatDate(venture.created_at)}</p>
+            </div>
+          </div>
+          <Badge className={`${currentStatus.color} flex items-center gap-1.5 px-3 py-1.5`}>
+            {currentStatus.icon}
+            {currentStatus.label}
+          </Badge>
+        </div>
+        <p className="text-sm text-cool-grey mt-3">{currentStatus.message}</p>
+      </NeoCardHeader>
+      <NeoCardContent>
+        {venture.pitch_video_url && (
+          <div className="mb-6 flex flex-col items-center justify-center w-full text-center">
+            <p className="text-sm font-medium text-cool-grey mb-2">Your Pitch Video</p>
+            <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden mt-2">
+              <video
+                src={venture.pitch_video_url}
+                controls
+                playsInline
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          <div className="neo-subtle rounded-2xl p-4 text-center">
+            <Video className="h-5 w-5 mx-auto mb-2 text-green-600" />
+            <p className="text-xs text-cool-grey">Pitch Video</p>
+            <p className={`text-sm font-semibold ${venture.pitch_video_url ? 'text-green-600' : 'text-cool-grey'}`}>
+              {venture.pitch_video_url ? 'Uploaded ✓' : 'Not uploaded'}
+            </p>
+          </div>
+          <div className="neo-subtle rounded-2xl p-4 text-center">
+            <FileText className="h-5 w-5 mx-auto mb-2 text-green-600" />
+            <p className="text-xs text-cool-grey">Pitch Deck</p>
+            <p className={`text-sm font-semibold ${venture.pitch_deck_count > 0 ? 'text-green-600' : 'text-cool-grey'}`}>
+              {venture.pitch_deck_count > 0 ? 'Uploaded ✓' : 'Not uploaded'}
+            </p>
+          </div>
+          <div className="neo-subtle rounded-2xl p-4 text-center">
+            <Users className="h-5 w-5 mx-auto mb-2 text-primary" />
+            <p className="text-xs text-cool-grey">Mentors</p>
+            <p className="text-sm font-semibold text-charcoal">—</p>
+          </div>
+          <div className="neo-subtle rounded-2xl p-4 text-center">
+            <Calendar className="h-5 w-5 mx-auto mb-2 text-primary" />
+            <p className="text-xs text-cool-grey">Next Session</p>
+            <p className="text-sm font-semibold text-charcoal">—</p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3 mt-5">
+          <Button onClick={() => navigate('/apply')} className="neo-extruded border-none">
+            <FileText className="h-4 w-4 mr-2" />
+            Update Application
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/messages')} className="neo-extruded border-none">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Message Mentor
+          </Button>
+        </div>
+      </NeoCardContent>
+    </NeoCard>
+  );
+}
+
 export default function FounderDashboard() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { data: venture, isLoading } = useFounderVenture(user?.id);
+  const { data: ventures, isLoading } = useFounderVentures(user?.id);
   const { data: jobApplications } = useApplicantJobApplications(user?.id);
-
-  const currentStatus = venture ? (statusConfig[venture.review_status] || statusConfig.submitted) : statusConfig.submitted;
 
   return (
     <DashboardLayout>
@@ -63,13 +141,15 @@ export default function FounderDashboard() {
           <p className="text-cool-grey text-sm lg:text-base">Track your venture application and upcoming sessions.</p>
         </div>
 
-        {/* Venture Status Card */}
-        <NeoCard className="p-5 lg:p-8">
-          {isLoading ? (
+        {/* Venture Status Cards */}
+        {isLoading ? (
+          <NeoCard className="p-5 lg:p-8">
             <div className="flex items-center justify-center py-12">
               <RocketLoader indeterminate label="Loading..." />
             </div>
-          ) : !venture ? (
+          </NeoCard>
+        ) : !ventures || ventures.length === 0 ? (
+          <NeoCard className="p-5 lg:p-8">
             <div className="text-center py-8">
               <p className="text-cool-grey mb-4">You haven&apos;t submitted a venture yet.</p>
               <Button onClick={() => navigate('/apply')} className="neo-extruded border-none">
@@ -77,82 +157,12 @@ export default function FounderDashboard() {
                 Apply to Program
               </Button>
             </div>
-          ) : (
-            <>
-              <NeoCardHeader className="pb-4">
-                <div className="flex items-start justify-between flex-wrap gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 neo-pressed rounded-2xl flex items-center justify-center">
-                      <Rocket className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <NeoCardTitle className="text-xl">{venture.name}</NeoCardTitle>
-                      <p className="text-cool-grey text-sm">{formatStage(venture.stage)} stage · Submitted {formatDate(venture.created_at)}</p>
-                    </div>
-                  </div>
-                  <Badge className={`${currentStatus.color} flex items-center gap-1.5 px-3 py-1.5`}>
-                    {currentStatus.icon}
-                    {currentStatus.label}
-                  </Badge>
-                </div>
-                <p className="text-sm text-cool-grey mt-3">{currentStatus.message}</p>
-              </NeoCardHeader>
-              <NeoCardContent>
-                {venture.pitch_video_url && (
-                  <div className="mb-6 flex flex-col items-center justify-center w-full text-center">
-                    <p className="text-sm font-medium text-cool-grey mb-2">Your Pitch Video</p>
-                    <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden mt-2">
-                      <video
-                        src={venture.pitch_video_url}
-                        controls
-                        playsInline
-                        className="absolute inset-0 w-full h-full object-contain"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-                  <div className="neo-subtle rounded-2xl p-4 text-center">
-                    <Video className="h-5 w-5 mx-auto mb-2 text-green-600" />
-                    <p className="text-xs text-cool-grey">Pitch Video</p>
-                    <p className={`text-sm font-semibold ${venture.pitch_video_url ? 'text-green-600' : 'text-cool-grey'}`}>
-                      {venture.pitch_video_url ? 'Uploaded ✓' : 'Not uploaded'}
-                    </p>
-                  </div>
-                  <div className="neo-subtle rounded-2xl p-4 text-center">
-                    <FileText className="h-5 w-5 mx-auto mb-2 text-green-600" />
-                    <p className="text-xs text-cool-grey">Pitch Deck</p>
-                    <p className={`text-sm font-semibold ${venture.pitch_deck_count > 0 ? 'text-green-600' : 'text-cool-grey'}`}>
-                      {venture.pitch_deck_count > 0 ? 'Uploaded ✓' : 'Not uploaded'}
-                    </p>
-                  </div>
-                  <div className="neo-subtle rounded-2xl p-4 text-center">
-                    <Users className="h-5 w-5 mx-auto mb-2 text-primary" />
-                    <p className="text-xs text-cool-grey">Mentors</p>
-                    <p className="text-sm font-semibold text-charcoal">—</p>
-                  </div>
-                  <div className="neo-subtle rounded-2xl p-4 text-center">
-                    <Calendar className="h-5 w-5 mx-auto mb-2 text-primary" />
-                    <p className="text-xs text-cool-grey">Next Session</p>
-                    <p className="text-sm font-semibold text-charcoal">—</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-3 mt-5">
-                  <Button onClick={() => navigate('/apply')} className="neo-extruded border-none">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Update Application
-                  </Button>
-                  <Button variant="outline" onClick={() => navigate('/messages')} className="neo-extruded border-none">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Message Mentor
-                  </Button>
-                </div>
-              </NeoCardContent>
-            </>
-          )}
-        </NeoCard>
+          </NeoCard>
+        ) : (
+          ventures.map(venture => (
+            <VentureCard key={venture.id} venture={venture} navigate={navigate} />
+          ))
+        )}
 
         {/* My Applications */}
         <NeoCard className="p-5 lg:p-6">
@@ -164,26 +174,29 @@ export default function FounderDashboard() {
             <p className="text-cool-grey text-sm mt-1">Track your venture and job applications</p>
           </NeoCardHeader>
           <NeoCardContent className="space-y-4 mt-4">
-            {venture && (
-              <div className="neo-subtle rounded-2xl p-4">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 neo-pressed rounded-xl flex items-center justify-center">
-                      <Rocket className="h-5 w-5 text-primary" />
+            {ventures && ventures.length > 0 && ventures.map(venture => {
+              const cfg = statusConfig[venture.review_status] || statusConfig.submitted;
+              return (
+                <div key={venture.id} className="neo-subtle rounded-2xl p-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 neo-pressed rounded-xl flex items-center justify-center">
+                        <Rocket className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-charcoal">{venture.name}</p>
+                        <p className="text-xs text-cool-grey">Venture Application · {formatDate(venture.created_at)}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-charcoal">{venture.name}</p>
-                      <p className="text-xs text-cool-grey">Venture Application · {formatDate(venture.created_at)}</p>
-                    </div>
+                    <Badge className={`${cfg.color} flex items-center gap-1.5 px-3 py-1`}>
+                      {cfg.icon}
+                      {cfg.label}
+                    </Badge>
                   </div>
-                  <Badge className={`${currentStatus.color} flex items-center gap-1.5 px-3 py-1`}>
-                    {currentStatus.icon}
-                    {currentStatus.label}
-                  </Badge>
+                  <p className="text-sm text-cool-grey mt-3">{cfg.message}</p>
                 </div>
-                <p className="text-sm text-cool-grey mt-3">{currentStatus.message}</p>
-              </div>
-            )}
+              );
+            })}
             {jobApplications && jobApplications.length > 0 ? (
               jobApplications.map((app) => {
                 const cfg = getJobStatusConfig(app.status);
@@ -209,10 +222,10 @@ export default function FounderDashboard() {
                 );
               })
             ) : null}
-            {(!venture && (!jobApplications || jobApplications.length === 0)) && (
+            {(!ventures || ventures.length === 0) && (!jobApplications || jobApplications.length === 0) && (
               <p className="text-cool-grey text-sm text-center py-4">No applications yet. Apply to a venture or job to get started.</p>
             )}
-            {venture && (!jobApplications || jobApplications.length === 0) && (
+            {ventures && ventures.length > 0 && (!jobApplications || jobApplications.length === 0) && (
               <div className="text-center">
                 <Button variant="outline" size="sm" onClick={() => navigate('/jobs')} className="neo-extruded border-none">
                   <Briefcase className="h-4 w-4 mr-2" />

@@ -14,6 +14,7 @@ interface Challenge {
   is_featured: boolean;
   participants_count: number;
   skills_tags: string[] | null;
+  video_prompt?: string | null;
 }
 
 interface ChallengeCardProps {
