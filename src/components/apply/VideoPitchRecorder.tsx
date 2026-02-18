@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Video, Upload, RotateCcw, Camera, Mic, MicOff, AlertCircle, Loader2, X, Play, Check } from 'lucide-react';
+import { Video, Upload, RotateCcw, Camera, Mic, MicOff, AlertCircle, Loader2, X, Play, Check, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCamera } from '@/hooks/useCamera';
 import { useFileUpload } from '@/hooks/useFileUpload';
@@ -11,13 +11,29 @@ interface VideoPitchRecorderProps {
   maxDuration?: number;
 }
 
+function QualityBadge({ quality }: { quality: string | null }) {
+  if (!quality) return null;
+  const isHD = quality === '1080p' || quality === '720p';
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider",
+      isHD
+        ? "bg-emerald-500/20 text-emerald-400"
+        : "bg-amber-500/20 text-amber-400"
+    )}>
+      {isHD && <Sparkles className="h-3 w-3" />}
+      {quality === '1080p' ? 'HD 1080p' : quality === '720p' ? 'HD 720p' : 'SD'}
+    </span>
+  );
+}
+
 export function VideoPitchRecorder({ onVideoReady, maxDuration = 60 }: VideoPitchRecorderProps) {
   const [mode, setMode] = useState<'choose' | 'camera' | 'preview'>('choose');
   const previewRef = useRef<HTMLVideoElement>(null);
 
   const {
     videoRef, isStreaming, isRecording, recordingTime, recordedUrl, recordedBlob,
-    error: cameraError, isMicEnabled, startStream, stopStream, flipCamera,
+    error: cameraError, isMicEnabled, streamQuality, startStream, stopStream, flipCamera,
     toggleMicrophone, startRecording, stopRecording, resetRecording,
   } = useCamera({ maxDuration });
 
@@ -26,7 +42,6 @@ export function VideoPitchRecorder({ onVideoReady, maxDuration = 60 }: VideoPitc
     file: uploadedFile, error: uploadError, openFilePicker, clearFile,
   } = useFileUpload({ accept: 'video/*', maxSizeMB: 100 });
 
-  // Validate uploaded video duration
   useEffect(() => {
     if (uploadedUrl && uploadedFile) {
       const video = document.createElement('video');
@@ -83,7 +98,7 @@ export function VideoPitchRecorder({ onVideoReady, maxDuration = 60 }: VideoPitc
           <button onClick={handleStartCamera} className="neo-extruded rounded-2xl p-6 text-center hover:shadow-neo-pressed transition-all duration-300">
             <Camera className="h-8 w-8 mx-auto mb-2 text-primary" />
             <p className="font-medium text-charcoal text-sm">Record Now</p>
-            <p className="text-xs text-cool-grey mt-1">Use your camera</p>
+            <p className="text-xs text-cool-grey mt-1">HD quality · up to {maxDuration}s</p>
           </button>
           <button onClick={openFilePicker} className="neo-extruded rounded-2xl p-6 text-center hover:shadow-neo-pressed transition-all duration-300">
             <Upload className="h-8 w-8 mx-auto mb-2 text-primary" />
@@ -98,7 +113,7 @@ export function VideoPitchRecorder({ onVideoReady, maxDuration = 60 }: VideoPitc
   if (mode === 'camera') {
     return (
       <div className="space-y-3">
-        <div className="relative aspect-[9/16] max-h-[50vh] bg-black rounded-2xl overflow-hidden">
+        <div className="relative aspect-video max-h-[50vh] bg-black rounded-2xl overflow-hidden">
           <video ref={videoRef} autoPlay playsInline muted className={cn("w-full h-full object-cover", !isStreaming && "hidden")} />
           {!isStreaming && (
             <div className="absolute inset-0 flex items-center justify-center">
@@ -114,7 +129,11 @@ export function VideoPitchRecorder({ onVideoReady, maxDuration = 60 }: VideoPitc
             </div>
           )}
 
-          {/* Timer */}
+          {/* Quality badge + timer */}
+          <div className="absolute top-3 left-3">
+            <QualityBadge quality={streamQuality} />
+          </div>
+
           {isRecording && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-red-600 text-white text-sm font-mono">
               {formatTime(recordingTime)} / {formatTime(maxDuration)}
@@ -145,7 +164,7 @@ export function VideoPitchRecorder({ onVideoReady, maxDuration = 60 }: VideoPitc
           >
             {isRecording ? <div className="h-6 w-6 rounded-sm bg-white" /> : <div className="h-12 w-12 rounded-full bg-primary" />}
           </button>
-          <div className="w-[72px]" /> {/* spacer */}
+          <div className="w-[72px]" />
         </div>
         <p className="text-center text-cool-grey text-xs">Max {maxDuration} seconds</p>
       </div>
@@ -155,7 +174,7 @@ export function VideoPitchRecorder({ onVideoReady, maxDuration = 60 }: VideoPitc
   // Preview mode
   return (
     <div className="space-y-3">
-      <div className="relative aspect-[9/16] max-h-[50vh] bg-black rounded-2xl overflow-hidden">
+      <div className="relative aspect-video max-h-[50vh] bg-black rounded-2xl overflow-hidden">
         {currentUrl && (
           <video ref={previewRef} src={currentUrl} controls playsInline className="w-full h-full object-contain" />
         )}
