@@ -58,6 +58,7 @@ export function useApplicantJobApplications(userId: string | undefined) {
     queryKey: ['applicant-job-applications', userId],
     queryFn: () => fetchApplicantJobApplications(userId),
     enabled: !!userId,
+    staleTime: 15_000,
   });
 
   useEffect(() => {

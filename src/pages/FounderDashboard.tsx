@@ -110,9 +110,9 @@ function VentureCard({ venture, navigate }: { venture: FounderVenture; navigate:
         </div>
 
         <div className="flex flex-wrap gap-3 mt-5">
-          <Button onClick={() => navigate('/apply')} className="neo-extruded border-none">
+          <Button onClick={() => navigate(`/apply?edit=${venture.id}`)} className="neo-extruded border-none">
             <FileText className="h-4 w-4 mr-2" />
-            Update Application
+            Edit Application
           </Button>
           <Button variant="outline" onClick={() => navigate('/messages')} className="neo-extruded border-none">
             <MessageSquare className="h-4 w-4 mr-2" />
