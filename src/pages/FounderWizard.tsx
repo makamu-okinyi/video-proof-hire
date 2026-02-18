@@ -302,6 +302,17 @@ export default function FounderWizard() {
               <p className="text-cool-grey text-sm">Record or upload your elevator pitch (max 60 seconds)</p>
             </div>
 
+            <div className="neo-subtle rounded-2xl p-4 text-left space-y-2">
+              <p className="text-sm font-medium text-charcoal">In your 1-minute video, please include:</p>
+              <ol className="text-sm text-cool-grey list-decimal list-inside space-y-1">
+                <li>Your <span className="font-medium text-charcoal">full name</span> and role in the venture</li>
+                <li>What <span className="font-medium text-charcoal">problem</span> your venture solves</li>
+                <li>Your <span className="font-medium text-charcoal">solution</span> and what makes it unique</li>
+                <li>Current <span className="font-medium text-charcoal">traction</span> or progress (users, revenue, partnerships)</li>
+                <li>What you're <span className="font-medium text-charcoal">looking for</span> from this program</li>
+              </ol>
+            </div>
+
             {pitchVideoBlob ? (
               <div className="neo-subtle rounded-2xl p-4 text-center">
                 <Check className="h-8 w-8 text-green-600 mx-auto mb-2" />

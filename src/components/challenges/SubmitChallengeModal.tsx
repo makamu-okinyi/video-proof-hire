@@ -27,6 +27,7 @@ interface SubmitChallengeModalProps {
     title: string;
     prize_amount: number | null;
     prize_description: string | null;
+    video_prompt?: string | null;
   };
 }
 
@@ -132,6 +133,17 @@ export function SubmitChallengeModal({ isOpen, onClose, challenge }: SubmitChall
                   {challenge.prize_description}
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Video Guidance from Employer */}
+          {challenge.video_prompt && (
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 space-y-1.5">
+              <p className="text-sm font-medium text-blue-600 flex items-center gap-2">
+                <Video className="h-4 w-4" />
+                Video Submission Guidance
+              </p>
+              <p className="text-sm text-muted-foreground whitespace-pre-line">{challenge.video_prompt}</p>
             </div>
           )}
 

@@ -62,6 +62,7 @@ export default function CreateJob() {
   const [benefitInput, setBenefitInput] = useState('');
   const [benefits, setBenefits] = useState<string[]>([]);
   const [deadline, setDeadline] = useState('');
+  const [videoPrompt, setVideoPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(isEdit);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -90,6 +91,7 @@ export default function CreateJob() {
       setSkills(Array.isArray(data.skills_required) ? data.skills_required : []);
       setBenefits(Array.isArray(data.benefits) ? data.benefits : []);
       setDeadline(data.application_deadline ? data.application_deadline.slice(0, 10) : '');
+      setVideoPrompt(data.video_prompt || '');
     };
     fetchJob();
   }, [jobId, user?.id, profile?.username]);
@@ -183,6 +185,7 @@ export default function CreateJob() {
             skills_required: validation.data.skills_required,
             benefits: validation.data.benefits,
             application_deadline: deadline || null,
+            video_prompt: videoPrompt.trim() || null,
           })
           .eq('id', jobId)
           .eq('employer_id', user?.id);
@@ -203,6 +206,7 @@ export default function CreateJob() {
           skills_required: validation.data.skills_required,
           benefits: validation.data.benefits,
           application_deadline: deadline || null,
+          video_prompt: videoPrompt.trim() || null,
         });
         if (error) throw error;
         toast.success('Job posting created!', { icon: null });
@@ -435,6 +439,20 @@ export default function CreateJob() {
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
           />
+        </div>
+
+        {/* Video Prompt */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Video Pitch Guidance <span className="text-muted-foreground text-xs">(optional)</span></label>
+          <p className="text-xs text-muted-foreground">Tell applicants what to include in their video pitch. This will be shown when they apply.</p>
+          <Textarea
+            placeholder="e.g. In your 1-minute video, please include: your name, relevant experience, why you're interested in this role, and a brief example of a project you're proud of."
+            value={videoPrompt}
+            onChange={(e) => setVideoPrompt(e.target.value)}
+            rows={4}
+            maxLength={1000}
+          />
+          <p className="text-xs text-muted-foreground text-right">{videoPrompt.length}/1,000</p>
         </div>
       </div>
     </div>
