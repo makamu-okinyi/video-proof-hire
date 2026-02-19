@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft, Loader2, Fingerprint, ChevronDown } from 'lucide-react';
+import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft, Loader2, Fingerprint, ChevronDown, Rocket, ShieldCheck } from 'lucide-react';
 import { RocketLoader } from '@/components/ui/RocketLoader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -373,82 +373,140 @@ export default function Auth() {
 
   const renderWelcome = () => (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 animate-fade-in">
-      <div className="soft-ui-card w-full max-w-md space-y-8 p-8">
-        {/* Logo */}
-        <div className="text-center space-y-4">
+      {/* Glass container */}
+      <div
+        className="w-full max-w-md space-y-8 p-8 rounded-3xl"
+        style={{
+          background: 'rgba(255,255,255,0.82)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255,255,255,0.6)',
+          boxShadow: '0 4px 32px 0 rgba(30,41,59,0.08), 0 1px 4px 0 rgba(30,41,59,0.04)',
+        }}
+      >
+        {/* Logo & headline */}
+        <div className="text-center space-y-2">
           <Logo size="xl" className="justify-center" />
-          <div className="space-y-1">
-            <h1 className="text-4xl font-bold tracking-tight text-charcoal">Startup Garage</h1>
-            <p className="text-cool-grey text-lg">Venture Acceleration Engine</p>
-          </div>
+          <h1
+            className="text-3xl font-bold text-[#1e293b]"
+            style={{ letterSpacing: '-0.04em' }}
+          >
+            Startup Garage
+          </h1>
+          <p className="text-[#64748b] text-sm font-normal">
+            Venture Acceleration Engine
+          </p>
         </div>
 
-        {/* Hero Visual - Neomorphic */}
-        <div className="relative h-48 w-full glass-panel rounded-3xl overflow-hidden">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-24 h-36 rounded-2xl bg-white/60 transform rotate-6 animate-float" />
-            <div className="absolute w-24 h-36 rounded-2xl bg-white/40 transform -rotate-6 animate-float" style={{ animationDelay: '0.5s' }} />
-          </div>
-        </div>
+        {/* Divider */}
+        <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
-        {/* Role Selection - Clear Founder vs Admin distinction */}
-        <div className="space-y-4 pt-4">
-          <p className="text-center text-sm text-cool-grey mb-2">Select your role to continue</p>
-          
-          {/* Applicant Option - Primary CTA */}
-          <div className="soft-ui-card p-5 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center">
-                <User className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-charcoal">Apply as Applicant</h3>
-                <p className="text-xs text-cool-grey">Submit your video portfolio to find your next hire</p>
+        {/* Role selection label */}
+        <p
+          className="text-center text-xs font-semibold uppercase tracking-widest text-[#94a3b8]"
+        >
+          Choose your path
+        </p>
+
+        {/* Selection cards */}
+        <div className="space-y-3">
+
+          {/* Applicant card */}
+          <button
+            onClick={() => { setUserType('talent'); setIsLogin(false); setStep('login'); }}
+            className="group w-full text-center rounded-2xl p-6 transition-all duration-300 pointer-events-auto"
+            style={{
+              background: 'rgba(255,255,255,0.7)',
+              border: '1px solid rgba(226,232,240,0.8)',
+              boxShadow: '0 1px 4px rgba(30,41,59,0.06)',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 32px rgba(249,115,22,0.12), 0 1px 4px rgba(30,41,59,0.08)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(249,115,22,0.35)';
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(30,41,59,0.06)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(226,232,240,0.8)';
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+            }}
+          >
+            {/* Icon */}
+            <div className="flex justify-center mb-4">
+              <div
+                className="h-16 w-16 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(249,115,22,0.09)' }}
+              >
+                <Rocket className="h-8 w-8 text-orange-500" strokeWidth={1.5} />
               </div>
             </div>
-            <p className="text-sm text-cool-grey pl-15">
-              Join our cohort program, get mentorship, and pitch to investors.
+            {/* Text */}
+            <h3
+              className="text-base font-semibold text-[#1e293b] mb-1.5"
+              style={{ letterSpacing: '-0.02em' }}
+            >
+              Apply as Applicant
+            </h3>
+            <p className="text-sm text-[#64748b] leading-relaxed">
+              Submit your video portfolio to join our next cohort and pitch to investors.
             </p>
-            <button 
-              className="w-full bg-primary text-primary-foreground py-3 rounded-2xl font-medium hover:bg-primary/90 transition-all duration-300 flex items-center justify-center gap-2 pointer-events-auto"
-              onClick={() => { setUserType('talent'); setIsLogin(false); setStep('login'); }}
-            >
-              Apply Now
-              <ArrowRight className="h-5 w-5" />
-            </button>
-          </div>
-          
-          {/* Admin/Program Manager Option */}
-          <div className="glass-panel p-5 rounded-3xl space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 bg-white/60 rounded-2xl flex items-center justify-center">
-                <Briefcase className="h-6 w-6 text-charcoal" />
+            {/* CTA link */}
+            <p className="mt-4 text-xs font-medium text-orange-500 group-hover:text-orange-600 transition-colors flex items-center justify-center gap-1">
+              Select <ArrowRight className="h-3.5 w-3.5" />
+            </p>
+          </button>
+
+          {/* Program Manager card */}
+          <button
+            onClick={() => { setUserType('employer'); setIsLogin(false); setStep('login'); }}
+            className="group w-full text-center rounded-2xl p-6 transition-all duration-300 pointer-events-auto"
+            style={{
+              background: 'rgba(255,255,255,0.7)',
+              border: '1px solid rgba(226,232,240,0.8)',
+              boxShadow: '0 1px 4px rgba(30,41,59,0.06)',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 32px rgba(100,116,139,0.12), 0 1px 4px rgba(30,41,59,0.08)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(100,116,139,0.4)';
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(30,41,59,0.06)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(226,232,240,0.8)';
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+            }}
+          >
+            {/* Icon */}
+            <div className="flex justify-center mb-4">
+              <div
+                className="h-16 w-16 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(100,116,139,0.08)' }}
+              >
+                <ShieldCheck className="h-8 w-8 text-slate-500" strokeWidth={1.5} />
               </div>
-              <div>
-                <h3 className="font-semibold text-charcoal">Program Manager / Admin</h3>
-                <p className="text-xs text-cool-grey">Manage cohorts and review applications</p>
-              </div>
             </div>
-            <button 
-              className="w-full soft-ui-card py-3 font-medium text-[#1e293b] hover:opacity-90 transition-all duration-300 flex items-center justify-center gap-2 pointer-events-auto"
-              onClick={() => { setUserType('employer'); setIsLogin(false); setStep('login'); }}
+            {/* Text */}
+            <h3
+              className="text-base font-semibold text-[#1e293b] mb-1.5"
+              style={{ letterSpacing: '-0.02em' }}
             >
-              Admin Login
-              <ArrowRight className="h-5 w-5" />
-            </button>
-          </div>
-          
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border/30" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="px-2 text-cool-grey">existing user?</span>
-            </div>
-          </div>
-          
-          <button 
-            className="w-full py-3 text-cool-grey hover:text-charcoal transition-colors font-medium pointer-events-auto"
+              Program Manager
+            </h3>
+            <p className="text-sm text-[#64748b] leading-relaxed">
+              Review applications, manage cohorts, and track venture progress.
+            </p>
+            {/* CTA link */}
+            <p className="mt-4 text-xs font-medium text-slate-500 group-hover:text-slate-700 transition-colors flex items-center justify-center gap-1">
+              Select <ArrowRight className="h-3.5 w-3.5" />
+            </p>
+          </button>
+        </div>
+
+        {/* Existing user — subtle, non-competing */}
+        <div className="text-center pt-2">
+          <button
+            className="text-sm text-[#94a3b8] hover:text-[#1e293b] transition-colors duration-200 pointer-events-auto"
+            style={{ opacity: 0.75 }}
             onClick={() => { setIsLogin(true); setStep('login'); }}
           >
             Sign in to my account

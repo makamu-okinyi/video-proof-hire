@@ -14,10 +14,33 @@ export interface AdminVenture {
   stage: string;
   industry: string[] | null;
   pitch_video_url: string | null;
+  pitch_deck_url: string | null;
   review_status: VentureReviewStatus;
   created_at: string;
   founder_name: string | null;
   founder_id: string | null;
+}
+
+function extractStoragePath(url: string, bucket: string): string | null {
+  const marker = `/object/public/${bucket}/`;
+  const signedMarker = `/object/sign/${bucket}/`;
+  let idx = url.indexOf(marker);
+  if (idx !== -1) return url.slice(idx + marker.length).split('?')[0];
+  idx = url.indexOf(signedMarker);
+  if (idx !== -1) return url.slice(idx + signedMarker.length).split('?')[0];
+  if (!url.startsWith('http')) return url;
+  return null;
+}
+
+async function resolveSignedDeckUrl(rawUrl: string | null): Promise<string | null> {
+  if (!rawUrl) return null;
+  const path = extractStoragePath(rawUrl, 'pitch-decks');
+  if (!path) return rawUrl;
+  const { data, error } = await supabase.storage
+    .from('pitch-decks')
+    .createSignedUrl(path, 60 * 60);
+  if (error || !data?.signedUrl) return rawUrl;
+  return data.signedUrl;
 }
 
 function mapVentureToAdmin(v: Record<string, unknown>): AdminVenture {
@@ -25,6 +48,11 @@ function mapVentureToAdmin(v: Record<string, unknown>): AdminVenture {
   const leadFounder = founders.find((f) => f.is_lead) ?? founders[0];
   const profiles = leadFounder?.profiles as Record<string, unknown> | undefined;
   const founderId = leadFounder?.user_id ?? profiles?.id;
+
+  const pitchDecks = (v.pitch_decks as Array<Record<string, unknown>>) ?? [];
+  const currentDeck = pitchDecks.find((d) => d.is_current) ?? pitchDecks[0];
+  const deckUrl = currentDeck?.file_url ? String(currentDeck.file_url) : null;
+
   return {
     id: String(v.id ?? ''),
     name: String(v.name ?? ''),
@@ -32,6 +60,7 @@ function mapVentureToAdmin(v: Record<string, unknown>): AdminVenture {
     stage: String(v.stage ?? ''),
     industry: Array.isArray(v.industry) ? v.industry : null,
     pitch_video_url: v.pitch_video_url ? String(v.pitch_video_url) : null,
+    pitch_deck_url: deckUrl,
     review_status: (v.review_status as VentureReviewStatus) || 'submitted',
     created_at: String(v.created_at ?? ''),
     founder_name: profiles?.username ? String(profiles.username) : null,
@@ -52,6 +81,10 @@ const ADMIN_VENTURES_SELECT = `
   venture_founders(
     is_lead,
     profiles(id, username)
+  ),
+  pitch_decks(
+    file_url,
+    is_current
   )
 `;
 
@@ -71,7 +104,11 @@ async function fetchAdminVentures(): Promise<AdminVenture[]> {
     return [];
   }
 
-  return data.map((v) => mapVentureToAdmin(v as Record<string, unknown>));
+  const mapped = data.map((v) => mapVentureToAdmin(v as Record<string, unknown>));
+  const resolved = await Promise.all(
+    mapped.map(async (m) => ({ ...m, pitch_deck_url: await resolveSignedDeckUrl(m.pitch_deck_url) }))
+  );
+  return resolved;
 }
 
 async function fetchAllAdminVentures(): Promise<AdminVenture[]> {
@@ -89,7 +126,11 @@ async function fetchAllAdminVentures(): Promise<AdminVenture[]> {
     return [];
   }
 
-  return data.map((v) => mapVentureToAdmin(v as Record<string, unknown>));
+  const mapped = data.map((v) => mapVentureToAdmin(v as Record<string, unknown>));
+  const resolved = await Promise.all(
+    mapped.map(async (m) => ({ ...m, pitch_deck_url: await resolveSignedDeckUrl(m.pitch_deck_url) }))
+  );
+  return resolved;
 }
 
 /** Fallback: fetch ventures without nested join (no founder names) */
