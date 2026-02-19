@@ -60,10 +60,14 @@ export function usePitchDeckUpload(): UsePitchDeckUploadReturn {
 
       setProgress(60);
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
+      // Get a signed URL (bucket is private) — valid for 1 year
+      const { data: urlData, error: signError } = await supabase.storage
         .from('pitch-decks')
-        .getPublicUrl(data.path);
+        .createSignedUrl(data.path, 60 * 60 * 24 * 365);
+
+      if (signError || !urlData?.signedUrl) {
+        throw new Error('Failed to generate deck URL');
+      }
 
       // Mark previous decks as not current
       await supabase
@@ -89,7 +93,7 @@ export function usePitchDeckUpload(): UsePitchDeckUploadReturn {
       const { error: insertError } = await supabase.from('pitch_decks').insert({
         venture_id: ventureId,
         title,
-        file_url: urlData.publicUrl,
+        file_url: urlData.signedUrl,
         file_type: file.type === 'application/pdf' ? 'pdf' : 'pptx',
         version: nextVersion,
         is_current: true,
@@ -101,7 +105,7 @@ export function usePitchDeckUpload(): UsePitchDeckUploadReturn {
       }
 
       setProgress(100);
-      return urlData.publicUrl;
+      return urlData.signedUrl;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to upload pitch deck';
       setError(message);

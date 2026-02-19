@@ -9,7 +9,6 @@ import {
   Bell,
   User,
   Settings,
-  MessageSquare,
   Rocket,
   LayoutDashboard,
   LogOut,
@@ -36,10 +35,7 @@ interface NavGroup {
   items: NavItem[];
 }
 
-const baseMenuItems = [
-  { icon: Rocket, label: 'Ventures', path: '/ventures' },
-  { icon: MessageSquare, label: 'Messages', path: '/messages' },
-];
+const baseMenuItems: NavItem[] = [];
 
 const founderItems: NavGroup = {
   title: 'Applicant Hub',
@@ -47,7 +43,6 @@ const founderItems: NavGroup = {
     { icon: LayoutDashboard, label: 'My Dashboard', path: '/founder' },
     { icon: Plus, label: 'Apply to Program', path: '/apply' },
     { icon: Briefcase, label: 'Jobs', path: '/jobs' },
-    { icon: Rocket, label: 'My Ventures', path: '/ventures' },
   ],
 };
 

@@ -7,7 +7,7 @@ import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/componen
 import { 
   Rocket, FileText, Users, Calendar, Bell, Briefcase,
   Clock, CheckCircle, AlertCircle,
-  Video, MessageSquare
+  Video
 } from 'lucide-react';
 import { RocketLoader } from '@/components/ui/RocketLoader';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
   pending: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-600', icon: <Clock className="h-4 w-4" />, message: 'Update: Your application is currently under review.' },
   submitted: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-600', icon: <Clock className="h-4 w-4" />, message: 'Update: Your application is currently under review.' },
   shortlisted: { label: "Congratulations! You've been Shortlisted", color: 'bg-green-500/10 text-green-600', icon: <CheckCircle className="h-4 w-4" />, message: 'Update: Your application has been shortlisted for the next stage.' },
-  rejected: { label: 'Application Closed', color: 'bg-slate-500/10 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400', icon: <AlertCircle className="h-4 w-4" />, message: 'Update: This application has been closed.' },
+  rejected: { label: 'Application Rejected', color: 'bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400', icon: <AlertCircle className="h-4 w-4" />, message: 'We are sorry, your application has been rejected at this time.' },
   accepted: { label: 'Accepted', color: 'bg-primary/10 text-primary', icon: <CheckCircle className="h-4 w-4" />, message: 'Update: Your application has been shortlisted for the next stage.' },
   reviewed: { label: 'Reviewed', color: 'bg-blue-500/10 text-blue-600', icon: <CheckCircle className="h-4 w-4" />, message: 'Update: Your application has been reviewed.' },
 };
@@ -113,10 +113,6 @@ function VentureCard({ venture, navigate }: { venture: FounderVenture; navigate:
           <Button onClick={() => navigate(`/apply?edit=${venture.id}`)} className="neo-extruded border-none">
             <FileText className="h-4 w-4 mr-2" />
             Edit Application
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/messages')} className="neo-extruded border-none">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Message Mentor
           </Button>
         </div>
       </NeoCardContent>

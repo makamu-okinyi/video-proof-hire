@@ -4,7 +4,7 @@ import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/componen
 import { StatCard } from '@/components/dashboard/StatCard';
 import { 
   Users, FileText, Play, CheckCircle, X,
-  Calendar, Award, Loader2, AlertCircle, ArrowRight, Download, Eye, Rocket
+  Calendar, Award, Loader2, AlertCircle, ArrowRight, Download, Eye, Rocket, FileDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -299,7 +299,12 @@ export default function AdminPanel() {
                                     'bg-amber-500/10 text-amber-600'
                                   }`}>{v.review_status}</Badge>
                                 </td>
-                                <td className="py-2 px-2 text-right">
+                                <td className="py-2 px-2 text-right flex items-center justify-end gap-1">
+                                  {v.pitch_deck_url && (
+                                    <a href={v.pitch_deck_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center h-8 w-8 rounded-[2px] hover:bg-accent transition-colors pointer-events-auto">
+                                      <FileDown className="h-4 w-4 text-cool-grey" />
+                                    </a>
+                                  )}
                                   <Button size="icon" variant="ghost" className="h-8 w-8 rounded-[2px] pointer-events-auto" onClick={() => v.pitch_video_url && setSelectedVideo(v.pitch_video_url)} disabled={!v.pitch_video_url}>
                                     <Eye className="h-4 w-4" />
                                   </Button>
@@ -512,6 +517,13 @@ export default function AdminPanel() {
                       {venture.pitch_video_url && (
                         <Button size="sm" variant="outline" className="neo-extruded border-none" onClick={() => setSelectedVideo(venture.pitch_video_url!)}>
                           <Play className="h-4 w-4 mr-1" /> Watch Pitch
+                        </Button>
+                      )}
+                      {venture.pitch_deck_url && (
+                        <Button size="sm" variant="outline" className="neo-extruded border-none" asChild>
+                          <a href={venture.pitch_deck_url} target="_blank" rel="noopener noreferrer">
+                            <FileDown className="h-4 w-4 mr-1" /> Pitch Deck
+                          </a>
                         </Button>
                       )}
                       {(venture.review_status === 'pending' || venture.review_status === 'submitted') && (
