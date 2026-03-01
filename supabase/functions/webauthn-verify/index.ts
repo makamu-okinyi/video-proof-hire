@@ -1,7 +1,6 @@
 /**
  * WebAuthn verification Edge Function (MVP stub).
  * Validates assertion and returns Supabase session for the credential owner.
- * Deploy with: supabase functions deploy webauthn-verify
  */
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -43,9 +42,12 @@ serve(async (req: Request) => {
       );
     }
 
+    const { data: userData } = await supabase.auth.admin.getUserById(cred.user_id);
+    const email = userData.user?.email ?? "";
+
     const { data: sessionData, error } = await supabase.auth.admin.generateLink({
       type: "magiclink",
-      email: (await supabase.auth.admin.getUserById(cred.user_id)).data.user?.email ?? "",
+      email,
     });
 
     if (error) {
@@ -57,8 +59,8 @@ serve(async (req: Request) => {
 
     return new Response(
       JSON.stringify({
-        access_token: sessionData.properties?.access_token,
-        refresh_token: sessionData.properties?.refresh_token,
+        access_token: (sessionData.properties as any)?.access_token,
+        refresh_token: (sessionData.properties as any)?.refresh_token,
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );

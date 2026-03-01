@@ -37,16 +37,16 @@ async function fetchApplicantJobApplications(userId: string | undefined): Promis
     return [];
   }
 
-  return (data ?? []).map((row: Record<string, unknown>) => {
-    const job = row.job_postings as Record<string, unknown> | Record<string, unknown>[] | null;
+  return (data ?? []).map((row: any) => {
+    const job = row.job_postings as any;
     const jobObj = Array.isArray(job) ? job[0] : job;
     return {
-      id: row.id,
-      job_id: row.job_id,
+      id: String(row.id),
+      job_id: String(row.job_id),
       status: (row.status as string) || 'pending',
       cover_message: row.cover_message as string | null,
       created_at: row.created_at as string,
-      job: jobObj ? { id: jobObj.id, title: jobObj.title, company_name: jobObj.company_name } : { id: row.job_id, title: 'Job', company_name: null },
+      job: jobObj ? { id: String(jobObj.id), title: String(jobObj.title), company_name: jobObj.company_name } : { id: String(row.job_id), title: 'Job', company_name: null },
     };
   });
 }

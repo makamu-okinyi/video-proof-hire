@@ -167,7 +167,7 @@ async function updateVentureReviewStatus(
   ventureId: string,
   status: 'shortlisted' | 'rejected'
 ): Promise<void> {
-  const { error } = await supabase.rpc('update_venture_review_status', {
+  const { error } = await (supabase.rpc as any)('update_venture_review_status', {
     p_venture_id: ventureId,
     p_status: status,
   });
