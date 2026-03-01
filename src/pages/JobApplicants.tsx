@@ -99,7 +99,7 @@ export default function JobApplicants() {
   };
 
   const updateStatus = async (applicationId: string, status: string, applicantId: string) => {
-    const { error } = await supabase.rpc('update_job_application_status', {
+    const { error } = await (supabase.rpc as any)('update_job_application_status', {
       p_application_id: applicationId,
       p_status: status,
     });
