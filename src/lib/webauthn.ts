@@ -88,7 +88,7 @@ export async function registerWebAuthn(userId: string, userEmail: string): Promi
           name: userEmail,
           displayName: userEmail.split('@')[0],
         },
-        challenge,
+        challenge: challenge as BufferSource,
         pubKeyCredParams: [
           { type: 'public-key', alg: -7 },
           { type: 'public-key', alg: -257 },
@@ -136,7 +136,7 @@ export async function authenticateWebAuthn(): Promise<{
     const challenge = randomChallenge();
     const options: CredentialRequestOptions = {
       publicKey: {
-        challenge,
+        challenge: challenge as BufferSource,
         timeout: 60000,
         rpId: RP_ID === 'localhost' ? 'localhost' : RP_ID,
         allowCredentials: [

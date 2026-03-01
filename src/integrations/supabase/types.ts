@@ -106,7 +106,6 @@ export type Database = {
           skills_tags: string[] | null
           title: string
           updated_at: string
-          video_prompt: string | null
         }
         Insert: {
           created_at?: string
@@ -122,7 +121,6 @@ export type Database = {
           skills_tags?: string[] | null
           title: string
           updated_at?: string
-          video_prompt?: string | null
         }
         Update: {
           created_at?: string
@@ -138,7 +136,6 @@ export type Database = {
           skills_tags?: string[] | null
           title?: string
           updated_at?: string
-          video_prompt?: string | null
         }
         Relationships: [
           {
@@ -508,7 +505,6 @@ export type Database = {
           skills_required: string[] | null
           title: string
           updated_at: string
-          video_prompt: string | null
           views: number
         }
         Insert: {
@@ -530,7 +526,6 @@ export type Database = {
           skills_required?: string[] | null
           title: string
           updated_at?: string
-          video_prompt?: string | null
           views?: number
         }
         Update: {
@@ -552,7 +547,6 @@ export type Database = {
           skills_required?: string[] | null
           title?: string
           updated_at?: string
-          video_prompt?: string | null
           views?: number
         }
         Relationships: [
@@ -733,6 +727,7 @@ export type Database = {
           avatar: string | null
           avatar_url: string | null
           bio: string | null
+          can_shortlist: boolean
           created_at: string
           id: string
           is_verified: boolean
@@ -746,6 +741,7 @@ export type Database = {
           avatar?: string | null
           avatar_url?: string | null
           bio?: string | null
+          can_shortlist?: boolean
           created_at?: string
           id: string
           is_verified?: boolean
@@ -759,6 +755,7 @@ export type Database = {
           avatar?: string | null
           avatar_url?: string | null
           bio?: string | null
+          can_shortlist?: boolean
           created_at?: string
           id?: string
           is_verified?: boolean
@@ -1021,7 +1018,7 @@ export type Database = {
           pitch_video_thumbnail: string | null
           pitch_video_url: string | null
           problem_statement: string | null
-          review_status: string
+          review_status: string | null
           solution: string | null
           stage: Database["public"]["Enums"]["venture_stage"]
           tagline: string
@@ -1052,7 +1049,7 @@ export type Database = {
           pitch_video_thumbnail?: string | null
           pitch_video_url?: string | null
           problem_statement?: string | null
-          review_status?: string
+          review_status?: string | null
           solution?: string | null
           stage?: Database["public"]["Enums"]["venture_stage"]
           tagline: string
@@ -1083,7 +1080,7 @@ export type Database = {
           pitch_video_thumbnail?: string | null
           pitch_video_url?: string | null
           problem_statement?: string | null
-          review_status?: string
+          review_status?: string | null
           solution?: string | null
           stage?: Database["public"]["Enums"]["venture_stage"]
           tagline?: string
@@ -1341,8 +1338,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_job_application_status: {
+        Args: { p_application_id: string; p_status: string }
+        Returns: undefined
+      }
       update_user_role: {
         Args: { new_role: Database["public"]["Enums"]["app_role"] }
+        Returns: undefined
+      }
+      update_venture_review_status: {
+        Args: { p_status: string; p_venture_id: string }
         Returns: undefined
       }
     }
