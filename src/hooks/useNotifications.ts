@@ -14,7 +14,7 @@ export interface DbNotification {
 }
 
 async function fetchNotifications(): Promise<DbNotification[]> {
-  const { data, error } = await supabase.rpc('get_user_notifications', {
+  const { data, error } = await (supabase.rpc as any)('get_user_notifications', {
     page_size: 50,
     page_offset: 0,
   });
@@ -26,7 +26,7 @@ async function fetchNotifications(): Promise<DbNotification[]> {
 }
 
 async function fetchUnreadCount(): Promise<number> {
-  const { data, error } = await supabase.rpc('get_unread_notification_count');
+  const { data, error } = await (supabase.rpc as any)('get_unread_notification_count');
   if (error) {
     console.error('[useNotifications] unread count error:', error);
     return 0;
@@ -50,7 +50,7 @@ export function useNotifications() {
 
   const markReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      const { error } = await supabase.rpc('mark_notification_read', { notification_id: notificationId });
+      const { error } = await (supabase.rpc as any)('mark_notification_read', { notification_id: notificationId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -61,7 +61,7 @@ export function useNotifications() {
 
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc('mark_all_notifications_read');
+      const { error } = await (supabase.rpc as any)('mark_all_notifications_read');
       if (error) throw error;
     },
     onSuccess: () => {
