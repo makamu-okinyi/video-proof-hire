@@ -208,6 +208,16 @@ export default function CreateJob() {
         });
         if (error) throw error;
         toast.success('Job posting created!', { icon: null });
+        // Alert talent users about new job (fire-and-forget)
+        supabase.functions.invoke('job-posting-alert', {
+          body: {
+            jobId: 'new',
+            jobTitle: validation.data.title,
+            companyName: validation.data.company_name || '',
+            jobType: jobType,
+            location: validation.data.location || '',
+          },
+        }).catch(console.error);
       }
       navigate('/employer', { replace: true });
     } catch (error) {
