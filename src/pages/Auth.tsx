@@ -159,6 +159,10 @@ export default function Auth() {
           }
         } else {
           toast.success('Account created! Check your email to verify.');
+          // Send welcome email (fire-and-forget)
+          supabase.functions.invoke('welcome-email', {
+            body: { userId: '', username, email },
+          }).catch(console.error);
           // Skip userType selection since it's already chosen on welcome screen
           setStep('onboarding');
         }
