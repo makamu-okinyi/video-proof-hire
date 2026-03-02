@@ -164,7 +164,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
       Authorization: `Bearer ${resendApiKey}`,
     },
     body: JSON.stringify({
-      from: "Venture Engine <onboarding@resend.dev>",
+      from: "Startup Garage <notifications@startupgarage.donjoafrica.com>",
       to: [to],
       subject,
       html,
