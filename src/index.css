@@ -4,136 +4,98 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================================
+   Donjo unified design system (see DESIGN_SYSTEM.md). Warm-gray neomorphic
+   base + one restrained brand accent. Light theme is primary (forced).
+   Restyle shadcn primitives through these tokens — don't fork components.
+   ========================================================================= */
+
 @layer base {
   :root {
-    /* Medical White / Slate-50 - Light theme */
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    /* Neomorphic base — warm gray */
+    --background: 220 16% 88%;
+    --foreground: 220 15% 13%;
 
-    --card: 210 40% 98%;
-    --card-foreground: 222 47% 11%;
+    --card: 220 16% 88%;
+    --card-foreground: 220 15% 13%;
 
-    --popover: 210 40% 98%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 220 16% 90%;
+    --popover-foreground: 220 15% 13%;
 
-    /* Success Orange - Primary CTA Color */
-    --primary: 14 100% 60%;
+    /* Brand accent — Success Orange. --brand = vivid (decoration/focus only);
+       --brand-strong = AA-safe fill for white-text CTAs. */
+    --brand: 14 100% 60%;
+    --brand-strong: 14 88% 44%;
+    --brand-foreground: 0 0% 100%;
+
+    /* Primary remapped to brand-strong so existing bg-primary CTAs are AA-accessible. */
+    --primary: 14 88% 44%;
     --primary-foreground: 0 0% 100%;
 
-    /* Neomorphic surface tones */
-    --secondary: 220 14% 90%;
-    --secondary-foreground: 0 0% 18%;
+    --secondary: 220 14% 82%;
+    --secondary-foreground: 220 15% 13%;
 
-    --muted: 220 14% 88%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 220 14% 82%;
+    /* 38% (not lighter) to pass WCAG AA on the gray base */
+    --muted-foreground: 220 12% 38%;
 
-    --accent: 14 100% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 220 14% 84%;
+    --accent-foreground: 220 15% 13%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
+    --border: 220 14% 82%;
+    --input: 220 14% 82%;
     --ring: 14 100% 60%;
 
-    --radius: 1.25rem;
+    --radius: 2rem;
 
-    /* Neomorphic specific tokens */
-    --neo-bg: 220 14% 94%;
-    --neo-shadow-dark: 222 20% 80%;
+    /* Neomorphic shadow tokens (light source top-left) */
+    --shadow-light: #ffffff;
+    --shadow-dark: #d1d9e6;
+    --neo-shadow: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
+    --neo-shadow-sm: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+    --neo-shadow-inset: inset 6px 6px 12px var(--shadow-dark), inset -6px -6px 12px var(--shadow-light);
+    --neo-shadow-pressed: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+
+    /* Legacy aliases repointed to the warm system so existing utilities match */
+    --neo-bg: 220 16% 88%;
+    --neo-shadow-dark: 220 14% 80%;
     --neo-shadow-light: 0 0% 100%;
-    
-    /* Charcoal palette for text */
-    --charcoal: 0 0% 13%;
-    --charcoal-light: 0 0% 28%;
-    --charcoal-dark: 0 0% 8%;
-    
-    /* Cool grey for subtitles */
-    --cool-grey: 220 10% 50%;
-    
-    /* Legacy tokens mapped */
-    --coral: 14 100% 60%;
-    --coral-light: 14 100% 70%;
-    --coral-dark: 14 100% 50%;
-    --success-orange: 14 100% 60%;
-    
-    --surface-dark: 0 0% 8%;
-    --surface-darker: 0 0% 4%;
-
-    /* Neomorphic Shadows */
-    --shadow-neo-extruded: 8px 8px 16px hsl(222 20% 80%), -8px -8px 16px hsl(0 0% 100%);
-    --shadow-neo-pressed: inset 5px 5px 10px hsl(222 20% 80%), inset -5px -5px 10px hsl(0 0% 100%);
-    --shadow-neo-subtle: 4px 4px 8px hsl(222 20% 82%), -4px -4px 8px hsl(0 0% 100%);
-    
-    /* Legacy shadows */
+    --shadow-neo-extruded: var(--neo-shadow);
+    --shadow-neo-pressed: var(--neo-shadow-pressed);
+    --shadow-neo-subtle: var(--neo-shadow-sm);
     --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.04);
     --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.06);
     --shadow-lg: 0 12px 40px hsl(0 0% 0% / 0.1);
-    --shadow-glow: 0 0 40px hsl(var(--success-orange) / 0.25);
+    --shadow-glow: 0 0 40px hsl(var(--brand) / 0.25);
 
-    /* Smooth Animations */
+    /* Text tokens (kept; repointed to the neutral ramp) */
+    --charcoal: 220 15% 13%;
+    --charcoal-light: 220 12% 38%;
+    --charcoal-dark: 220 15% 8%;
+    --cool-grey: 220 12% 38%;
+
+    /* Legacy accent aliases (used by text-gradient-orange) */
+    --coral: 14 100% 60%;
+    --coral-light: 14 100% 70%;
+    --coral-dark: 14 88% 44%;
+    --success-orange: 14 100% 60%;
+    --surface-dark: 0 0% 8%;
+    --surface-darker: 0 0% 4%;
+
     --transition-fast: 150ms cubic-bezier(0.25, 0.1, 0.25, 1);
     --transition-base: 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
     --transition-slow: 500ms cubic-bezier(0.25, 0.1, 0.25, 1);
 
-    --sidebar-background: 220 14% 94%;
-    --sidebar-foreground: 0 0% 18%;
-    --sidebar-primary: 0 0% 12%;
+    --sidebar-background: 220 16% 90%;
+    --sidebar-foreground: 220 15% 20%;
+    --sidebar-primary: 220 15% 13%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 220 14% 88%;
-    --sidebar-accent-foreground: 0 0% 12%;
-    --sidebar-border: 220 14% 85%;
-    --sidebar-ring: 14 100% 60%;
-  }
-
-  .dark {
-    /* Slate-900/950 - Dark theme with deep soft shadows */
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-
-    --card: 222 47% 13%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222 47% 13%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 14 100% 60%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 220 15% 18%;
-    --secondary-foreground: 0 0% 96%;
-
-    --muted: 220 15% 20%;
-    --muted-foreground: 0 0% 60%;
-
-    --accent: 14 100% 60%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62% 40%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 220 15% 22%;
-    --input: 220 15% 22%;
-    --ring: 14 100% 60%;
-
-    --neo-bg: 220 15% 12%;
-    --neo-shadow-dark: 220 15% 8%;
-    --neo-shadow-light: 220 15% 18%;
-
-    --charcoal: 0 0% 88%;
-    --charcoal-light: 0 0% 78%;
-    --charcoal-dark: 0 0% 94%;
-    
-    --cool-grey: 220 10% 60%;
-
-    --sidebar-background: 220 15% 10%;
-    --sidebar-foreground: 0 0% 96%;
-    --sidebar-primary: 14 100% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 18%;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 220 15% 22%;
+    --sidebar-accent: 220 14% 84%;
+    --sidebar-accent-foreground: 220 15% 13%;
+    --sidebar-border: 220 14% 82%;
     --sidebar-ring: 14 100% 60%;
   }
 }
@@ -144,8 +106,7 @@
   }
 
   body {
-    @apply text-foreground antialiased;
-    background: transparent;
+    @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-text-size-adjust: 100%;
     overflow-x: hidden;
@@ -160,7 +121,7 @@
     color: hsl(var(--charcoal));
   }
 
-  /* Numeric analytics - JetBrains Mono */
+  /* Numeric analytics — JetBrains Mono */
   .font-mono, [data-analytics] {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
@@ -172,306 +133,142 @@
 }
 
 @layer utilities {
-  /* Medical White neumorphic (Light) - 2px radius Industrial-Chic */
-  .neo-medical-extruded {
-    background: hsl(210 40% 98%);
-    box-shadow: 4px 4px 8px hsl(220 15% 75%), -4px -4px 8px hsl(0 0% 100%);
-    border-radius: 2px;
-  }
-
-  .neo-medical-pressed {
-    background: hsl(210 40% 96%);
-    box-shadow: inset 3px 3px 6px hsl(220 15% 78%), inset -3px -3px 6px hsl(0 0% 100%);
-    border-radius: 2px;
-  }
-
-  /* Dark: Slate-900/950 neumorphic - flips shadows */
-  .dark .neo-medical-extruded {
-    background: hsl(222 47% 13%);
-    box-shadow: 4px 4px 8px hsl(220 15% 8%), -4px -4px 8px hsl(220 15% 20%);
-  }
-
-  .dark .neo-medical-pressed {
-    background: hsl(222 47% 11%);
-    box-shadow: inset 3px 3px 6px hsl(220 15% 6%), inset -3px -3px 6px hsl(220 15% 18%);
-  }
-
-  /* Neomorphic utilities */
+  /* ---- Neomorphic surfaces (the one surface system) ---- */
   .neo-extruded {
-    background: hsl(var(--neo-bg));
-    box-shadow: var(--shadow-neo-extruded);
+    background: hsl(var(--background));
+    box-shadow: var(--neo-shadow);
     border-radius: var(--radius);
+  }
+
+  .neo-extruded-sm {
+    background: hsl(var(--background));
+    box-shadow: var(--neo-shadow-sm);
+    border-radius: var(--radius);
+  }
+
+  .neo-inset {
+    background: hsl(var(--background));
+    box-shadow: var(--neo-shadow-inset);
+    border-radius: calc(var(--radius) - 0.5rem);
   }
 
   .neo-pressed {
-    background: hsl(var(--neo-bg));
-    box-shadow: var(--shadow-neo-pressed);
-    border-radius: var(--radius);
+    background: hsl(var(--background));
+    box-shadow: var(--neo-shadow-pressed);
+    border-radius: calc(var(--radius) - 0.5rem);
   }
 
   .neo-subtle {
-    background: hsl(var(--neo-bg));
-    box-shadow: var(--shadow-neo-subtle);
+    background: hsl(var(--background));
+    box-shadow: var(--neo-shadow-sm);
     border-radius: var(--radius);
   }
 
   .neo-flat {
-    background: hsl(var(--neo-bg));
+    background: hsl(var(--background));
     border-radius: var(--radius);
   }
 
-  /* Text utilities */
+  /* Back-compat: the old "medical white" classes now alias the warm neo system */
+  .neo-medical-extruded {
+    background: hsl(var(--background));
+    box-shadow: var(--neo-shadow-sm);
+    border-radius: var(--radius);
+  }
+
+  .neo-medical-pressed {
+    background: hsl(var(--background));
+    box-shadow: var(--neo-shadow-pressed);
+    border-radius: calc(var(--radius) - 0.5rem);
+  }
+
+  /* Primary CTA pill — brand-strong fill, white text, neo shadow, brand focus ring. */
+  .neo-pill {
+    background: hsl(var(--brand-strong));
+    color: hsl(var(--brand-foreground));
+    border-radius: 9999px;
+    padding: 0.875rem 2.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    box-shadow: var(--neo-shadow-sm);
+  }
+  .neo-pill:hover {
+    box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+    transform: translateY(1px);
+  }
+  .neo-pill:active {
+    box-shadow: var(--neo-shadow-pressed);
+    transform: translateY(2px);
+  }
+  .neo-pill:focus-visible {
+    outline: 2px solid hsl(var(--brand));
+    outline-offset: 3px;
+  }
+
+  .squircle-icon {
+    background: hsl(var(--background));
+    box-shadow: var(--neo-shadow-sm);
+    border-radius: 22%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ---- Glassmorphism retired: these legacy classes now render as neo surfaces ---- */
+  .glass-panel,
+  .soft-ui-card,
+  .donjo-depth-card {
+    background: hsl(var(--background));
+    box-shadow: var(--neo-shadow);
+    border-radius: var(--radius);
+    color: hsl(var(--foreground));
+    border: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-image: none;
+  }
+
+  .glass {
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .donjo-card,
+  [data-donjo-card] {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .glass-panel .text-charcoal,
+  .glass-panel h1, .glass-panel h2, .glass-panel h3, .glass-panel h4 {
+    color: hsl(var(--charcoal));
+  }
+
+  /* ---- Text utilities ---- */
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--muted-foreground)) 100%);
   }
-
   .text-gradient-orange {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--success-orange)) 0%, hsl(var(--coral-light)) 100%);
+    background-image: linear-gradient(135deg, hsl(var(--brand)) 0%, hsl(var(--coral-light)) 100%);
   }
+  .text-cool-grey { color: hsl(var(--cool-grey)); }
+  .text-charcoal { color: hsl(var(--charcoal)); }
 
-  .text-cool-grey {
-    color: hsl(var(--cool-grey));
-  }
+  /* ---- Misc kept ---- */
+  .btn-technical { border-radius: calc(var(--radius) - 0.5rem); pointer-events: auto; }
 
-  .text-charcoal {
-    color: hsl(var(--charcoal));
-  }
+  button, [role="button"], a, input, select, textarea { pointer-events: auto; }
 
-  /* Soft UI card - Login/Auth (pure white, dual soft shadows, 12px radius) */
-  .soft-ui-card {
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow:
-      6px 6px 12px rgba(0, 0, 0, 0.04),
-      -6px -6px 12px rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(0, 0, 0, 0.04);
-  }
-
-  /* Depth texture cards - low-poly crystalline (cards/modals) */
-  .donjo-depth-card {
-    background: #ffffff;
-    background-image: url(/images/low-poly-depth.png);
-    background-size: cover;
-    border-radius: 12px;
-    box-shadow:
-      6px 6px 12px rgba(0, 0, 0, 0.04),
-      -6px -6px 12px rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(0, 0, 0, 0.04);
-  }
-
-  /* Glassmorphism panel - Premium Minimalist */
-  .glass-panel {
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow:
-      6px 6px 12px rgba(0, 0, 0, 0.04),
-      -6px -6px 12px rgba(255, 255, 255, 0.8);
-    color: #1e293b;
-  }
-
-  /* Technical buttons - 2px radius. Use .btn-technical or rounded-[2px] */
-  .btn-technical {
-    border-radius: 2px;
-    pointer-events: auto;
-  }
-
-  /* Fix trackpad - all interactive elements */
-  button, [role="button"], a, input, select, textarea {
-    pointer-events: auto;
-  }
-
-  /* Dashboard cards - glassy effect over sharp background */
-  .donjo-card,
-  [data-donjo-card] {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-  }
-
-  /* Chromebook sharpness - prevent blurring of background images */
   .donjo-bg-stack {
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
   }
 
-  .glass-panel .text-charcoal,
-  .glass-panel h1, .glass-panel h2, .glass-panel h3, .glass-panel h4 {
-    color: #1e293b;
-  }
-
-  /* Legacy utilities */
-  .glass {
-    @apply backdrop-blur-2xl;
-    background: hsl(var(--background) / 0.9);
-    border: 1px solid hsl(var(--border) / 0.5);
-  }
-
-  .glow {
-    box-shadow: var(--shadow-glow);
-  }
-
-  .glow-hover:hover {
-    box-shadow: var(--shadow-glow);
-  }
-
-  /* Card styles */
-  .card-minimal {
-    @apply neo-extruded;
-    transition: all var(--transition-base);
-  }
-
-  .card-minimal:hover {
-    box-shadow: 10px 10px 20px hsl(222 20% 78%), -10px -10px 20px hsl(0 0% 100%);
-  }
-
-  .card-elevated {
-    @apply neo-extruded;
-  }
-
-  /* Animation utilities */
-  .animate-in {
-    animation: animate-in var(--transition-base) forwards;
-  }
-
-  .fade-up {
-    animation: fade-up var(--transition-base) forwards;
-  }
-
-  .scale-in {
-    animation: scale-in var(--transition-fast) forwards;
-  }
-
-  /* Hide scrollbar */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  /* Video feed specific */
-  .video-card {
-    @apply relative w-full h-full overflow-hidden rounded-2xl neo-extruded;
-  }
-
-  .video-overlay {
-    @apply absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent;
-  }
-
-  /* Venture cards - Neomorphic style */
-  .venture-card {
-    @apply relative overflow-hidden neo-extruded;
-    transition: all var(--transition-base);
-  }
-
-  .venture-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 12px 12px 24px hsl(222 20% 78%), -12px -12px 24px hsl(0 0% 100%);
-  }
-
-  /* Safe area padding for mobile */
-  .safe-area-pb {
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
-  }
-
-  .safe-area-pt {
-    padding-top: max(1rem, env(safe-area-inset-top));
-  }
-}
-
-@keyframes animate-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 20px hsl(var(--success-orange) / 0.3);
-  }
-  50% {
-    box-shadow: 0 0 40px hsl(var(--success-orange) / 0.5);
-  }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-down {
-  from {
-    opacity: 0;
-    transform: translateY(-100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-.float {
-  animation: float 4s ease-in-out infinite;
-}
-
-.animate-slide-up {
-  animation: slide-up 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
-}
-
-.animate-slide-down {
-  animation: slide-down 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
-}
-
-.animate-scale-up {
-  animation: scale-in 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  .glow { box-shadow: var(--shadow-glow); }
+  .glow-hover:hover { box-shadow: var(--shadow-glow); }
 }

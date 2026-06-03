@@ -44,6 +44,11 @@ export default {
           dark: "hsl(var(--surface-dark))",
           darker: "hsl(var(--surface-darker))",
         },
+        brand: {
+          DEFAULT: "hsl(var(--brand))",
+          strong: "hsl(var(--brand-strong))",
+          foreground: "hsl(var(--brand-foreground))",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
