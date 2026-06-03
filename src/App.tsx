@@ -40,6 +40,7 @@ const ChallengeSubmissions = lazy(() => import("./pages/ChallengeSubmissions"));
 const FounderWizard = lazy(() => import("./pages/FounderWizard"));
 const FounderDashboard = lazy(() => import("./pages/FounderDashboard"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
+const Messages = lazy(() => import("./pages/Messages"));
 
 const queryClient = new QueryClient();
 
@@ -79,7 +80,10 @@ const App = () => (
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/edit" element={<EditProfile />} />
-            <Route path="/messages" element={<Navigate to="/feed" replace />} />
+            {/* TODO(phase-3): messaging is wired but NOT verified end-to-end. Confirm
+                conversations/messages RLS (read own, send, counterparty read) before
+                calling it live. */}
+            <Route path="/messages" element={<Messages />} />
             <Route path="/user/:userId" element={<UserProfile />} />
             {/* Employer Routes (protected by EmployerRoute) */}
             <Route path="/employer" element={<EmployerRoute />}>
