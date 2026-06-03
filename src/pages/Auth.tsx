@@ -284,9 +284,10 @@ export default function Auth() {
       // Refresh to get updated profile
       await refreshProfile();
 
-      // Redirect based on user type
+      // Redirect based on user type (employer = hiring dashboard; talent -> feed,
+      // then useRoleBasedRedirect routes founders on to /founder).
       if (userType === 'employer') {
-        navigate('/admin');
+        navigate('/employer');
       } else {
         navigate('/feed');
       }
@@ -319,7 +320,8 @@ export default function Auth() {
     // If profile needs completion (new Google OAuth user), show onboarding flow
     // Let the step rendering handle it - don't show "already signed in" screen
     if (!profileNeedsCompletion && step === 'welcome') {
-      const destination = (profile.user_type === 'employer' || profile.user_type === 'investor') ? '/admin' : 
+      const destination = profile.user_type === 'admin' ? '/admin' :
+                          profile.user_type === 'employer' ? '/employer' :
                           profile.user_type === 'founder' ? '/founder' : '/feed';
 
       return (

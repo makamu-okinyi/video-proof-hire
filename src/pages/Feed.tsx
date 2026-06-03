@@ -13,7 +13,8 @@ export default function Feed() {
   const navigate = useNavigate();
   const { profile, isLoading, isAuthenticated, user } = useAuth();
   useRoleBasedRedirect();
-  const isAdmin = profile?.user_type === 'employer' || profile?.user_type === 'investor';
+  const isAdmin = profile?.user_type === 'admin';
+  const isEmployer = profile?.user_type === 'employer';
   const { data: stats, isLoading: statsLoading } = useFeedStats(user?.id, isAdmin);
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export default function Feed() {
   }, [isAuthenticated, isLoading, navigate]);
 
   const isFounder = profile?.user_type === 'founder' || profile?.user_type === 'talent';
-  const shouldRedirectToDashboard = (isAdmin || isFounder) && !!profile;
+  const shouldRedirectToDashboard = (isAdmin || isEmployer || isFounder) && !!profile;
   if (isLoading || shouldRedirectToDashboard) {
     return (
       <DashboardLayout>

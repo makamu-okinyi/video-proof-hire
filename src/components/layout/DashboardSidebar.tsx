@@ -92,10 +92,11 @@ export function DashboardSidebar() {
     setIsOpen(false);
   };
 
-  const isAdmin = profile?.user_type === 'employer' || profile?.user_type === 'investor';
+  const isAdmin = profile?.user_type === 'admin';
+  const isEmployer = profile?.user_type === 'employer';
   const isFounder = profile?.user_type === 'founder' || profile?.user_type === 'talent';
 
-  const dashboardPath = isAdmin ? '/admin' : isFounder ? '/founder' : '/feed';
+  const dashboardPath = isAdmin ? '/admin' : isEmployer ? '/employer' : isFounder ? '/founder' : '/feed';
   const mainMenuItems: NavGroup = {
     title: 'Main Menu',
     items: [{ icon: LayoutDashboard, label: 'Dashboard', path: dashboardPath }, ...baseMenuItems],

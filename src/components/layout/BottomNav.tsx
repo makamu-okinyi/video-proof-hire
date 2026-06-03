@@ -34,9 +34,10 @@ export function BottomNav() {
   const { profile } = useAuth();
   const { unreadCount } = useNotifications();
 
-  const isEmployer = profile?.user_type === 'employer' || profile?.user_type === 'investor';
+  // Management personas (hiring employer + admin) share the management bottom nav.
+  const isManager = profile?.user_type === 'employer' || profile?.user_type === 'admin';
   const isFounder = profile?.user_type === 'founder' || profile?.user_type === 'talent';
-  const navItems = isEmployer ? employerNavItems : isFounder ? founderNavItems : applicantNavItems;
+  const navItems = isManager ? employerNavItems : isFounder ? founderNavItems : applicantNavItems;
 
   const isActiveRoute = (path: string) => {
     if (path === '/employer') {

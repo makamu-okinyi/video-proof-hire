@@ -2,11 +2,18 @@ import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
-const ADMIN_ROLES = ['employer', 'investor'];
+// Role model after the security split: 'admin' is the vetted review/admin role;
+// 'employer' is self-serve hiring-only; founder/talent are founder-side.
+const ADMIN_ROLES = ['admin'];
+const EMPLOYER_ROLES = ['employer'];
 const FOUNDER_ROLES = ['founder', 'talent'];
 
 export function isAdminRole(userType?: string): boolean {
   return !!userType && ADMIN_ROLES.includes(userType);
+}
+
+export function isEmployerRole(userType?: string): boolean {
+  return !!userType && EMPLOYER_ROLES.includes(userType);
 }
 
 export function isFounderRole(userType?: string): boolean {
@@ -28,6 +35,8 @@ export function useRoleBasedRedirect() {
     if (path === '/feed' || path === '/dashboard') {
       if (isAdminRole(profile.user_type)) {
         navigate('/admin', { replace: true });
+      } else if (isEmployerRole(profile.user_type)) {
+        navigate('/employer', { replace: true });
       } else if (isFounderRole(profile.user_type)) {
         navigate('/founder', { replace: true });
       }
@@ -41,6 +50,7 @@ export function useRoleBasedRedirect() {
 export function useDashboardPath(): string {
   const { profile } = useAuth();
   if (isAdminRole(profile?.user_type)) return '/admin';
+  if (isEmployerRole(profile?.user_type)) return '/employer';
   if (isFounderRole(profile?.user_type)) return '/founder';
   return '/feed';
 }

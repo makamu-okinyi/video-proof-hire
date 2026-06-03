@@ -21,10 +21,14 @@ below are done. Both apps (marketing + main) deploy together at the very end.
 - [x] Security: RLS audit closed — see `SECURITY_CLOSEOUT.md`.
 
 ## ⚠️ To verify
-- [ ] **Per-function `--no-verify-jwt`** flags are still **TBD.** Functions deployed with the
-      default `verify_jwt = true`. If a function is meant to be called **unauthenticated**
-      (likely `webauthn-verify` during login; possibly webhook/trigger-driven emails) it will
-      **401**. If a function 401s in testing, redeploy it with `--no-verify-jwt`.
+- [x] **`webauthn-verify` / `--no-verify-jwt` — NOT needed.** Verified against the live
+      function: the client (`AuthContext.signInWithWebAuthn`) sends `Authorization: Bearer
+      <anonKey>`, and the anon key is a valid project JWT, so `verify_jwt = true` is satisfied
+      (live test returned 400 "Missing credentialId" = function ran; only a request with **no**
+      auth header returns 401). Passkey login works as deployed. The other client-invoked
+      functions (welcome-email, job/status/notification) run in authenticated contexts, so
+      their JWT is present too. Only revisit `--no-verify-jwt` if a webhook/trigger ever calls a
+      function with no Authorization header.
 - [ ] **Rotate** the DB password + service_role key that were shared during setup (cheap on a
       fresh project), then update local `.env` / function secrets accordingly.
 - [ ] Bootstrap the first **admin**: the email seed no-ops until that user signs up; after they
