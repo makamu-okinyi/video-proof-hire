@@ -9,6 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AdminRoute } from "@/components/auth/AdminRoute";
+import { ReviewerRoute } from "@/components/auth/ReviewerRoute";
 import { FounderRoute } from "@/components/auth/FounderRoute";
 import { EmployerRoute } from "@/components/auth/EmployerRoute";
 import { AuthProvider } from "@/context/AuthContext";
@@ -67,8 +68,8 @@ const App = () => (
             <Route path="/feed" element={<Feed />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/ventures" element={<AdminRoute><Ventures /></AdminRoute>} />
-            <Route path="/ventures/:id" element={<AdminRoute><VentureDetail /></AdminRoute>} />
+            <Route path="/ventures" element={<ReviewerRoute><Ventures /></ReviewerRoute>} />
+            <Route path="/ventures/:id" element={<ReviewerRoute><VentureDetail /></ReviewerRoute>} />
             <Route path="/apply" element={<FounderRoute><FounderWizard /></FounderRoute>} />
             <Route path="/founder" element={<FounderRoute><FounderDashboard /></FounderRoute>} />
             <Route path="/founder/dashboard" element={<Navigate to="/founder" replace />} />
