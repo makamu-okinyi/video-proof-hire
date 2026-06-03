@@ -3,7 +3,8 @@ import { useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { RocketLoader } from '@/components/ui/RocketLoader';
 
-const EMPLOYER_ROLES = ['employer', 'investor'] as const;
+// Hiring dashboard is employer-scope (self-serve). admin also allowed for support.
+const EMPLOYER_ROLES = ['employer', 'admin'] as const;
 
 function isEmployerRole(userType?: string): boolean {
   return !!userType && EMPLOYER_ROLES.includes(userType as typeof EMPLOYER_ROLES[number]);

@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { RocketLoader } from '@/components/ui/RocketLoader';
 
-const ADMIN_ROLES = ['employer', 'investor'] as const;
+// Admin is a vetted role (granted only via admin_set_user_role); employer/investor
+// are no longer admin-equivalent after the role-escalation lockdown.
+const ADMIN_ROLES = ['admin'] as const;
 
 function isAdminRole(userType?: string): boolean {
   return !!userType && ADMIN_ROLES.includes(userType as typeof ADMIN_ROLES[number]);

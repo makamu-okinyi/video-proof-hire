@@ -82,7 +82,8 @@ export default function Auth() {
       // Redirect when: just logged in, OAuth callback, or profile loaded (with role)
       const shouldRedirect = justLoggedIn || location.search.includes('code=') || location.hash.includes('access_token');
       if (shouldRedirect && profile) {
-        const destination = (profile.user_type === 'employer' || profile.user_type === 'investor') ? '/admin' : 
+        const destination = profile.user_type === 'admin' ? '/admin' :
+                          profile.user_type === 'employer' ? '/employer' :
                           profile.user_type === 'founder' ? '/founder' : '/feed';
         navigate(destination, { replace: true });
         setJustLoggedIn(false);
