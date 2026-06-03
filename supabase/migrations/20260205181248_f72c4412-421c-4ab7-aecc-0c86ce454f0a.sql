@@ -11,13 +11,15 @@ VALUES ('pitch-decks', 'pitch-decks', false)
 ON CONFLICT (id) DO NOTHING;
 
 -- RLS policies for pitch-decks bucket
+DROP POLICY IF EXISTS "Founders can upload pitch decks" ON storage.objects;
 CREATE POLICY "Founders can upload pitch decks"
 ON storage.objects FOR INSERT
 WITH CHECK (
-  bucket_id = 'pitch-decks' 
+  bucket_id = 'pitch-decks'
   AND auth.uid() IS NOT NULL
 );
 
+DROP POLICY IF EXISTS "Founders can view their pitch decks" ON storage.objects;
 CREATE POLICY "Founders can view their pitch decks"
 ON storage.objects FOR SELECT
 USING (
@@ -25,6 +27,7 @@ USING (
   AND auth.uid() IS NOT NULL
 );
 
+DROP POLICY IF EXISTS "Founders can delete their pitch decks" ON storage.objects;
 CREATE POLICY "Founders can delete their pitch decks"
 ON storage.objects FOR DELETE
 USING (

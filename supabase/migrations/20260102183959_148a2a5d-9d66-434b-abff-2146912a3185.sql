@@ -1,20 +1,25 @@
 -- Create storage bucket for videos
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('videos', 'videos', true);
+VALUES ('videos', 'videos', true)
+ON CONFLICT (id) DO NOTHING;
 
 -- Create storage policies for videos bucket
+DROP POLICY IF EXISTS "Anyone can view videos" ON storage.objects;
 CREATE POLICY "Anyone can view videos"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'videos');
 
+DROP POLICY IF EXISTS "Authenticated users can upload videos" ON storage.objects;
 CREATE POLICY "Authenticated users can upload videos"
 ON storage.objects FOR INSERT
 WITH CHECK (bucket_id = 'videos' AND auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Users can update their own videos" ON storage.objects;
 CREATE POLICY "Users can update their own videos"
 ON storage.objects FOR UPDATE
 USING (bucket_id = 'videos' AND auth.uid()::text = (storage.foldername(name))[1]);
 
+DROP POLICY IF EXISTS "Users can delete their own videos" ON storage.objects;
 CREATE POLICY "Users can delete their own videos"
 ON storage.objects FOR DELETE
 USING (bucket_id = 'videos' AND auth.uid()::text = (storage.foldername(name))[1]);
