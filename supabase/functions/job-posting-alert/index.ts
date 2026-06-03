@@ -86,7 +86,7 @@ function buildJobAlertHtml(params: {
             <table cellpadding="0" cellspacing="0">
               <tr>
                 <td style="background:#1a1a1a;padding:12px 32px;border-radius:2px;">
-                  <a href="https://donjo.lovable.app/jobs" style="color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">View Jobs</a>
+                  <a href="https://hr.donjoafrica.com/jobs" style="color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">View Jobs</a>
                 </td>
               </tr>
             </table>
@@ -105,7 +105,7 @@ function buildJobAlertHtml(params: {
 
         <tr>
           <td align="center" style="padding:0 40px;">
-            <p style="margin:0;font-size:13px;color:#1a1a1a;letter-spacing:0.5px;">donjo.lovable.app</p>
+            <p style="margin:0;font-size:13px;color:#1a1a1a;letter-spacing:0.5px;">donjoafrica.com</p>
           </td>
         </tr>
 

@@ -124,7 +124,7 @@ function buildEmailHtml(params: {
         <!-- Website link -->
         <tr>
           <td align="center" style="padding:0 40px;">
-            <p style="margin:0;font-size:13px;color:#1a1a1a;letter-spacing:0.5px;">donjo.lovable.app</p>
+            <p style="margin:0;font-size:13px;color:#1a1a1a;letter-spacing:0.5px;">donjoafrica.com</p>
           </td>
         </tr>
 
