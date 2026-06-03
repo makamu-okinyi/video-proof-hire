@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { rpcCall } from '@/integrations/supabase/rpc';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { StartConversationButton } from '@/components/messaging/StartConversationButton';
@@ -78,7 +79,7 @@ export default function JobApplicants() {
       if (applications) {
         // Fetch videos for each applicant
         const applicantsWithVideos: Applicant[] = await Promise.all(
-          applications.map(async (app: any) => {
+          (applications as unknown as Omit<Applicant, 'videos'>[]).map(async (app) => {
             // Use RPC function to access public videos (respects RLS via SECURITY DEFINER)
             const { data: videos } = await supabase
               .rpc('get_user_public_videos', { target_user_id: app.applicant.id });
@@ -86,7 +87,7 @@ export default function JobApplicants() {
             return {
               ...app,
               videos: (videos || []).slice(0, 6),
-            };
+            } as Applicant;
           })
         );
         setApplicants(applicantsWithVideos);
@@ -99,7 +100,7 @@ export default function JobApplicants() {
   };
 
   const updateStatus = async (applicationId: string, status: string, applicantId: string) => {
-    const { error } = await (supabase.rpc as any)('update_job_application_status', {
+    const { error } = await rpcCall('update_job_application_status', {
       p_application_id: applicationId,
       p_status: status,
     });

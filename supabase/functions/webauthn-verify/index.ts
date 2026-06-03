@@ -57,10 +57,11 @@ serve(async (req: Request) => {
       );
     }
 
+    const sessionProps = sessionData.properties as { access_token?: string; refresh_token?: string } | null;
     return new Response(
       JSON.stringify({
-        access_token: (sessionData.properties as any)?.access_token,
-        refresh_token: (sessionData.properties as any)?.refresh_token,
+        access_token: sessionProps?.access_token,
+        refresh_token: sessionProps?.refresh_token,
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );

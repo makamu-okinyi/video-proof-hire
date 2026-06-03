@@ -58,7 +58,14 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
 
       if (error) throw error;
 
-      const commentsData: Comment[] = (data || []).map((c: any) => ({
+      type RawComment = {
+        id: string;
+        content: string;
+        created_at: string;
+        user_id: string;
+        profiles?: { username?: string | null; avatar?: string | null } | null;
+      };
+      const commentsData: Comment[] = ((data || []) as unknown as RawComment[]).map((c) => ({
         id: c.id,
         content: c.content,
         created_at: c.created_at,

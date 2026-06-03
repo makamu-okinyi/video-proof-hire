@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { rpcCall } from '@/integrations/supabase/rpc';
 
 export interface DbNotification {
   id: string;
@@ -14,7 +14,7 @@ export interface DbNotification {
 }
 
 async function fetchNotifications(): Promise<DbNotification[]> {
-  const { data, error } = await (supabase.rpc as any)('get_user_notifications', {
+  const { data, error } = await rpcCall<DbNotification[]>('get_user_notifications', {
     page_size: 50,
     page_offset: 0,
   });
@@ -22,11 +22,11 @@ async function fetchNotifications(): Promise<DbNotification[]> {
     console.error('[useNotifications] fetch error:', error);
     return [];
   }
-  return (data ?? []) as DbNotification[];
+  return data ?? [];
 }
 
 async function fetchUnreadCount(): Promise<number> {
-  const { data, error } = await (supabase.rpc as any)('get_unread_notification_count');
+  const { data, error } = await rpcCall<number>('get_unread_notification_count');
   if (error) {
     console.error('[useNotifications] unread count error:', error);
     return 0;
@@ -50,7 +50,7 @@ export function useNotifications() {
 
   const markReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      const { error } = await (supabase.rpc as any)('mark_notification_read', { notification_id: notificationId });
+      const { error } = await rpcCall('mark_notification_read', { notification_id: notificationId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -61,7 +61,7 @@ export function useNotifications() {
 
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase.rpc as any)('mark_all_notifications_read');
+      const { error } = await rpcCall('mark_all_notifications_read');
       if (error) throw error;
     },
     onSuccess: () => {

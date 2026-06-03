@@ -28,6 +28,43 @@ const stageColors = {
   scale: 'bg-primary/10 text-primary',
 };
 
+// Raw shape of a `ventures` row (with the `venture_founders` join) as returned by
+// Supabase, before mapping to the domain `Venture` type.
+interface VentureRow {
+  id: string;
+  name: string;
+  tagline: string;
+  description?: string;
+  problem_statement?: string;
+  solution?: string;
+  market_size?: string;
+  traction?: string;
+  business_model?: string;
+  stage: Venture['stage'];
+  logo_url?: string;
+  cover_image_url?: string;
+  pitch_video_url?: string;
+  pitch_video_thumbnail?: string;
+  website_url?: string;
+  github_url?: string;
+  demo_url?: string;
+  industry?: string[];
+  tech_stack?: string[];
+  is_fundraising: boolean;
+  funding_goal?: number;
+  funding_raised?: number;
+  hackathon_name?: string;
+  hackathon_cohort?: string;
+  is_active: boolean;
+  is_featured: boolean;
+  created_at: string;
+  updated_at: string;
+  venture_founders?: Venture['founders'];
+}
+
+// Founder preview as actually returned by the join (raw, with nested profile).
+type FounderPreview = { id: string; profiles?: { avatar?: string | null } | null };
+
 export default function Ventures() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
@@ -65,7 +102,7 @@ export default function Ventures() {
 
       if (error) throw error;
 
-      const transformedVentures: Venture[] = (data || []).map((v: any) => ({
+      const transformedVentures: Venture[] = ((data || []) as unknown as VentureRow[]).map((v) => ({
         id: v.id,
         name: v.name,
         tagline: v.tagline,
@@ -312,7 +349,7 @@ function VentureCard({ venture, featured, index }: VentureCardProps) {
         {venture.founders && venture.founders.length > 0 && (
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/30">
             <div className="flex -space-x-2">
-              {venture.founders.slice(0, 3).map((founder: any) => (
+              {(venture.founders as unknown as FounderPreview[]).slice(0, 3).map((founder) => (
                 <img
                   key={founder.id}
                   src={founder.profiles?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'}

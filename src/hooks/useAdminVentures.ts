@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { rpcCall } from '@/integrations/supabase/rpc';
 import { toast } from 'sonner';
 
 /** Venture applications are stored in the `ventures` table (not a separate applications table). */
@@ -167,7 +168,7 @@ async function updateVentureReviewStatus(
   ventureId: string,
   status: 'shortlisted' | 'rejected'
 ): Promise<void> {
-  const { error } = await (supabase.rpc as any)('update_venture_review_status', {
+  const { error } = await rpcCall('update_venture_review_status', {
     p_venture_id: ventureId,
     p_status: status,
   });

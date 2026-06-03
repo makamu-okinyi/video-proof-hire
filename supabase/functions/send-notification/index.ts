@@ -163,7 +163,8 @@ const handler = async (req: Request): Promise<Response> => {
 
       // Check if sender is the employer for any of the recipient's applications
       const isAuthorizedEmployer = application?.some(
-        (app: any) => app.job_postings?.employer_id === senderId
+        (app: { job_postings?: { employer_id?: string } | null }) =>
+          app.job_postings?.employer_id === senderId
       );
 
       if (!isAuthorizedEmployer) {
@@ -291,10 +292,10 @@ const handler = async (req: Request): Promise<Response> => {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in send-notification function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

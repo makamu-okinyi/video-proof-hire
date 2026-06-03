@@ -16,6 +16,16 @@ export interface ApplicantJobApplication {
   };
 }
 
+type JobPostingJoin = { id: string | number; title: string; company_name: string | null };
+interface RawApplicationRow {
+  id: string | number;
+  job_id: string | number;
+  status: string | null;
+  cover_message: string | null;
+  created_at: string;
+  job_postings: JobPostingJoin | JobPostingJoin[] | null;
+}
+
 async function fetchApplicantJobApplications(userId: string | undefined): Promise<ApplicantJobApplication[]> {
   if (!userId) return [];
 
@@ -37,8 +47,8 @@ async function fetchApplicantJobApplications(userId: string | undefined): Promis
     return [];
   }
 
-  return (data ?? []).map((row: any) => {
-    const job = row.job_postings as any;
+  return ((data ?? []) as unknown as RawApplicationRow[]).map((row) => {
+    const job = row.job_postings;
     const jobObj = Array.isArray(job) ? job[0] : job;
     return {
       id: String(row.id),
