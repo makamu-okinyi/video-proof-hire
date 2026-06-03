@@ -18,6 +18,9 @@ dist-ssr
 .env.*.local
 !.env.example
 
+# Supabase CLI local link cache
+supabase/.temp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
