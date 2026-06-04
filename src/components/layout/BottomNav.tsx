@@ -50,7 +50,7 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/50 safe-area-pb">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border safe-area-pb">
       <div className="flex items-center justify-between h-14 max-w-md mx-auto px-1">
         {navItems.map((item, index) => {
           const isActive = isActiveRoute(item.path);
@@ -60,9 +60,9 @@ export function BottomNav() {
             return (
               <Button
                 key={item.label}
-                variant="coral"
+                variant="default"
                 size="icon"
-                className="h-10 w-10 rounded-full shadow-lg -mt-4 pulse-glow"
+                className="h-10 w-10 rounded-full shadow-lg -mt-4"
                 onClick={() => navigate(item.path)}
               >
                 <Plus className="h-5 w-5" />

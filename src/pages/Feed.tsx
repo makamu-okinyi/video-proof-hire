@@ -66,9 +66,9 @@ export default function Feed() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <button
             onClick={() => navigate('/ventures')}
-            className="glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-left hover:opacity-90 transition-all duration-300 group min-w-0 text-[#1e293b]"
+            className="neo-extruded-sm p-4 sm:p-6 text-left hover:-translate-y-0.5 transition-transform duration-200 group min-w-0 text-foreground"
           >
-            <div className="h-10 w-10 sm:h-12 sm:w-12 bg-white/60 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-white/80 transition-all duration-300">
+            <div className="squircle-icon h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4">
               <Rocket className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>
             <h3 className="font-semibold text-charcoal mb-1 text-sm sm:text-base">Explore Ventures</h3>
@@ -77,9 +77,9 @@ export default function Feed() {
 
           <button
             onClick={() => navigate('/apply')}
-            className="glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-left hover:opacity-90 transition-all duration-300 group min-w-0 text-[#1e293b]"
+            className="neo-extruded-sm p-4 sm:p-6 text-left hover:-translate-y-0.5 transition-transform duration-200 group min-w-0 text-foreground"
           >
-            <div className="h-10 w-10 sm:h-12 sm:w-12 bg-white/60 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-white/80 transition-all duration-300">
+            <div className="squircle-icon h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4">
               <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>
             <h3 className="font-semibold text-charcoal mb-1 text-sm sm:text-base">Apply as Applicant</h3>
@@ -88,9 +88,9 @@ export default function Feed() {
 
           <button
             onClick={() => navigate('/jobs')}
-            className="glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-left hover:opacity-90 transition-all duration-300 group min-w-0 text-[#1e293b]"
+            className="neo-extruded-sm p-4 sm:p-6 text-left hover:-translate-y-0.5 transition-transform duration-200 group min-w-0 text-foreground"
           >
-            <div className="h-10 w-10 sm:h-12 sm:w-12 bg-white/60 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-white/80 transition-all duration-300">
+            <div className="squircle-icon h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4">
               <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>
             <h3 className="font-semibold text-charcoal mb-1 text-sm sm:text-base">Find Jobs</h3>
@@ -99,9 +99,9 @@ export default function Feed() {
 
           <button
             onClick={() => navigate('/challenges')}
-            className="glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-left hover:opacity-90 transition-all duration-300 group min-w-0 text-[#1e293b]"
+            className="neo-extruded-sm p-4 sm:p-6 text-left hover:-translate-y-0.5 transition-transform duration-200 group min-w-0 text-foreground"
           >
-            <div className="h-10 w-10 sm:h-12 sm:w-12 bg-white/60 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-white/80 transition-all duration-300">
+            <div className="squircle-icon h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4">
               <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>
             <h3 className="font-semibold text-charcoal mb-1 text-sm sm:text-base">Challenges</h3>

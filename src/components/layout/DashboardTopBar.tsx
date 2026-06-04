@@ -54,7 +54,7 @@ export function DashboardTopBar() {
   const { unreadCount } = useNotifications();
 
   return (
-    <header className="sticky top-0 z-30 glass-panel">
+    <header className="sticky top-0 z-30 bg-background border-b border-border">
       <div className="flex items-center justify-between px-4 lg:px-8 py-4">
         {/* Breadcrumbs */}
         <nav className="flex items-center gap-2 text-sm ml-14 lg:ml-0">
@@ -79,7 +79,7 @@ export function DashboardTopBar() {
         {/* Search & Actions */}
         <div className="flex items-center gap-3">
           {/* Neomorphic Search */}
-          <div className="hidden md:flex items-center gap-2 glass-panel px-4 py-2 rounded-2xl w-64">
+          <div className="hidden md:flex items-center gap-2 neo-inset px-4 py-2 w-64">
             <Search className="h-4 w-4 text-cool-grey" />
             <input
               type="text"
@@ -91,7 +91,7 @@ export function DashboardTopBar() {
           {/* Notifications */}
           <button
             onClick={() => navigate('/notifications')}
-            className="glass-panel p-3 rounded-2xl relative hover:opacity-90 transition-shadow"
+            className="neo-extruded-sm p-3 relative hover:-translate-y-0.5 transition-transform"
             aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
           >
             <Bell className="h-5 w-5 text-cool-grey" />

@@ -218,20 +218,20 @@ export default function AdminPanel() {
               <>
                 {/* Alert Banner - slim, above stats */}
                 {(pendingLongCount > 0 || pendingCount >= 3) && (
-                  <div className="rounded-[2px] px-4 py-3 flex items-center justify-between gap-4 flex-wrap pointer-events-auto" style={{ background: 'linear-gradient(90deg, #2563eb 0%, #3b82f6 100%)', color: 'white' }}>
+                  <div className="neo-extruded px-4 py-3 flex items-center justify-between gap-4 flex-wrap pointer-events-auto">
                     <div className="flex items-center gap-3">
                       {pendingLongCount > 0 ? (
-                        <AlertCircle className="h-5 w-5 shrink-0" />
+                        <AlertCircle className="h-5 w-5 shrink-0 text-brand-strong" />
                       ) : (
-                        <Rocket className="h-5 w-5 shrink-0" />
+                        <Rocket className="h-5 w-5 shrink-0 text-brand-strong" />
                       )}
-                      <span className="font-medium text-sm">
+                      <span className="font-medium text-sm text-foreground">
                         {pendingLongCount > 0
                           ? `⚠️ ${pendingLongCount} pending review${pendingLongCount !== 1 ? 's' : ''} overdue 5+ days. Review now to keep applicants engaged.`
                           : '🚀 Cohort 3 applications are open. You have pending reviews to process.'}
                       </span>
                     </div>
-                    <Button size="sm" onClick={() => setActiveTab('review')} className="bg-white text-blue-600 hover:bg-white/90 shrink-0 rounded-[2px] pointer-events-auto">
+                    <Button size="sm" variant="default" onClick={() => setActiveTab('review')} className="shrink-0 rounded-full pointer-events-auto">
                       Review Queue <ArrowRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
