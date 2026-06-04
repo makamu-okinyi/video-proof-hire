@@ -300,7 +300,7 @@ export default function Auth() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="glass-panel p-8 rounded-2xl">
+        <div className="neo-extruded p-8">
           <RocketLoader indeterminate label="Loading..." />
         </div>
       </div>
@@ -336,9 +336,9 @@ export default function Auth() {
 
             <div className="space-y-3">
               <Button
-                variant="hero"
+                variant="default"
                 size="xl"
-                className="w-full"
+                className="w-full rounded-full"
                 onClick={() => navigate(destination)}
               >
                 Continue
@@ -381,37 +381,23 @@ export default function Auth() {
   const renderWelcome = () => (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 animate-fade-in">
       {/* Glass container */}
-      <div
-        className="w-full max-w-md space-y-8 p-8 rounded-3xl"
-        style={{
-          background: 'rgba(255,255,255,0.82)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          border: '1px solid rgba(255,255,255,0.6)',
-          boxShadow: '0 4px 32px 0 rgba(30,41,59,0.08), 0 1px 4px 0 rgba(30,41,59,0.04)',
-        }}
-      >
+      <div className="neo-extruded w-full max-w-md space-y-8 p-6 sm:p-8">
         {/* Logo & headline */}
         <div className="text-center space-y-2">
           <Logo size="xl" className="justify-center" />
-          <h1
-            className="text-3xl font-bold text-[#1e293b]"
-            style={{ letterSpacing: '-0.04em' }}
-          >
-            Startup Garage
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Donjo
           </h1>
-          <p className="text-[#64748b] text-sm font-normal">
-            Venture Acceleration Engine
+          <p className="text-muted-foreground text-sm">
+            Prove your skills, get hired
           </p>
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+        <div className="h-px bg-border" />
 
-        {/* Role selection label */}
-        <p
-          className="text-center text-xs font-semibold uppercase tracking-widest text-[#94a3b8]"
-        >
+        {/* Role selection eyebrow */}
+        <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Choose your path
         </p>
 
@@ -421,44 +407,20 @@ export default function Auth() {
           {/* Applicant card */}
           <button
             onClick={() => { setUserType('talent'); setIsLogin(false); setStep('login'); }}
-            className="group w-full text-center rounded-2xl p-6 transition-all duration-300 pointer-events-auto"
-            style={{
-              background: 'rgba(255,255,255,0.7)',
-              border: '1px solid rgba(226,232,240,0.8)',
-              boxShadow: '0 1px 4px rgba(30,41,59,0.06)',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 32px rgba(249,115,22,0.12), 0 1px 4px rgba(30,41,59,0.08)';
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(249,115,22,0.35)';
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(30,41,59,0.06)';
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(226,232,240,0.8)';
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            }}
+            className="neo-extruded-sm group w-full text-center p-6 transition-transform duration-200 hover:-translate-y-0.5 pointer-events-auto"
           >
-            {/* Icon */}
             <div className="flex justify-center mb-4">
-              <div
-                className="h-16 w-16 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(249,115,22,0.09)' }}
-              >
-                <Rocket className="h-8 w-8 text-orange-500" strokeWidth={1.5} />
+              <div className="squircle-icon h-16 w-16">
+                <Rocket className="h-8 w-8 text-brand-strong" strokeWidth={1.5} />
               </div>
             </div>
-            {/* Text */}
-            <h3
-              className="text-base font-semibold text-[#1e293b] mb-1.5"
-              style={{ letterSpacing: '-0.02em' }}
-            >
+            <h3 className="text-base font-semibold text-foreground mb-1.5 tracking-tight">
               Apply as Applicant
             </h3>
-            <p className="text-sm text-[#64748b] leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Submit your video portfolio to join our next cohort and pitch to investors.
             </p>
-            {/* CTA link */}
-            <p className="mt-4 text-xs font-medium text-orange-500 group-hover:text-orange-600 transition-colors flex items-center justify-center gap-1">
+            <p className="mt-4 text-xs font-semibold text-foreground flex items-center justify-center gap-1">
               Select <ArrowRight className="h-3.5 w-3.5" />
             </p>
           </button>
@@ -466,44 +428,20 @@ export default function Auth() {
           {/* Program Manager card */}
           <button
             onClick={() => { setUserType('employer'); setIsLogin(false); setStep('login'); }}
-            className="group w-full text-center rounded-2xl p-6 transition-all duration-300 pointer-events-auto"
-            style={{
-              background: 'rgba(255,255,255,0.7)',
-              border: '1px solid rgba(226,232,240,0.8)',
-              boxShadow: '0 1px 4px rgba(30,41,59,0.06)',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 32px rgba(100,116,139,0.12), 0 1px 4px rgba(30,41,59,0.08)';
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(100,116,139,0.4)';
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(30,41,59,0.06)';
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(226,232,240,0.8)';
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            }}
+            className="neo-extruded-sm group w-full text-center p-6 transition-transform duration-200 hover:-translate-y-0.5 pointer-events-auto"
           >
-            {/* Icon */}
             <div className="flex justify-center mb-4">
-              <div
-                className="h-16 w-16 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(100,116,139,0.08)' }}
-              >
-                <ShieldCheck className="h-8 w-8 text-slate-500" strokeWidth={1.5} />
+              <div className="squircle-icon h-16 w-16">
+                <ShieldCheck className="h-8 w-8 text-foreground" strokeWidth={1.5} />
               </div>
             </div>
-            {/* Text */}
-            <h3
-              className="text-base font-semibold text-[#1e293b] mb-1.5"
-              style={{ letterSpacing: '-0.02em' }}
-            >
+            <h3 className="text-base font-semibold text-foreground mb-1.5 tracking-tight">
               Program Manager
             </h3>
-            <p className="text-sm text-[#64748b] leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Review applications, manage cohorts, and track venture progress.
             </p>
-            {/* CTA link */}
-            <p className="mt-4 text-xs font-medium text-slate-500 group-hover:text-slate-700 transition-colors flex items-center justify-center gap-1">
+            <p className="mt-4 text-xs font-semibold text-muted-foreground flex items-center justify-center gap-1">
               Select <ArrowRight className="h-3.5 w-3.5" />
             </p>
           </button>
@@ -512,8 +450,7 @@ export default function Auth() {
         {/* Existing user — subtle, non-competing */}
         <div className="text-center pt-2">
           <button
-            className="text-sm text-[#94a3b8] hover:text-[#1e293b] transition-colors duration-200 pointer-events-auto"
-            style={{ opacity: 0.75 }}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 pointer-events-auto"
             onClick={() => { setIsLogin(true); setStep('login'); }}
           >
             Sign in to my account
@@ -530,59 +467,59 @@ export default function Auth() {
           <button
             type="button"
             onClick={() => setStep('welcome')}
-            className="glass-panel px-4 py-2.5 text-sm font-medium text-[#1e293b] hover:opacity-90 pointer-events-auto"
+            className="neo-extruded-sm flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-foreground hover:-translate-y-0.5 transition-transform pointer-events-auto"
           >
-            UI Series
+            <ChevronLeft className="h-4 w-4" /> Back
           </button>
           <div className="flex-1 flex justify-center">
             <div className="relative">
-              <select className="glass-panel px-4 py-2.5 text-sm font-medium text-[#1e293b] appearance-none cursor-pointer pointer-events-auto bg-transparent pr-8 min-w-[120px]" defaultValue="en">
+              <select className="neo-extruded-sm px-4 py-2.5 text-sm font-medium text-foreground appearance-none cursor-pointer pointer-events-auto pr-8 min-w-[120px]" defaultValue="en">
                 <option value="en">English</option>
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             </div>
           </div>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 max-w-md mx-auto w-full">
-          <div className="glass-panel w-full p-8 rounded-2xl space-y-6">
-          {/* Avatar / Logo - design1 central */}
+          <div className="neo-extruded w-full p-6 sm:p-8 space-y-6">
+          {/* Avatar / Logo */}
           <div className="mb-4 flex justify-center">
-            <div className="w-20 h-20 glass-panel rounded-full flex items-center justify-center p-1 ring-2 ring-white/40">
+            <div className="w-20 h-20 neo-extruded-sm rounded-full flex items-center justify-center p-1">
               <Logo size="lg" className="object-contain" />
             </div>
           </div>
 
           <div className="w-full space-y-4">
-            {/* Phone number, email or username */}
+            {/* Email or username */}
             <div className="space-y-1.5">
-              <label className="text-sm text-slate-600">Phone number, email or username</label>
-              <div className="glass-panel rounded-[2px]">
+              <label className="text-sm text-muted-foreground">Email or username</label>
+              <div className="neo-inset">
                 <Input
                   type="email"
                   placeholder=""
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 rounded-[2px] border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 pl-4"
+                  className="h-12 rounded-[inherit] border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-4"
                 />
               </div>
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label className="text-sm text-slate-600">Password</label>
-              <div className="glass-panel rounded-[2px] relative">
+              <label className="text-sm text-muted-foreground">Password</label>
+              <div className="neo-inset relative">
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   placeholder=""
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 rounded-[2px] border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 pl-4 pr-12"
+                  className="h-12 rounded-[inherit] border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 pl-4 pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 pointer-events-auto"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground pointer-events-auto"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -590,10 +527,10 @@ export default function Auth() {
               {!isLogin && <PasswordStrengthIndicator password={password} />}
             </div>
 
-            {/* Log in - Emerald-500 for success/active */}
+            {/* Primary CTA — brand-strong fill (AA) */}
             <Button
               variant="default"
-              className="w-full h-14 rounded-[2px] bg-emerald-500 hover:bg-emerald-600 text-white font-semibold shadow-none border-0 mt-4"
+              className="w-full h-14 rounded-full font-semibold mt-4"
               onClick={handleAuth}
               disabled={loading || !email || !password}
             >
@@ -601,9 +538,9 @@ export default function Auth() {
               {!loading && <ArrowRight className="h-5 w-5 ml-2" />}
             </Button>
 
-            {/* Forgot your login details? Get help login in. */}
+            {/* Forgot password */}
             {isLogin && (
-              <p className="text-center text-sm text-slate-600 mt-2">
+              <p className="text-center text-sm text-muted-foreground mt-2">
                 Forgot your login details?{' '}
                 <button
                   type="button"
@@ -612,32 +549,32 @@ export default function Auth() {
                     setResetEmailSent(false);
                     setStep('forgotPassword');
                   }}
-                  className="font-medium text-slate-800 hover:text-emerald-600 pointer-events-auto"
+                  className="font-medium text-foreground hover:underline pointer-events-auto"
                 >
-                  Get help login in.
+                  Get help signing in.
                 </button>
               </p>
             )}
 
-            {/* Biometric - Fingerprint icon (WebAuthn + password fallback) */}
+            {/* Biometric (WebAuthn passkey) */}
             <div className="flex justify-center py-4">
               <button
                 type="button"
                 onClick={handleBiometricClick}
                 disabled={bioLoading}
-                className="w-16 h-16 glass-panel rounded-[2px] flex items-center justify-center text-[#64748b] hover:text-emerald-500 transition-colors pointer-events-auto disabled:opacity-50"
+                className="w-16 h-16 neo-inset flex items-center justify-center text-muted-foreground hover:text-brand-strong transition-colors pointer-events-auto disabled:opacity-50"
               >
                 {bioLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : <Fingerprint className="h-8 w-8" />}
               </button>
             </div>
 
-            {/* Don't have an account? Sign up */}
-            <p className="text-center text-sm text-slate-600 pt-2">
+            {/* Toggle sign in / sign up */}
+            <p className="text-center text-sm text-muted-foreground pt-2">
               {isLogin ? "Don't have an account? " : 'Already have an account? '}
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className="font-medium text-slate-800 hover:text-emerald-600 pointer-events-auto"
+                className="font-medium text-brand-strong hover:text-brand-strong/80 pointer-events-auto"
               >
                 {isLogin ? 'Sign up' : 'Sign in'}
               </button>
@@ -649,16 +586,16 @@ export default function Auth() {
           <div className="mt-6 w-full">
             <div className="relative py-2">
               <span className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-slate-300" />
+                <span className="w-full border-t border-border" />
               </span>
               <span className="relative flex justify-center text-xs uppercase">
-                <span className="px-2 text-[#64748b]">or continue with</span>
+                <span className="px-2 bg-background text-muted-foreground">or continue with</span>
               </span>
             </div>
             <Button
               variant="outline"
               size="lg"
-              className="w-full mt-4 rounded-[2px] glass-panel"
+              className="w-full mt-4 rounded-full"
               onClick={handleGoogleSignIn}
               disabled={loading || googleLoading}
             >
@@ -687,14 +624,14 @@ export default function Auth() {
           setStep('login');
           setResetEmailSent(false);
         }}
-        className="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] transition-colors mb-8 pointer-events-auto"
+        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 pointer-events-auto"
       >
         <ChevronLeft className="h-5 w-5" />
         <span>Back to login</span>
       </button>
 
       <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
-        <div className="glass-panel p-8 rounded-2xl space-y-6">
+        <div className="neo-extruded p-6 sm:p-8 space-y-6">
           {resetEmailSent ? (
             // Success state
             <div className="space-y-6 text-center animate-fade-in">
@@ -727,7 +664,7 @@ export default function Auth() {
                 <button
                   onClick={handleForgotPassword}
                   disabled={loading}
-                  className="text-coral hover:underline font-medium"
+                  className="text-foreground hover:underline font-medium"
                 >
                   {loading ? 'Sending...' : 'Resend'}
                 </button>
@@ -758,10 +695,10 @@ export default function Auth() {
               </div>
 
               {/* Submit */}
-              <Button 
-                variant="hero" 
-                size="xl" 
-                className="w-full mt-2"
+              <Button
+                variant="default"
+                size="xl"
+                className="w-full mt-2 rounded-full"
                 onClick={handleForgotPassword}
                 disabled={loading || !resetEmail}
               >
@@ -798,13 +735,13 @@ export default function Auth() {
             onClick={() => handleUserTypeSelect('talent')}
             className={cn(
               "w-full p-6 rounded-2xl border-2 text-left transition-all duration-200",
-              "hover:border-coral hover:shadow-md",
+              "hover:border-brand hover:-translate-y-0.5",
               "border-border"
             )}
           >
             <div className="flex items-start gap-4">
-              <div className="h-14 w-14 rounded-xl bg-coral/10 flex items-center justify-center">
-                <User className="h-7 w-7 text-coral" />
+              <div className="h-14 w-14 rounded-xl bg-brand/10 flex items-center justify-center">
+                <User className="h-7 w-7 text-brand-strong" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold">Student / Talent</h3>
@@ -820,7 +757,7 @@ export default function Auth() {
             onClick={() => handleUserTypeSelect('employer')}
             className={cn(
               "w-full p-6 rounded-2xl border-2 text-left transition-all duration-200",
-              "hover:border-coral hover:shadow-md",
+              "hover:border-brand hover:-translate-y-0.5",
               "border-border"
             )}
           >
@@ -887,8 +824,8 @@ export default function Auth() {
                     className={cn(
                       "p-4 rounded-xl border-2 text-left transition-all duration-200",
                       selectedCategory === cat.value
-                        ? "border-coral bg-coral/5"
-                        : "border-border hover:border-coral/50"
+                        ? "border-brand bg-brand/5"
+                        : "border-border hover:border-brand/50"
                     )}
                   >
                     <span className="text-2xl">{cat.icon}</span>
@@ -916,10 +853,10 @@ export default function Auth() {
         </div>
 
         {/* Complete */}
-        <Button 
-          variant="coral" 
-          size="xl" 
-          className="w-full mt-8"
+        <Button
+          variant="default"
+          size="xl"
+          className="w-full mt-8 rounded-full"
           onClick={handleOnboardingComplete}
           disabled={loading}
         >
@@ -936,7 +873,7 @@ export default function Auth() {
       {/* Google OAuth Loading Overlay */}
       {googleLoading && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center">
-          <Loader2 className="h-12 w-12 animate-spin text-coral mb-4" />
+          <Loader2 className="h-12 w-12 animate-spin text-brand-strong mb-4" />
           <p className="text-lg font-medium text-foreground">Redirecting to Google...</p>
           <p className="text-sm text-muted-foreground mt-1">Please wait</p>
         </div>
