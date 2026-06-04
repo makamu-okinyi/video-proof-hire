@@ -418,7 +418,7 @@ export default function Auth() {
               Apply as Applicant
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Submit your video portfolio to join our next cohort and pitch to investors.
+              Submit your video portfolio and get discovered by employers.
             </p>
             <p className="mt-4 text-xs font-semibold text-foreground flex items-center justify-center gap-1">
               Select <ArrowRight className="h-3.5 w-3.5" />
@@ -436,10 +436,10 @@ export default function Auth() {
               </div>
             </div>
             <h3 className="text-base font-semibold text-foreground mb-1.5 tracking-tight">
-              Program Manager
+              Hire Talent
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Review applications, manage cohorts, and track venture progress.
+              Post jobs, review video applications, and hire verified talent.
             </p>
             <p className="mt-4 text-xs font-semibold text-muted-foreground flex items-center justify-center gap-1">
               Select <ArrowRight className="h-3.5 w-3.5" />
