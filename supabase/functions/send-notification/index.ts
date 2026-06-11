@@ -235,7 +235,7 @@ const handler = async (req: Request): Promise<Response> => {
             <p style="color: #666; font-style: italic; margin: 0;">"${safeMessagePreview}"</p>
           </div>
           <p style="color: #666; font-size: 14px;">Log in to your account to reply.</p>
-          <p style="color: #999; font-size: 12px; margin-top: 40px;">— The SkillTok Team</p>
+          <p style="color: #999; font-size: 12px; margin-top: 40px;">— Startup Garage</p>
         </div>
       `;
     } else {
@@ -257,7 +257,7 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
           ` : ""}
           <p style="color: #666; font-size: 14px;">Log in to your account to view more details.</p>
-          <p style="color: #999; font-size: 12px; margin-top: 40px;">— The SkillTok Team</p>
+          <p style="color: #999; font-size: 12px; margin-top: 40px;">— Startup Garage</p>
         </div>
       `;
     }
@@ -272,7 +272,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "SkillTok <onboarding@resend.dev>",
+        from: "Startup Garage <notifications@startupgarage.donjoafrica.com>",
         to: [recipientEmail],
         subject,
         html: htmlContent,
