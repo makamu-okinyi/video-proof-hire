@@ -530,7 +530,7 @@ export default function AdminPanel() {
                         <>
                           <Button 
                             size="sm" 
-                            className="bg-green-600 hover:bg-green-700 text-white" 
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground"
                             onClick={() => handleAction(venture, 'shortlisted')}
                             disabled={isUpdating}
                           >

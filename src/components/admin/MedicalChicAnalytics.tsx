@@ -178,7 +178,7 @@ export function SystemHealthGauge({ value, max = 10, label = 'Application Succes
             stroke="currentColor"
             strokeWidth="8"
             strokeLinecap="round"
-            className="text-emerald-500 transition-all duration-500"
+            className="text-brand transition-all duration-500"
             strokeDasharray={GAUGE_CIRCUMFERENCE}
             strokeDashoffset={strokeDashoffset}
           />
@@ -261,7 +261,7 @@ export function MetricCard({
       </div>
       <div className="h-2 w-full overflow-hidden rounded-[2px] bg-muted/50">
         <div
-          className="h-full rounded-[2px] bg-emerald-500 transition-all duration-500"
+          className="h-full rounded-[2px] bg-primary transition-all duration-500"
           style={{ width: `${pct * 100}%` }}
         />
       </div>
