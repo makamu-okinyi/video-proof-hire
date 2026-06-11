@@ -119,7 +119,6 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Light backdrop - left area stays interactive for context preservation */}
           <motion.div
             className="fixed inset-0 z-40 bg-black/20"
             initial={{ opacity: 0 }}
@@ -129,12 +128,11 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
             onClick={handleBackdropClick}
             aria-hidden="true"
           />
-          {/* Side Drawer - Industrial-Chic: slate-950, 2px corners, 35% width */}
           <motion.aside
             role="dialog"
             aria-modal="true"
             aria-labelledby="apply-drawer-title"
-            className="fixed top-0 right-0 z-50 h-full w-full sm:w-[35%] min-w-[320px] bg-slate-950 shadow-2xl flex flex-col rounded-l-[2px]"
+            className="fixed top-0 right-0 z-50 h-full w-full sm:w-[35%] min-w-[320px] neo-extruded flex flex-col rounded-l-3xl"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
@@ -142,19 +140,19 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
             style={{ willChange: 'transform' }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-800 shrink-0">
+            <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
               <div>
-                <h2 id="apply-drawer-title" className="text-lg font-semibold text-white font-sans">
+                <h2 id="apply-drawer-title" className="text-lg font-semibold text-foreground">
                   Apply to {job.title}
                 </h2>
                 {job.company_name && (
-                  <p className="text-sm text-slate-400 font-sans">{job.company_name}</p>
+                  <p className="text-sm text-muted-foreground">{job.company_name}</p>
                 )}
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 rounded-[2px] text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />
@@ -166,29 +164,29 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
               <div className="p-4 space-y-5">
                 {/* Video Guidance from Employer */}
                 {job.video_prompt && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-[2px] p-3 space-y-1.5">
-                    <p className="text-sm font-medium text-emerald-400 flex items-center gap-2">
+                  <div className="neo-pressed p-3 space-y-1.5">
+                    <p className="text-sm font-medium text-foreground flex items-center gap-2">
                       <Video className="h-4 w-4" />
                       Video Pitch Guidance
                     </p>
-                    <p className="text-sm text-slate-300 whitespace-pre-line">{job.video_prompt}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-line">{job.video_prompt}</p>
                   </div>
                 )}
 
                 {/* Video Portfolio Section */}
                 <div className="space-y-2 pointer-events-auto z-50 relative">
-                  <Label className="flex items-center gap-2 text-slate-200 font-sans">
+                  <Label className="flex items-center gap-2 text-foreground">
                     <Video className="h-4 w-4" />
                     Your Video Portfolio
                   </Label>
 
                   {isLoading ? (
-                    <div className="text-sm text-slate-400 py-4 text-center font-sans">
+                    <div className="text-sm text-muted-foreground py-4 text-center">
                       Loading your videos...
                     </div>
                   ) : videos.length === 0 ? (
-                    <div className="text-sm text-slate-400 py-4 text-center border border-dashed border-slate-700 rounded-[2px] font-sans">
-                      <Video className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <div className="neo-pressed text-sm text-muted-foreground py-6 text-center space-y-2">
+                      <Video className="h-8 w-8 mx-auto opacity-40" />
                       <p>No videos yet. Create videos to showcase your skills!</p>
                     </div>
                   ) : (
@@ -197,10 +195,10 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
                         <Card
                           key={video.id}
                           className={cn(
-                            'relative aspect-[9/16] overflow-hidden cursor-pointer transition-all rounded-[2px] border-slate-700 bg-slate-900',
+                            'relative aspect-[9/16] overflow-hidden cursor-pointer transition-all neo-extruded-sm border-0',
                             selectedVideoIds.includes(video.id)
-                              ? 'ring-2 ring-emerald-500'
-                              : 'hover:ring-1 hover:ring-slate-600'
+                              ? 'ring-2 ring-brand'
+                              : 'hover:ring-1 hover:ring-border'
                           )}
                           onClick={() => toggleVideoSelection(video.id)}
                         >
@@ -211,13 +209,13 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                              <Play className="h-6 w-6 text-slate-500" />
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Play className="h-6 w-6 text-muted-foreground" />
                             </div>
                           )}
                           {selectedVideoIds.includes(video.id) && (
-                            <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
-                              <div className="bg-emerald-500 text-white rounded-full p-1">
+                            <div className="absolute inset-0 bg-brand/20 flex items-center justify-center">
+                              <div className="bg-primary text-primary-foreground rounded-full p-1">
                                 <Play className="h-4 w-4" />
                               </div>
                             </div>
@@ -228,16 +226,15 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
                   )}
 
                   {videos.length > 0 && (
-                    <p className="text-xs text-slate-500 font-sans">
-                      {selectedVideoIds.length} video(s) selected • Your profile acts as your
-                      application
+                    <p className="text-xs text-muted-foreground">
+                      {selectedVideoIds.length} video(s) selected • Your profile acts as your application
                     </p>
                   )}
                 </div>
 
-                {/* Cover Message - Inter placeholder */}
+                {/* Cover Message */}
                 <div className="space-y-2">
-                  <Label htmlFor="cover-message" className="text-slate-200 font-sans">
+                  <Label htmlFor="cover-message" className="text-foreground">
                     Cover Message (Optional)
                   </Label>
                   <Textarea
@@ -247,30 +244,30 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
                     onChange={(e) => setCoverMessage(e.target.value)}
                     rows={3}
                     maxLength={500}
-                    className="rounded-[2px] border-slate-700 bg-slate-900 text-white placeholder:text-slate-500 font-sans resize-none focus:ring-emerald-500/50"
+                    className="resize-none"
                   />
-                  <p className="text-xs text-slate-500 text-right font-mono">
+                  <p className="text-xs text-muted-foreground text-right font-mono">
                     {coverMessage.length}/500
                   </p>
                 </div>
 
                 {/* Profile Preview */}
                 {profile && (
-                  <div className="bg-slate-800/50 rounded-[2px] p-3 space-y-1">
-                    <p className="text-sm font-medium text-slate-200 font-sans">Applying as:</p>
+                  <div className="neo-pressed p-3 space-y-1">
+                    <p className="text-sm font-medium text-foreground">Applying as:</p>
                     <div className="flex items-center gap-2">
                       {profile.avatar && (
                         <img
                           src={profile.avatar}
                           alt={profile.username || 'Profile'}
-                          className="h-8 w-8 rounded-[2px] object-cover"
+                          className="h-8 w-8 rounded-xl object-cover"
                         />
                       )}
                       <div>
-                        <p className="text-sm font-medium text-white font-sans">
+                        <p className="text-sm font-medium text-foreground">
                           {profile.username || 'Anonymous'}
                         </p>
-                        <p className="text-xs text-slate-400 font-sans">
+                        <p className="text-xs text-muted-foreground">
                           {profile.skills?.slice(0, 3).join(', ')}
                         </p>
                       </div>
@@ -278,9 +275,8 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
                   </div>
                 )}
 
-                {/* Apply Button - Emerald-500 primary */}
                 <Button
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-[2px] pointer-events-auto z-50 font-sans"
+                  className="w-full pointer-events-auto z-50"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
                 >

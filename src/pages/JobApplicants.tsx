@@ -216,11 +216,8 @@ export default function JobApplicants() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center bg-slate-50">
-        <div className="absolute inset-0 bg-slate-100/80" />
-        <div className="relative z-10">
-          <RocketLoader indeterminate label="Loading applicants..." />
-        </div>
+      <div className="min-h-dvh flex flex-col items-center justify-center bg-background">
+        <RocketLoader indeterminate label="Loading applicants..." />
       </div>
     );
   }

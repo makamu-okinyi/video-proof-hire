@@ -137,7 +137,7 @@ export function JobCard({ job, hasApplied }: JobCardProps) {
           variant={hasApplied ? "secondary" : "default"}
           className={cn(
             "w-full mt-4 pointer-events-auto z-50 font-sans rounded-[2px]",
-            !hasApplied && "bg-emerald-500 hover:bg-emerald-600"
+            !hasApplied && "bg-primary hover:bg-primary/90 text-primary-foreground"
           )}
           size="sm"
           onClick={handleApplyClick}
