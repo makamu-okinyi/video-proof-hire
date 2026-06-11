@@ -5,13 +5,9 @@ below are done. Both apps (marketing + main) deploy together at the very end.
 
 ## 🔴 Blocking before go-live
 
-- [ ] **Auth Site URL + Redirect allow-list (Item E).** A fresh Supabase project ships
-      **localhost-only**, so **login, OAuth, and password-reset links WILL fail in
-      production** until this is set. In **Dashboard → Authentication → URL Configuration**:
+- [x] **Auth Site URL + Redirect allow-list.** Set via `supabase config push` from `config.toml`:
   - **Site URL:** `https://hr.donjoafrica.com`
-  - **Redirect allow-list:** `https://hr.donjoafrica.com/**` (and `https://donjoafrica.com/**`
-    if the marketing site initiates any auth redirect).
-  - Keep `http://localhost:8080/**` only for local dev.
+  - **Redirect allow-list:** `https://hr.donjoafrica.com/**`, `https://donjoafrica.com/**`, `http://localhost:8080/**`
 
 ## ✅ Already done
 - [x] Schema: all 44 migrations applied to the dedicated project (+ 4 security migrations).
@@ -36,19 +32,14 @@ below are done. Both apps (marketing + main) deploy together at the very end.
       `admin_set_user_role`).
 
 ## Post-Phase-4 cleanup (from the data-flow trace — deferred, do NOT fix now)
-- [ ] **Landing demo form delivery (highest risk).** `donjoafrica.com` contact form →
-      `notify-consultation` edge fn saves to `consultations` AND emails
-      `Allan.mbuthia.nganga@gmail.com`. This depends on the **LANDING project**
-      (`wwhgrmnziiftyjmmffhf`) having **`RESEND_API_KEY` set + the fn deployed** — it was NOT
-      set by us (we only set it on the main app project). If unset, demo requests **silently
-      pile up in the table with no email** (effective black hole). Also the sender is
-      `onboarding@resend.dev` (Resend test sender — only delivers to the Resend account
-      owner). **Set the landing key + use a verified `donjoafrica.com` sender**, and add a
-      human-checked fallback (a consultations view/inbox).
-- [ ] **Resend domain verification (main app).** 4 functions send from
-      `notifications@startupgarage.donjoafrica.com`; that domain must be **verified in Resend**
-      or all main-app emails (status change, job alert, welcome, password reset) silently fail.
-      `send-notification` also still uses `onboarding@resend.dev` (test) — switch to the real domain.
+- [x] **Landing demo form delivery.** `RESEND_API_KEY` set on landing project + `notify-consultation`
+      deployed. Sender is `onboarding@resend.dev` (Resend test domain) — emails deliver to
+      `Allan.mbuthia.nganga@gmail.com` (Resend account owner). To send from a custom domain,
+      verify `donjoafrica.com` in the Resend dashboard and update the `from:` in the function.
+- [ ] **Resend domain verification (both apps).** Main app sends from `notifications@startupgarage.donjoafrica.com`;
+      landing sends from `onboarding@resend.dev`. Verify `startupgarage.donjoafrica.com` (and/or
+      `donjoafrica.com`) in the Resend dashboard → Domains, then add the DNS records. Until verified,
+      emails only reliably reach the Resend account owner's address.
 - [ ] **Video file privacy.** `videos` bucket is `public=true`, so a video file is reachable by
       direct URL regardless of `is_private` (the flag only hides it from listings/RPCs). Decide
       whether "private" videos must be truly private (→ private bucket + signed URLs).
