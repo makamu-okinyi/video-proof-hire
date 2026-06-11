@@ -54,13 +54,11 @@ below are done. Both apps (marketing + main) deploy together at the very end.
       whether "private" videos must be truly private (→ private bucket + signed URLs).
 - [ ] **No employer email on new application.** Applying fires only an in-app notification to
       the employer (DB trigger); no email. Add an employer email if expected.
-- [ ] **Stale contact email.** `donjoafrica.com` footer shows `mailto:hello@donjo.dev` (wrong domain).
+- [x] **Stale contact email.** Fixed in `donjoafrica.com` — Connect.tsx now shows `makamubetsy@gmail.com`.
 - [ ] **`video_comments` are world-readable** (`USING(true)`) — low severity, but since videos
       *can* be private (`is_private`), comments on private videos are exposed. Revisit if needed.
-- [ ] **Judge ↔ pitch_decks RLS.** `ReviewerRoute` lets `judge` reach the venture views, but
-      `pitch_decks` SELECT is scoped to founders/admin/**investor** (not judge) — so judges see
-      ventures + scores + tech-blocks but **not pitch decks**. Add `judge` to `pitch_decks` read
-      if judges are meant to see decks.
+- [x] **Judge ↔ pitch_decks RLS.** Added `judge` to `pitch_decks` SELECT and `pitch-decks`
+      storage bucket SELECT in migration `20260220000000_judge_pitch_decks_read.sql`.
 
 ## Notes
 - Buckets: `videos` and `avatars` are public by design; `pitch-decks` is private and scoped.

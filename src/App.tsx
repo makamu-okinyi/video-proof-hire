@@ -81,9 +81,6 @@ const App = () => (
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/edit" element={<EditProfile />} />
-            {/* TODO(phase-3): messaging is wired but NOT verified end-to-end. Confirm
-                conversations/messages RLS (read own, send, counterparty read) before
-                calling it live. */}
             <Route path="/messages" element={<Messages />} />
             <Route path="/user/:userId" element={<UserProfile />} />
             {/* Employer Routes (protected by EmployerRoute) */}
