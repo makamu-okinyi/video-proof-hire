@@ -3,8 +3,13 @@ project_id = "ngoqbdvbalktlggvhcge"
 [auth]
 site_url = "https://hr.donjoafrica.com"
 additional_redirect_urls = [
+  "https://hr.donjoafrica.com",
+  "https://hr.donjoafrica.com/",
   "https://hr.donjoafrica.com/**",
+  "https://donjoafrica.com",
+  "https://donjoafrica.com/",
   "https://donjoafrica.com/**",
+  "http://localhost:8080",
   "http://localhost:8080/**"
 ]
 jwt_expiry = 3600
