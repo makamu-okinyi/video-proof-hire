@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ElementType } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft, Loader2, Fingerprint, ChevronDown, Rocket, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft, Loader2, Fingerprint, ChevronDown, Rocket, ShieldCheck, Code2, Palette, BarChart3, Package } from 'lucide-react';
 import { RocketLoader } from '@/components/ui/RocketLoader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,15 +23,15 @@ const passwordSchema = z.string()
 const usernameSchema = z.string().trim().max(50, { message: "Username must be less than 50 characters" }).optional();
 const bioSchema = z.string().trim().max(500, { message: "Bio must be less than 500 characters" }).optional();
 
-type Step = 'welcome' | 'login' | 'signup' | 'userType' | 'onboarding' | 'forgotPassword';
+type Step = 'welcome' | 'login' | 'signup' | 'userType' | 'onboarding' | 'forgotPassword' | 'confirmation';
 type UserType = 'talent' | 'employer';
 type SkillCategory = 'tech' | 'design' | 'business' | 'other';
 
-const skillCategories: { value: SkillCategory; label: string; icon: string }[] = [
-  { value: 'tech', label: 'Technology', icon: '💻' },
-  { value: 'design', label: 'Design', icon: '🎨' },
-  { value: 'business', label: 'Business', icon: '📊' },
-  { value: 'other', label: 'Other', icon: '📦' },
+const skillCategories: { value: SkillCategory; label: string; Icon: ElementType }[] = [
+  { value: 'tech', label: 'Technology', Icon: Code2 },
+  { value: 'design', label: 'Design', Icon: Palette },
+  { value: 'business', label: 'Business', Icon: BarChart3 },
+  { value: 'other', label: 'Other', Icon: Package },
 ];
 
 export default function Auth() {
@@ -141,9 +141,14 @@ export default function Auth() {
           // Removed passive "Welcome back" toast - no clear UX goal
         }
       } else {
-        const { error } = await signup(email, password);
+        const metadata = {
+          username: username.trim() || null,
+          skill_category: selectedCategory || 'other',
+          user_type: userType,
+          industry: selectedCategory || null,
+        };
+        const { error } = await signup(email, password, metadata);
         if (error) {
-          // Handle various signup errors including 422
           const errorMsg = error.message?.toLowerCase() || '';
           if (errorMsg.includes('already registered') || errorMsg.includes('already exists')) {
             toast.error('An account with this email already exists. Try logging in instead.');
@@ -159,13 +164,8 @@ export default function Auth() {
             toast.error(error.message || 'Signup failed. Please try again.');
           }
         } else {
-          toast.success('Account created! Check your email to verify.');
-          // Send welcome email (fire-and-forget)
-          supabase.functions.invoke('welcome-email', {
-            body: { userId: '', username, email },
-          }).catch(console.error);
-          // Skip userType selection since it's already chosen on welcome screen
-          setStep('onboarding');
+          supabase.functions.invoke('welcome-email', { body: { userId: '', username, email } }).catch(console.error);
+          setStep('confirmation');
         }
       }
     } catch (error) {
@@ -527,14 +527,59 @@ export default function Auth() {
               {!isLogin && <PasswordStrengthIndicator password={password} />}
             </div>
 
-            {/* Primary CTA — brand-strong fill (AA) */}
+            {/* Signup-only: Username + Niche */}
+            {!isLogin && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-sm text-muted-foreground">
+                    {userType === 'employer' ? 'Company / Display name' : 'Username'} (optional)
+                  </label>
+                  <div className="neo-inset">
+                    <Input
+                      type="text"
+                      placeholder={userType === 'employer' ? 'Acme Inc.' : '@username'}
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="h-12 rounded-[inherit] border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-4"
+                      maxLength={50}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">
+                    {userType === 'employer' ? 'Industry / Sector' : 'Your field'}
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {skillCategories.map((cat) => (
+                      <button
+                        key={cat.value}
+                        type="button"
+                        onClick={() => setSelectedCategory(cat.value as SkillCategory)}
+                        className={cn(
+                          "p-3 rounded-xl border-2 text-left transition-all duration-200 flex items-center gap-2",
+                          selectedCategory === cat.value
+                            ? "border-brand bg-brand/5"
+                            : "border-border hover:border-brand/50"
+                        )}
+                      >
+                        <cat.Icon className="h-4 w-4 text-brand-strong shrink-0" />
+                        <span className="text-xs font-medium">{cat.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Primary CTA */}
             <Button
               variant="default"
               className="w-full h-14 rounded-full font-semibold mt-4"
               onClick={handleAuth}
               disabled={loading || !email || !password}
             >
-              {loading ? 'Loading...' : isLogin ? 'Log in' : 'Continue'}
+              {loading ? 'Loading...' : isLogin ? 'Log in' : 'Create Account'}
               {!loading && <ArrowRight className="h-5 w-5 ml-2" />}
             </Button>
 
@@ -828,7 +873,7 @@ export default function Auth() {
                         : "border-border hover:border-brand/50"
                     )}
                   >
-                    <span className="text-2xl">{cat.icon}</span>
+                    <cat.Icon className="h-6 w-6 text-brand-strong" />
                     <p className="text-sm font-medium mt-2">{cat.label}</p>
                   </button>
                 ))}
@@ -867,10 +912,39 @@ export default function Auth() {
     </div>
   );
 
+  const renderConfirmation = () => (
+    <div className="flex flex-col min-h-screen items-center justify-center px-6 py-8 animate-fade-in">
+      <div className="neo-extruded w-full max-w-md p-8 text-center space-y-6">
+        <div className="flex justify-center">
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <Mail className="h-8 w-8 text-primary" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-foreground">Check your email</h2>
+          <p className="text-muted-foreground text-sm">
+            We sent a verification link to <strong>{email}</strong>. Click the link to activate your account, then sign in below.
+          </p>
+        </div>
+        <Button
+          variant="default"
+          size="xl"
+          className="w-full rounded-full"
+          onClick={() => { setIsLogin(true); setStep('login'); setPassword(''); }}
+        >
+          Proceed to Sign In
+          <ArrowRight className="h-5 w-5 ml-2" />
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          Didn&apos;t receive it? Check your spam folder.
+        </p>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen relative">
       <AuthBackground />
-      {/* Google OAuth Loading Overlay */}
       {googleLoading && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 animate-spin text-brand-strong mb-4" />
@@ -883,6 +957,7 @@ export default function Auth() {
       {step === 'forgotPassword' && renderForgotPassword()}
       {step === 'userType' && renderUserType()}
       {step === 'onboarding' && renderOnboarding()}
+      {step === 'confirmation' && renderConfirmation()}
     </div>
   );
 }

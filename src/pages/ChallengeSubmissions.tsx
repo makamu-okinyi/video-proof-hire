@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Play, Eye, Trophy, CheckCircle } from 'lucide-react';
+import { ChevronLeft, Play, Eye, Trophy, CheckCircle, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
@@ -188,11 +188,10 @@ export default function ChallengeSubmissions() {
                 {/* Submission Info */}
                 <div className="p-3 space-y-3">
                   <div className="flex items-center gap-2">
-                    <img 
-                      src={submission.user.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'}
-                      alt={submission.user.username || 'User'}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
+                    {submission.user.avatar
+                      ? <img src={submission.user.avatar} alt={submission.user.username || 'User'} className="h-8 w-8 rounded-full object-cover" onError={e => { e.currentTarget.style.display = 'none'; }} />
+                      : <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0"><UserIcon className="h-4 w-4 text-muted-foreground" /></div>
+                    }
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1">
                         <p className="text-sm font-medium truncate">

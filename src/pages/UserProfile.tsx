@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  ChevronLeft, Eye, Play, BadgeCheck, Globe
+import {
+  ChevronLeft, Eye, Play, BadgeCheck, Globe, User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -128,11 +128,10 @@ export default function UserProfile() {
         <div className="flex items-start gap-4">
           {/* Avatar */}
           <div className="relative">
-            <img 
-              src={profile.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'} 
-              alt={profile.username || 'User'}
-              className="h-20 w-20 rounded-full object-cover border-2 border-coral"
-            />
+            {profile.avatar
+              ? <img src={profile.avatar} alt={profile.username || 'User'} className="h-20 w-20 rounded-full object-cover border-2 border-coral" onError={e => { e.currentTarget.style.display = 'none'; }} />
+              : <div className="h-20 w-20 rounded-full bg-secondary border-2 border-border flex items-center justify-center"><User className="h-9 w-9 text-muted-foreground" /></div>
+            }
             {profile.is_verified && (
               <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-coral flex items-center justify-center border-2 border-background">
                 <BadgeCheck className="h-4 w-4 text-background" />

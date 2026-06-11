@@ -227,8 +227,8 @@ export default function AdminPanel() {
                       )}
                       <span className="font-medium text-sm text-foreground">
                         {pendingLongCount > 0
-                          ? `⚠️ ${pendingLongCount} pending review${pendingLongCount !== 1 ? 's' : ''} overdue 5+ days. Review now to keep applicants engaged.`
-                          : '🚀 Cohort 3 applications are open. You have pending reviews to process.'}
+                          ? `${pendingLongCount} pending review${pendingLongCount !== 1 ? 's' : ''} overdue 5+ days. Review now to keep applicants engaged.`
+                          : 'Cohort 3 applications are open. You have pending reviews to process.'}
                       </span>
                     </div>
                     <Button size="sm" variant="default" onClick={() => setActiveTab('review')} className="shrink-0 rounded-full pointer-events-auto">

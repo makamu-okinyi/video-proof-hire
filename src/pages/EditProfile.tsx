@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, X, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Edit2, X, Check, Loader2, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -143,11 +143,10 @@ export default function EditProfile() {
             onChange={handleAvatarUpload}
           />
           <div className="relative">
-            <img 
-              src={editAvatar || profile?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'} 
-              alt={profile?.username || 'User'}
-              className="h-24 w-24 rounded-full object-cover border-2 border-border"
-            />
+            {(editAvatar || profile?.avatar)
+              ? <img src={editAvatar || profile?.avatar || ''} alt={profile?.username || 'User'} className="h-24 w-24 rounded-full object-cover border-2 border-border" onError={e => { e.currentTarget.style.display = 'none'; }} />
+              : <div className="h-24 w-24 rounded-full bg-secondary border-2 border-border flex items-center justify-center"><User className="h-10 w-10 text-muted-foreground" /></div>
+            }
             <Button 
               variant="secondary" 
               size="icon-sm" 

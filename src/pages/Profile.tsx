@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Settings, Edit2, Share2, 
+import {
+  Settings, Edit2, Share2,
   Eye, Bookmark, LogOut, ChevronRight,
-  BadgeCheck, Lock, Globe, Play, RefreshCw
+  BadgeCheck, Lock, Globe, Play, RefreshCw, User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -228,7 +228,9 @@ export default function Profile() {
         {/* Profile Header */}
         <NeoCard className="p-8">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-semibold text-charcoal">@{profile?.username || 'user'}</h1>
+            <h1 className="text-xl font-semibold text-charcoal">
+            @{profile?.username || user?.user_metadata?.full_name?.replace(/\s+/g, '').toLowerCase() || 'user'}
+          </h1>
             <div className="flex items-center gap-2">
               <button onClick={refreshStats} className="neo-subtle p-2 rounded-xl hover:neo-pressed transition-all" title="Refresh stats">
                 <RefreshCw className="h-5 w-5 text-cool-grey" />
@@ -245,11 +247,18 @@ export default function Profile() {
           <div className="flex items-start gap-6">
             {/* Avatar */}
             <div className="relative">
-              <img 
-                src={profile?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'} 
-                alt={profile?.username || 'User'}
-                className="h-24 w-24 rounded-3xl object-cover neo-extruded"
-              />
+              {(profile?.avatar || user?.user_metadata?.avatar_url) ? (
+                <img
+                  src={profile?.avatar || user?.user_metadata?.avatar_url}
+                  alt={profile?.username || 'User'}
+                  className="h-24 w-24 rounded-3xl object-cover neo-extruded"
+                  onError={e => { e.currentTarget.style.display = 'none'; }}
+                />
+              ) : (
+                <div className="h-24 w-24 rounded-3xl neo-extruded flex items-center justify-center bg-secondary">
+                  <User className="h-10 w-10 text-muted-foreground" />
+                </div>
+              )}
               {profile?.is_verified && (
                 <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary flex items-center justify-center border-2 border-background">
                   <BadgeCheck className="h-4 w-4 text-primary-foreground" />
@@ -276,7 +285,9 @@ export default function Profile() {
 
               {/* Bio */}
               <div>
-                <p className="font-medium text-charcoal">{profile?.username || 'Your Name'}</p>
+                <p className="font-medium text-charcoal">
+                  {profile?.username || user?.user_metadata?.full_name || user?.user_metadata?.name || 'Your Name'}
+                </p>
                 <p className="text-sm text-cool-grey mt-1">
                   {profile?.bio || 'Add a bio to tell employers about yourself'}
                 </p>

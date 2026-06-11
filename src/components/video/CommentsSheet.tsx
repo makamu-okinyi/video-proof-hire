@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Send, Heart, Loader2 } from 'lucide-react';
+import { X, Send, Heart, Loader2, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -171,11 +171,10 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
           ) : (
             comments.map((comment) => (
               <div key={comment.id} className="flex gap-3">
-                <img
-                  src={comment.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'}
-                  alt={comment.username || 'User'}
-                  className="h-9 w-9 rounded-full object-cover flex-shrink-0"
-                />
+                {comment.avatar
+                  ? <img src={comment.avatar} alt={comment.username || 'User'} className="h-9 w-9 rounded-full object-cover flex-shrink-0" onError={e => { e.currentTarget.style.display = 'none'; }} />
+                  : <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"><User className="h-4 w-4 text-muted-foreground" /></div>
+                }
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm">
@@ -209,11 +208,9 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
         <form onSubmit={handleSubmit} className="p-4 border-t border-border safe-area-pb">
           <div className="flex items-center gap-3">
             {user && (
-              <img
-                src={profile?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'}
-                alt="You"
-                className="h-8 w-8 rounded-full object-cover"
-              />
+              profile?.avatar
+                ? <img src={profile.avatar} alt="You" className="h-8 w-8 rounded-full object-cover" onError={e => { e.currentTarget.style.display = 'none'; }} />
+                : <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"><User className="h-4 w-4 text-muted-foreground" /></div>
             )}
             <div className="flex-1 relative">
               <Input

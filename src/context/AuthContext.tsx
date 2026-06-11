@@ -30,7 +30,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signup: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signup: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<{ error: Error | null }>;
   signInWithOAuth: (provider: Provider, redirectTo?: string) => Promise<{ error: Error | null; url?: string | null }>;
   signInWithWebAuthn: () => Promise<{ error: Error | null }>;
   registerWebAuthn: () => Promise<{ error: Error | null }>;
@@ -48,22 +48,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
+    const [{ data: profileData, error: profileError }, { data: roleData }] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+      supabase.from('user_roles').select('role').eq('user_id', userId).order('created_at', { ascending: true }).limit(1).maybeSingle(),
+    ]);
 
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+    if (profileError) return;
 
-    if (!profileError && profileData) {
-      const userType = (roleData as UserRoleRow | null)?.role || profileData.user_type;
+    const existingRole = (roleData as UserRoleRow | null)?.role;
+    const userType = existingRole || profileData?.user_type;
+
+    // Auto-bootstrap profile from user_metadata if missing role or profile
+    if (!userType || !profileData) {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const meta = authUser?.user_metadata as Record<string, string> | undefined;
+      if (meta?.user_type) {
+        if (!existingRole) {
+          await supabase.rpc('update_user_role', { new_role: meta.user_type }).catch(console.error);
+        }
+        const upsertData = {
+          id: userId,
+          username: meta.username || profileData?.username || null,
+          skill_category: meta.skill_category || profileData?.skill_category || null,
+          bio: meta.bio || profileData?.bio || null,
+        };
+        await supabase.from('profiles').upsert(upsertData, { onConflict: 'id' }).catch(console.error);
+        setProfile({ ...profileData, ...upsertData, user_type: meta.user_type } as Profile);
+        return;
+      }
+    }
+
+    if (profileData) {
       setProfile({ ...profileData, user_type: userType } as Profile);
     }
   };
@@ -137,9 +152,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signup = async (email: string, password: string) => {
+  const signup = async (email: string, password: string, metadata?: Record<string, unknown>) => {
     const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: redirectUrl } });
+    const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: redirectUrl, data: metadata || {} } });
     return { error };
   };
 
@@ -201,8 +216,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = async (data: Partial<Profile>) => {
     if (!user) return;
-    const { error } = await supabase.from('profiles').update(data).eq('id', user.id);
-    if (!error) setProfile((prev) => prev ? { ...prev, ...data } : null);
+    const { error } = await supabase.from('profiles').upsert({ id: user.id, ...data }, { onConflict: 'id' });
+    if (!error) setProfile((prev) => prev ? { ...prev, ...data } : { id: user.id, ...data } as Profile);
   };
 
   const refreshProfile = async () => { if (user) await fetchProfile(user.id); };

@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ElementType } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  X, Video, Upload, RotateCcw, Play, 
+import {
+  X, Video, Upload, RotateCcw, Play,
   Check, ChevronDown, Globe, Users, SlidersHorizontal,
-  Camera, AlertCircle, Loader2, Mic, MicOff, Volume2, VolumeX
+  Camera, AlertCircle, Loader2, Mic, MicOff, Volume2, VolumeX,
+  Code2, Zap, Hammer, Wrench, Flame, Palette, TrendingUp, Heart, HardHat, Car, ChefHat, Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,19 +31,19 @@ const contentCategories = [
   'Introduction',
 ];
 
-const skillCategories = [
-  { value: 'coding', label: 'Coding & Software', icon: '💻' },
-  { value: 'electrical', label: 'Electrical', icon: '⚡' },
-  { value: 'carpentry', label: 'Carpentry', icon: '🪚' },
-  { value: 'plumbing', label: 'Plumbing', icon: '🔧' },
-  { value: 'welding', label: 'Welding', icon: '🔥' },
-  { value: 'design', label: 'Design & Creative', icon: '🎨' },
-  { value: 'marketing', label: 'Marketing & Sales', icon: '📈' },
-  { value: 'healthcare', label: 'Healthcare', icon: '🏥' },
-  { value: 'construction', label: 'Construction', icon: '🏗️' },
-  { value: 'automotive', label: 'Automotive', icon: '🚗' },
-  { value: 'culinary', label: 'Culinary & Food', icon: '👨‍🍳' },
-  { value: 'other', label: 'Other', icon: '📦' },
+const skillCategories: { value: string; label: string; Icon: ElementType }[] = [
+  { value: 'coding', label: 'Coding & Software', Icon: Code2 },
+  { value: 'electrical', label: 'Electrical', Icon: Zap },
+  { value: 'carpentry', label: 'Carpentry', Icon: Hammer },
+  { value: 'plumbing', label: 'Plumbing', Icon: Wrench },
+  { value: 'welding', label: 'Welding', Icon: Flame },
+  { value: 'design', label: 'Design & Creative', Icon: Palette },
+  { value: 'marketing', label: 'Marketing & Sales', Icon: TrendingUp },
+  { value: 'healthcare', label: 'Healthcare', Icon: Heart },
+  { value: 'construction', label: 'Construction', Icon: HardHat },
+  { value: 'automotive', label: 'Automotive', Icon: Car },
+  { value: 'culinary', label: 'Culinary & Food', Icon: ChefHat },
+  { value: 'other', label: 'Other', Icon: Package },
 ];
 
 export default function Create() {
@@ -578,8 +579,8 @@ export default function Create() {
             <span className="font-medium">Trade / Profession</span>
             <div className="flex items-center gap-2">
               {skillCategory ? (
-                <span className="text-sm">
-                  {skillCategories.find(c => c.value === skillCategory)?.icon}{' '}
+                <span className="text-sm flex items-center gap-1.5">
+                  {(() => { const cat = skillCategories.find(c => c.value === skillCategory); return cat ? <cat.Icon className="h-4 w-4" /> : null; })()}
                   {skillCategories.find(c => c.value === skillCategory)?.label}
                 </span>
               ) : (
@@ -600,7 +601,7 @@ export default function Create() {
                     skillCategory === cat.value ? "bg-coral/10 text-coral border border-coral" : "bg-secondary hover:bg-secondary/80"
                   )}
                 >
-                  <span className="text-lg">{cat.icon}</span>
+                  <cat.Icon className="h-4 w-4 shrink-0" />
                   <span className="text-sm font-medium">{cat.label}</span>
                 </button>
               ))}

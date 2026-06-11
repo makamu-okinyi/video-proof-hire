@@ -350,12 +350,9 @@ function VentureCard({ venture, featured, index }: VentureCardProps) {
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/30">
             <div className="flex -space-x-2">
               {(venture.founders as unknown as FounderPreview[]).slice(0, 3).map((founder) => (
-                <img
-                  key={founder.id}
-                  src={founder.profiles?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'}
-                  alt=""
-                  className="h-6 w-6 rounded-full border-2 border-background object-cover"
-                />
+                founder.profiles?.avatar
+                  ? <img key={founder.id} src={founder.profiles.avatar} alt="" className="h-6 w-6 rounded-full border-2 border-background object-cover" onError={e => { e.currentTarget.style.display = 'none'; }} />
+                  : <div key={founder.id} className="h-6 w-6 rounded-full border-2 border-background bg-secondary flex items-center justify-center"><span className="text-[8px] text-muted-foreground font-medium">{founder.profiles?.username?.[0]?.toUpperCase() || '?'}</span></div>
               ))}
             </div>
             <span className="text-xs text-cool-grey">

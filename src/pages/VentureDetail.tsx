@@ -17,6 +17,7 @@ import {
   FileText,
   Loader2,
   Building2,
+  User as UserIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -453,14 +454,10 @@ export default function VentureDetail() {
                       key={founder.id}
                       className="flex items-center gap-4 p-3 rounded-lg bg-secondary/50"
                     >
-                      <img
-                        src={
-                          founder.profiles?.avatar ||
-                          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-                        }
-                        alt={founder.profiles?.username || 'Founder'}
-                        className="h-12 w-12 rounded-full object-cover"
-                      />
+                      {founder.profiles?.avatar
+                        ? <img src={founder.profiles.avatar} alt={founder.profiles?.username || 'Founder'} className="h-12 w-12 rounded-full object-cover" onError={e => { e.currentTarget.style.display = 'none'; }} />
+                        : <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center shrink-0"><UserIcon className="h-6 w-6 text-muted-foreground" /></div>
+                      }
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate">
                           {founder.profiles?.username || 'Anonymous'}

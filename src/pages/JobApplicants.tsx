@@ -267,12 +267,22 @@ export default function JobApplicants() {
               {/* Applicant Header */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <img 
-                    src={applicant.applicant.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'}
-                    alt={applicant.applicant.username || 'User'}
-                    className="h-12 w-12 rounded-full object-cover cursor-pointer"
-                    onClick={() => navigate(`/user/${applicant.applicant.id}`)}
-                  />
+                  {applicant.applicant.avatar ? (
+                    <img
+                      src={applicant.applicant.avatar}
+                      alt={applicant.applicant.username || 'User'}
+                      className="h-12 w-12 rounded-full object-cover cursor-pointer"
+                      onClick={() => navigate(`/user/${applicant.applicant.id}`)}
+                      onError={e => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div
+                      className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center cursor-pointer"
+                      onClick={() => navigate(`/user/${applicant.applicant.id}`)}
+                    >
+                      <User className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 
