@@ -39,7 +39,6 @@ const baseMenuItems: NavItem[] = [];
 const founderItems: NavGroup = {
   title: 'Applicant Hub',
   items: [
-    { icon: LayoutDashboard, label: 'My Dashboard', path: '/founder' },
     { icon: Plus, label: 'Apply to Program', path: '/apply' },
     { icon: Briefcase, label: 'Jobs', path: '/jobs' },
   ],
@@ -56,14 +55,6 @@ const adminItems: NavGroup = {
   ],
 };
 
-const managementItems: NavGroup = {
-  title: 'Account',
-  items: [
-    { icon: Bell, label: 'Notifications', path: '/notifications' },
-    { icon: User, label: 'Profile', path: '/profile' },
-    { icon: Settings, label: 'Settings', path: '/employer/settings' },
-  ],
-};
 
 export function DashboardSidebar() {
   const location = useLocation();
@@ -96,9 +87,20 @@ export function DashboardSidebar() {
   const isFounder = profile?.user_type === 'founder' || profile?.user_type === 'talent';
 
   const dashboardPath = isAdmin ? '/admin' : isEmployer ? '/employer' : isFounder ? '/founder' : '/feed';
+  const settingsPath = isAdmin ? '/admin' : isEmployer ? '/employer/settings' : '/profile/edit';
+
   const mainMenuItems: NavGroup = {
     title: 'Main Menu',
     items: [{ icon: LayoutDashboard, label: 'Dashboard', path: dashboardPath }, ...baseMenuItems],
+  };
+
+  const managementItems: NavGroup = {
+    title: 'Account',
+    items: [
+      { icon: Bell, label: 'Notifications', path: '/notifications' },
+      { icon: User, label: 'Profile', path: '/profile' },
+      { icon: Settings, label: 'Settings', path: settingsPath },
+    ],
   };
 
   const navGroups = [

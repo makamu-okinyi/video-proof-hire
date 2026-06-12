@@ -112,7 +112,11 @@ function VentureCard({ venture, navigate }: { venture: FounderVenture; navigate:
 export default function FounderDashboard() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const displayName = profile?.username || user?.user_metadata?.full_name || user?.user_metadata?.name || 'there';
+  const emailPrefix = user?.email ? user.email.split('@')[0] : null;
+  const displayName = profile?.username
+    || user?.user_metadata?.full_name?.split(' ')[0]
+    || user?.user_metadata?.name?.split(' ')[0]
+    || (emailPrefix ? emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1) : 'there');
   const { data: ventures, isLoading } = useFounderVentures(user?.id);
   const { data: jobApplications } = useApplicantJobApplications(user?.id);
 
