@@ -49,7 +49,6 @@ export default function JobApplicants() {
 
   const updateApplicationStatus = useMutation(api.jobs.updateApplicationStatus);
   const notifyStatusChange = useAction(api.notifications.notifyStatusChange);
-  const sendNotification = useAction(api.notifications.sendNotification);
 
   const updateStatus = async (applicationId: string, status: string, applicantId: string) => {
     try {
@@ -60,7 +59,7 @@ export default function JobApplicants() {
       toast.success(`Application ${status}`, { icon: null });
 
       if (status === 'shortlisted' || status === 'rejected') {
-        // In-app notification + auto-message + email (fire and forget)
+        // In-app notification + auto-message (fire and forget)
         notifyStatusChange({
           type: 'job_status',
           recipientId: applicantId,
@@ -69,13 +68,6 @@ export default function JobApplicants() {
           jobId: job?._id,
           jobTitle: job?.title,
           companyName: job?.companyName,
-        }).catch(console.error);
-        sendNotification({
-          type: 'application_status',
-          recipientId: applicantId,
-          jobTitle: job?.title,
-          companyName: job?.companyName,
-          status,
         }).catch(console.error);
       }
     } catch (error) {

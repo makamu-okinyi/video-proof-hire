@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
-import { useQuery, useMutation, useAction } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { toast } from 'sonner';
@@ -72,7 +72,6 @@ export default function CreateJob() {
   const loadingData = isEdit && existingJob === undefined;
   const createJob = useMutation(api.jobs.createJob);
   const updateJob = useMutation(api.jobs.updateJob);
-  const sendJobAlert = useAction(api.notifications.sendJobAlert);
 
   useEffect(() => {
     if (!existingJob) return;
@@ -197,13 +196,6 @@ export default function CreateJob() {
           videoPrompt: videoPrompt || undefined,
         });
         toast.success('Job posting created!', { icon: null });
-        // Alert talent users about new job (fire-and-forget)
-        sendJobAlert({
-          jobTitle: validation.data.title,
-          companyName: validation.data.company_name || '',
-          jobType,
-          location: validation.data.location || '',
-        }).catch(console.error);
       }
       navigate('/employer', { replace: true });
     } catch (error) {

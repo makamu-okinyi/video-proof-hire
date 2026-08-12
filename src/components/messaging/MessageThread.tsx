@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { useQuery, useMutation, useAction } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { useAuth } from "@/context/AuthContext";
 
 interface Message {
   id: string;
@@ -28,11 +27,10 @@ interface MessageThreadProps {
   };
 }
 
-export function MessageThread({ conversationId, currentUserId, otherUserId, otherUser }: MessageThreadProps) {
+export function MessageThread({ conversationId, currentUserId, otherUser }: MessageThreadProps) {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { profile } = useAuth();
 
   const rawMessages = useQuery(api.messages.getMessages, { conversationId: conversationId as Id<'conversations'> });
   const messages: Message[] = (rawMessages ?? []).map((m) => ({
@@ -46,7 +44,6 @@ export function MessageThread({ conversationId, currentUserId, otherUserId, othe
 
   const sendMessageMutation = useMutation(api.messages.sendMessage);
   const markConversationRead = useMutation(api.messages.markConversationRead);
-  const sendNotification = useAction(api.notifications.sendNotification);
 
   useEffect(() => {
     markConversationRead({ conversationId: conversationId as Id<'conversations'> }).catch(console.error);
@@ -72,14 +69,6 @@ export function MessageThread({ conversationId, currentUserId, otherUserId, othe
         content: messageContent,
       });
       setNewMessage("");
-
-      // Send email notification (fire and forget)
-      sendNotification({
-        type: 'new_message',
-        recipientId: otherUserId,
-        senderName: profile?.username || 'Someone',
-        messagePreview: messageContent.substring(0, 100),
-      }).catch(console.error);
     } catch (error) {
       console.error('Failed to send message:', error);
     } finally {

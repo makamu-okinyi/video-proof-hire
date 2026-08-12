@@ -10,7 +10,6 @@
 
 import type * as auth from "../auth.js";
 import type * as challenges from "../challenges.js";
-import type * as emailTemplates from "../emailTemplates.js";
 import type * as employer from "../employer.js";
 import type * as http from "../http.js";
 import type * as jobs from "../jobs.js";
@@ -31,7 +30,6 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   challenges: typeof challenges;
-  emailTemplates: typeof emailTemplates;
   employer: typeof employer;
   http: typeof http;
   jobs: typeof jobs;

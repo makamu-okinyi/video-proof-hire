@@ -168,15 +168,6 @@ export default function Auth() {
             toast.error(error.message || 'Signup failed. Please try again.');
           }
         } else {
-          // Send welcome email via Convex HTTP action (fire and forget)
-          const convexSiteUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
-          if (convexSiteUrl) {
-            fetch(`${convexSiteUrl}/welcome-email`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: '', username, email }),
-            }).catch(console.error);
-          }
           // With Convex auth, signup signs in immediately — go to profile setup
           setJustLoggedIn(true);
           setStep('userType');
