@@ -22,58 +22,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-
-interface VentureData {
-  id: string;
-  name: string;
-  tagline: string;
-  description: string | null;
-  problem_statement: string | null;
-  solution: string | null;
-  market_size: string | null;
-  traction: string | null;
-  business_model: string | null;
-  stage: string;
-  logo_url: string | null;
-  cover_image_url: string | null;
-  pitch_video_url: string | null;
-  pitch_video_thumbnail: string | null;
-  website_url: string | null;
-  github_url: string | null;
-  demo_url: string | null;
-  industry: string[];
-  tech_stack: string[];
-  is_fundraising: boolean;
-  funding_goal: number | null;
-  funding_raised: number | null;
-  hackathon_name: string | null;
-  hackathon_cohort: string | null;
-  created_at: string;
-  venture_founders: {
-    id: string;
-    user_id: string;
-    role: string;
-    title: string | null;
-    is_lead: boolean;
-    profiles: {
-      id: string;
-      username: string | null;
-      avatar: string | null;
-      bio: string | null;
-    } | null;
-  }[];
-  pitch_decks: {
-    id: string;
-    title: string;
-    file_url: string;
-    version: number;
-    is_current: boolean;
-  }[];
-}
 
 const stageColors: Record<string, string> = {
   idea: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
@@ -87,80 +41,28 @@ export default function VentureDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const [venture, setVenture] = useState<VentureData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarking, setBookmarking] = useState(false);
 
+  const venture = useQuery(api.ventures.getVenture, id ? { ventureId: id as Id<'ventures'> } : 'skip');
+  const bookmarkRow = useQuery(
+    api.ventures.isVentureBookmarked,
+    id && isAuthenticated ? { ventureId: id as Id<'ventures'> } : 'skip'
+  );
+  const isBookmarked = bookmarkRow?.action === 'bookmark';
+  const loading = venture === undefined;
+
+  const bookmarkVenture = useMutation(api.ventures.bookmarkVenture);
+  const removeBookmark = useMutation(api.ventures.removeBookmark);
+
   useEffect(() => {
-    if (id) {
-      fetchVenture();
-      if (isAuthenticated && user) {
-        checkBookmarkStatus();
-      }
-    }
-  }, [id, isAuthenticated, user]);
-
-  const fetchVenture = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('ventures')
-        .select(`
-          *,
-          venture_founders (
-            id,
-            user_id,
-            role,
-            title,
-            is_lead,
-            profiles (
-              id,
-              username,
-              avatar,
-              bio
-            )
-          ),
-          pitch_decks (
-            id,
-            title,
-            file_url,
-            version,
-            is_current
-          )
-        `)
-        .eq('id', id)
-        .eq('is_active', true)
-        .single();
-
-      if (error) throw error;
-      setVenture(data as VentureData);
-    } catch (error) {
-      console.error('Error fetching venture:', error);
+    if (venture === null || (venture && !venture.isActive)) {
       toast.error('Venture not found');
       navigate('/ventures');
-    } finally {
-      setLoading(false);
     }
-  };
-
-  const checkBookmarkStatus = async () => {
-    if (!user) return;
-    try {
-      const { data } = await supabase
-        .from('investor_bookmarks')
-        .select('id')
-        .eq('investor_id', user.id)
-        .eq('venture_id', id)
-        .eq('action', 'bookmark')
-        .single();
-      setIsBookmarked(!!data);
-    } catch {
-      setIsBookmarked(false);
-    }
-  };
+  }, [venture, navigate]);
 
   const toggleBookmark = async () => {
-    if (!isAuthenticated || !user) {
+    if (!isAuthenticated || !user || !id) {
       toast.error('Please sign in to bookmark ventures');
       navigate('/auth');
       return;
@@ -169,20 +71,10 @@ export default function VentureDetail() {
     setBookmarking(true);
     try {
       if (isBookmarked) {
-        await supabase
-          .from('investor_bookmarks')
-          .delete()
-          .eq('investor_id', user.id)
-          .eq('venture_id', id);
-        setIsBookmarked(false);
+        await removeBookmark({ ventureId: id as Id<'ventures'> });
         toast.success('Removed from bookmarks');
       } else {
-        await supabase.from('investor_bookmarks').insert({
-          investor_id: user.id,
-          venture_id: id,
-          action: 'bookmark',
-        });
-        setIsBookmarked(true);
+        await bookmarkVenture({ ventureId: id as Id<'ventures'>, action: 'bookmark' });
         toast.success('Added to bookmarks');
       }
     } catch (error) {
@@ -219,8 +111,8 @@ export default function VentureDetail() {
     return null;
   }
 
-  const leadFounder = venture.venture_founders?.find((f) => f.is_lead);
-  const currentDeck = venture.pitch_decks?.find((d) => d.is_current);
+  const leadFounder = venture.founders?.find((f) => f.isLead);
+  const currentDeck = venture.pitchDecks?.find((d) => d.isCurrentVersion);
 
   return (
     <div className="min-h-screen bg-background">
@@ -259,10 +151,10 @@ export default function VentureDetail() {
           className="space-y-6"
         >
           {/* Cover Image */}
-          {venture.cover_image_url && (
+          {venture.coverImageUrl && (
             <div className="relative h-48 md:h-64 rounded-2xl overflow-hidden">
               <img
-                src={venture.cover_image_url}
+                src={venture.coverImageUrl}
                 alt={venture.name}
                 className="w-full h-full object-cover"
               />
@@ -272,9 +164,9 @@ export default function VentureDetail() {
 
           {/* Venture Info */}
           <div className="flex items-start gap-4">
-            {venture.logo_url ? (
+            {venture.logoUrl ? (
               <img
-                src={venture.logo_url}
+                src={venture.logoUrl}
                 alt={venture.name}
                 className="h-16 w-16 rounded-xl object-cover border border-border"
               />
@@ -294,13 +186,13 @@ export default function VentureDetail() {
                 >
                   {formatStage(venture.stage)}
                 </Badge>
-                {venture.is_fundraising && (
+                {venture.isFundraising && (
                   <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
                     Fundraising
                   </Badge>
                 )}
-                {venture.hackathon_name && (
-                  <Badge variant="secondary">{venture.hackathon_name}</Badge>
+                {venture.hackathonName && (
+                  <Badge variant="secondary">{venture.hackathonName}</Badge>
                 )}
               </div>
             </div>
@@ -319,7 +211,7 @@ export default function VentureDetail() {
         </motion.section>
 
         {/* Video Section */}
-        {venture.pitch_video_url && (
+        {venture.pitchVideoUrl && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -337,8 +229,8 @@ export default function VentureDetail() {
                 <div className="w-full flex items-center justify-center">
                   <div className="aspect-video w-full max-w-full rounded-lg overflow-hidden bg-secondary">
                     <video
-                      src={venture.pitch_video_url}
-                      poster={venture.pitch_video_thumbnail || undefined}
+                      src={venture.pitchVideoUrl}
+                      poster={venture.pitchVideoThumbnail || undefined}
                       controls
                       className="w-full h-full object-contain mx-auto"
                     />
@@ -356,7 +248,7 @@ export default function VentureDetail() {
           transition={{ delay: 0.2 }}
           className="grid md:grid-cols-2 gap-4"
         >
-          {venture.problem_statement && (
+          {venture.problemStatement && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -366,7 +258,7 @@ export default function VentureDetail() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  {venture.problem_statement}
+                  {venture.problemStatement}
                 </p>
               </CardContent>
             </Card>
@@ -390,7 +282,7 @@ export default function VentureDetail() {
         </motion.section>
 
         {/* Traction & Market */}
-        {(venture.traction || venture.market_size) && (
+        {(venture.traction || venture.marketSize) && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -412,19 +304,19 @@ export default function VentureDetail() {
                     </p>
                   </div>
                 )}
-                {venture.market_size && (
+                {venture.marketSize && (
                   <div>
                     <h4 className="font-medium text-sm mb-1">Market Size</h4>
                     <p className="text-muted-foreground text-sm">
-                      {venture.market_size}
+                      {venture.marketSize}
                     </p>
                   </div>
                 )}
-                {venture.business_model && (
+                {venture.businessModel && (
                   <div>
                     <h4 className="font-medium text-sm mb-1">Business Model</h4>
                     <p className="text-muted-foreground text-sm">
-                      {venture.business_model}
+                      {venture.businessModel}
                     </p>
                   </div>
                 )}
@@ -434,7 +326,7 @@ export default function VentureDetail() {
         )}
 
         {/* Team */}
-        {venture.venture_founders && venture.venture_founders.length > 0 && (
+        {venture.founders && venture.founders.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -449,24 +341,24 @@ export default function VentureDetail() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4">
-                  {venture.venture_founders.map((founder) => (
+                  {venture.founders.map((founder) => (
                     <div
-                      key={founder.id}
+                      key={founder._id}
                       className="flex items-center gap-4 p-3 rounded-lg bg-secondary/50"
                     >
-                      {founder.profiles?.avatar
-                        ? <img src={founder.profiles.avatar} alt={founder.profiles?.username || 'Founder'} className="h-12 w-12 rounded-full object-cover" onError={e => { e.currentTarget.style.display = 'none'; }} />
+                      {founder.profile?.avatar
+                        ? <img src={founder.profile.avatar} alt={founder.profile?.username || 'Founder'} className="h-12 w-12 rounded-full object-cover" onError={e => { e.currentTarget.style.display = 'none'; }} />
                         : <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center shrink-0"><UserIcon className="h-6 w-6 text-muted-foreground" /></div>
                       }
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate">
-                          {founder.profiles?.username || 'Anonymous'}
+                          {founder.profile?.username || 'Anonymous'}
                         </h4>
                         <p className="text-sm text-muted-foreground">
                           {founder.title || founder.role}
                         </p>
                       </div>
-                      {founder.is_lead && (
+                      {founder.isLead && (
                         <Badge variant="secondary" className="text-xs">
                           Lead
                         </Badge>
@@ -480,7 +372,7 @@ export default function VentureDetail() {
         )}
 
         {/* Tech Stack */}
-        {venture.tech_stack && venture.tech_stack.length > 0 && (
+        {venture.techStack && venture.techStack.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -492,7 +384,7 @@ export default function VentureDetail() {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {venture.tech_stack.map((tech) => (
+                  {venture.techStack.map((tech) => (
                     <Badge key={tech} variant="outline">
                       {tech}
                     </Badge>
@@ -524,7 +416,7 @@ export default function VentureDetail() {
                   asChild
                 >
                   <a
-                    href={currentDeck.file_url}
+                    href={currentDeck.fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -538,9 +430,9 @@ export default function VentureDetail() {
         )}
 
         {/* Links */}
-        {(venture.website_url ||
-          venture.github_url ||
-          venture.demo_url) && (
+        {(venture.websiteUrl ||
+          venture.githubUrl ||
+          venture.demoUrl) && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -551,14 +443,14 @@ export default function VentureDetail() {
                 <CardTitle className="text-lg">Links</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {venture.website_url && (
+                {venture.websiteUrl && (
                   <Button
                     variant="outline"
                     className="w-full justify-start gap-2"
                     asChild
                   >
                     <a
-                      href={venture.website_url}
+                      href={venture.websiteUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -567,14 +459,14 @@ export default function VentureDetail() {
                     </a>
                   </Button>
                 )}
-                {venture.github_url && (
+                {venture.githubUrl && (
                   <Button
                     variant="outline"
                     className="w-full justify-start gap-2"
                     asChild
                   >
                     <a
-                      href={venture.github_url}
+                      href={venture.githubUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -583,14 +475,14 @@ export default function VentureDetail() {
                     </a>
                   </Button>
                 )}
-                {venture.demo_url && (
+                {venture.demoUrl && (
                   <Button
                     variant="outline"
                     className="w-full justify-start gap-2"
                     asChild
                   >
                     <a
-                      href={venture.demo_url}
+                      href={venture.demoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                     >

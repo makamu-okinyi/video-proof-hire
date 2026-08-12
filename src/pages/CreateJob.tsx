@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useAction } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import {
@@ -64,37 +66,30 @@ export default function CreateJob() {
   const [deadline, setDeadline] = useState('');
   const [videoPrompt, setVideoPrompt] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(isEdit);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const existingJob = useQuery(api.jobs.getJob, jobId ? { jobId: jobId as Id<'jobPostings'> } : 'skip');
+  const loadingData = isEdit && existingJob === undefined;
+  const createJob = useMutation(api.jobs.createJob);
+  const updateJob = useMutation(api.jobs.updateJob);
+  const sendJobAlert = useAction(api.notifications.sendJobAlert);
+
   useEffect(() => {
-    if (!jobId || !user) return;
-    const fetchJob = async () => {
-      setLoadingData(true);
-      const { data, error } = await supabase
-        .from('job_postings')
-        .select('*')
-        .eq('id', jobId)
-        .eq('employer_id', user.id)
-        .maybeSingle();
-      setLoadingData(false);
-      if (error || !data) return;
-      setTitle(data.title || '');
-      setDescription(data.description || '');
-      setLocation(data.location || '');
-      setSalaryMin(data.salary_min != null ? String(data.salary_min) : '');
-      setSalaryMax(data.salary_max != null ? String(data.salary_max) : '');
-      setJobType(data.job_type || 'full-time');
-      setExperienceLevel(data.experience_level || 'entry');
-      setCompanyName(data.company_name || profile?.username || '');
-      setCompanyLogo(data.company_logo || '');
-      setSkills(Array.isArray(data.skills_required) ? data.skills_required : []);
-      setBenefits(Array.isArray(data.benefits) ? data.benefits : []);
-      setDeadline(data.application_deadline ? data.application_deadline.slice(0, 10) : '');
-      setVideoPrompt((data as Record<string, unknown>)?.video_prompt as string || '');
-    };
-    fetchJob();
-  }, [jobId, user?.id, profile?.username]);
+    if (!existingJob) return;
+    setTitle(existingJob.title || '');
+    setDescription(existingJob.description || '');
+    setLocation(existingJob.location || '');
+    setSalaryMin(existingJob.salaryMin != null ? String(existingJob.salaryMin) : '');
+    setSalaryMax(existingJob.salaryMax != null ? String(existingJob.salaryMax) : '');
+    setJobType(existingJob.jobType || 'full-time');
+    setExperienceLevel(existingJob.experienceLevel || 'entry');
+    setCompanyName(existingJob.companyName || profile?.username || '');
+    setCompanyLogo(existingJob.companyLogo || '');
+    setSkills(Array.isArray(existingJob.skillsRequired) ? existingJob.skillsRequired : []);
+    setBenefits(Array.isArray(existingJob.benefits) ? existingJob.benefits : []);
+    setDeadline(existingJob.applicationDeadline ? existingJob.applicationDeadline.slice(0, 10) : '');
+    setVideoPrompt(existingJob.videoPrompt || '');
+  }, [existingJob, profile?.username]);
 
   const addSkill = () => {
     const trimmedSkill = skillInput.trim();
@@ -170,53 +165,44 @@ export default function CreateJob() {
       };
 
       if (isEdit && jobId) {
-        const { error } = await supabase
-          .from('job_postings')
-          .update({
-            title: validation.data.title,
-            description: validation.data.description,
-            location: validation.data.location,
-            salary_min: parseSalary(salaryMin),
-            salary_max: parseSalary(salaryMax),
-            job_type: jobType,
-            experience_level: experienceLevel,
-            company_name: validation.data.company_name,
-            company_logo: validation.data.company_logo,
-            skills_required: validation.data.skills_required,
-            benefits: validation.data.benefits,
-            application_deadline: deadline || null,
-          })
-          .eq('id', jobId)
-          .eq('employer_id', user?.id);
-        if (error) throw error;
-        toast.success('Job updated!', { icon: null });
-      } else {
-        const { error } = await supabase.from('job_postings').insert({
-          employer_id: user?.id,
+        await updateJob({
+          jobId: jobId as Id<'jobPostings'>,
           title: validation.data.title,
           description: validation.data.description,
-          location: validation.data.location,
-          salary_min: parseSalary(salaryMin),
-          salary_max: parseSalary(salaryMax),
-          job_type: jobType,
-          experience_level: experienceLevel,
-          company_name: validation.data.company_name,
-          company_logo: validation.data.company_logo,
-          skills_required: validation.data.skills_required,
+          location: validation.data.location || undefined,
+          salaryMin: parseSalary(salaryMin) ?? undefined,
+          salaryMax: parseSalary(salaryMax) ?? undefined,
+          jobType,
+          experienceLevel,
+          skillsRequired: validation.data.skills_required,
           benefits: validation.data.benefits,
-          application_deadline: deadline || null,
+          applicationDeadline: deadline || undefined,
+          videoPrompt: videoPrompt || undefined,
         });
-        if (error) throw error;
+        toast.success('Job updated!', { icon: null });
+      } else {
+        await createJob({
+          title: validation.data.title,
+          description: validation.data.description,
+          location: validation.data.location || undefined,
+          salaryMin: parseSalary(salaryMin) ?? undefined,
+          salaryMax: parseSalary(salaryMax) ?? undefined,
+          jobType,
+          experienceLevel,
+          companyName: validation.data.company_name || undefined,
+          companyLogo: validation.data.company_logo || undefined,
+          skillsRequired: validation.data.skills_required,
+          benefits: validation.data.benefits,
+          applicationDeadline: deadline || undefined,
+          videoPrompt: videoPrompt || undefined,
+        });
         toast.success('Job posting created!', { icon: null });
         // Alert talent users about new job (fire-and-forget)
-        supabase.functions.invoke('job-posting-alert', {
-          body: {
-            jobId: 'new',
-            jobTitle: validation.data.title,
-            companyName: validation.data.company_name || '',
-            jobType: jobType,
-            location: validation.data.location || '',
-          },
+        sendJobAlert({
+          jobTitle: validation.data.title,
+          companyName: validation.data.company_name || '',
+          jobType,
+          location: validation.data.location || '',
         }).catch(console.error);
       }
       navigate('/employer', { replace: true });

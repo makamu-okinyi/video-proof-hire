@@ -1,80 +1,40 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { rpcCall } from '@/integrations/supabase/rpc';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 
 export interface DbNotification {
-  id: string;
+  _id: string;
   type: string;
   title: string;
   message: string;
-  action_url: string | null;
-  is_read: boolean;
-  created_at: string;
-  related_user_username: string | null;
-  related_user_avatar: string | null;
-}
-
-async function fetchNotifications(): Promise<DbNotification[]> {
-  const { data, error } = await rpcCall<DbNotification[]>('get_user_notifications', {
-    page_size: 50,
-    page_offset: 0,
-  });
-  if (error) {
-    console.error('[useNotifications] fetch error:', error);
-    return [];
-  }
-  return data ?? [];
-}
-
-async function fetchUnreadCount(): Promise<number> {
-  const { data, error } = await rpcCall<number>('get_unread_notification_count');
-  if (error) {
-    console.error('[useNotifications] unread count error:', error);
-    return 0;
-  }
-  return Number(data ?? 0);
+  actionUrl: string | null;
+  isRead: boolean;
+  _creationTime: number;
 }
 
 export function useNotifications() {
-  const queryClient = useQueryClient();
+  const rawNotifications = useQuery(api.notifications.getMyNotifications, {});
+  const unreadCount = useQuery(api.notifications.getUnreadCount, {});
 
-  const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ['notifications'],
-    queryFn: fetchNotifications,
-  });
+  const markReadMutation = useMutation(api.notifications.markRead);
+  const markAllReadMutation = useMutation(api.notifications.markAllRead);
 
-  const { data: unreadCount = 0 } = useQuery({
-    queryKey: ['notifications-unread'],
-    queryFn: fetchUnreadCount,
-    refetchInterval: 30000,
-  });
-
-  const markReadMutation = useMutation({
-    mutationFn: async (notificationId: string) => {
-      const { error } = await rpcCall('mark_notification_read', { notification_id: notificationId });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
-    },
-  });
-
-  const markAllReadMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await rpcCall('mark_all_notifications_read');
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
-    },
-  });
+  const notifications: DbNotification[] = (rawNotifications ?? []).map((n) => ({
+    _id: n._id,
+    type: n.type,
+    title: n.title,
+    message: n.message,
+    actionUrl: n.actionUrl ?? null,
+    isRead: n.isRead,
+    _creationTime: n._creationTime,
+  }));
 
   return {
     notifications,
-    unreadCount,
-    isLoading,
-    markRead: markReadMutation.mutate,
-    markAllRead: markAllReadMutation.mutate,
+    unreadCount: unreadCount ?? 0,
+    isLoading: rawNotifications === undefined,
+    markRead: (id: string) =>
+      markReadMutation({ notificationId: id as Id<"notifications"> }),
+    markAllRead: () => markAllReadMutation({}),
   };
 }

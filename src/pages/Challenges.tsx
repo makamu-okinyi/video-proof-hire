@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search, Trophy, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChallengeCard } from '@/components/challenges/ChallengeCard';
 import { SubmitChallengeModal } from '@/components/challenges/SubmitChallengeModal';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -25,45 +26,30 @@ export default function Challenges() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'featured'>('all');
-  const [challenges, setChallenges] = useState<Challenge[]>([]);
-  const [userSubmissions, setUserSubmissions] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
 
-  useEffect(() => {
-    fetchChallenges();
-    if (user) {
-      fetchUserSubmissions();
-    }
-  }, [user]);
+  // Convex queries — reactive, no manual refetch needed
+  const challengesData = useQuery(api.challenges.getActiveChallenges, {});
+  const mySubmissionsData = useQuery(api.challenges.getMySubmissions, {});
 
-  const fetchChallenges = async () => {
-    setIsLoading(true);
-    const { data, error } = await supabase
-      .from('challenges')
-      .select('*')
-      .eq('is_active', true)
-      .order('is_featured', { ascending: false })
-      .order('created_at', { ascending: false });
+  const isLoading = challengesData === undefined;
 
-    if (!error && data) {
-      setChallenges(data);
-    }
-    setIsLoading(false);
-  };
+  // Map Convex camelCase fields to the snake_case shape that ChallengeCard expects
+  const challenges: Challenge[] = (challengesData ?? []).map((c) => ({
+    id: c._id,
+    title: c.title,
+    description: c.description,
+    prize_amount: c.prizeAmount ?? null,
+    prize_description: c.prizeDescription ?? null,
+    deadline: c.deadline ?? null,
+    is_featured: c.isFeatured,
+    participants_count: 0, // not tracked in Convex schema
+    skills_tags: c.skillsTags ?? null,
+    video_prompt: c.videoPrompt ?? null,
+  }));
 
-  const fetchUserSubmissions = async () => {
-    if (!user) return;
-    
-    const { data, error } = await supabase
-      .from('challenge_submissions')
-      .select('challenge_id')
-      .eq('user_id', user.id);
-
-    if (!error && data) {
-      setUserSubmissions(data.map(s => s.challenge_id));
-    }
-  };
+  // Extract submitted challenge IDs
+  const userSubmissions: string[] = (mySubmissionsData ?? []).map((s) => s.challengeId as string);
 
   const filteredChallenges = challenges.filter(challenge => {
     const matchesSearch = challenge.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -131,7 +117,7 @@ export default function Challenges() {
           <p className="text-sm text-cool-grey">
             {filteredChallenges.length} challenge{filteredChallenges.length !== 1 ? 's' : ''} available
           </p>
-          
+
           {isLoading ? (
             <div className="text-center py-12">
               <div className="neo-pressed px-6 py-3 rounded-2xl inline-block text-cool-grey animate-pulse">
@@ -142,7 +128,7 @@ export default function Challenges() {
             <div className="space-y-4">
               {filteredChallenges.map((challenge) => (
                 <div key={challenge.id} className="neo-extruded rounded-3xl overflow-hidden">
-                  <ChallengeCard 
+                  <ChallengeCard
                     challenge={challenge}
                     hasSubmitted={userSubmissions.includes(challenge.id)}
                     onSubmit={() => handleSubmitClick(challenge)}
@@ -164,7 +150,7 @@ export default function Challenges() {
             isOpen={!!selectedChallenge}
             onClose={() => {
               setSelectedChallenge(null);
-              fetchUserSubmissions();
+              // No manual refetch needed — Convex getMySubmissions updates reactively
             }}
             challenge={selectedChallenge}
           />

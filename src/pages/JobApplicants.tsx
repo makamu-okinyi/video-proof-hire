@@ -4,144 +4,86 @@ import { ChevronLeft, Play, Eye, CheckCircle, XCircle, Clock, User, Download, Lo
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { rpcCall } from '@/integrations/supabase/rpc';
+import { useQuery, useMutation, useAction } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { StartConversationButton } from '@/components/messaging/StartConversationButton';
 import { RocketLoader } from '@/components/ui/RocketLoader';
-interface Applicant {
-  id: string;
+
+type Applicant = {
+  _id: Id<'jobApplications'>;
+  _creationTime: number;
   status: string;
-  cover_message: string | null;
-  created_at: string;
+  coverMessage?: string;
   applicant: {
-    id: string;
-    username: string | null;
-    avatar: string | null;
-    skills: string[] | null;
-    skill_category: string;
-    is_verified: boolean;
-  };
+    userId: string;
+    username?: string;
+    avatar?: string;
+    skills?: string[];
+    isVerified?: boolean;
+  } | null;
   videos: {
-    id: string;
-    title: string | null;
-    thumbnail_url: string | null;
-    video_url: string;
+    _id: Id<'videos'>;
+    title?: string;
+    thumbnailUrl?: string;
+    videoUrl: string;
     views: number;
   }[];
-}
-
-interface Job {
-  id: string;
-  title: string;
-  company_name: string | null;
-}
+};
 
 export default function JobApplicants() {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
-  const [job, setJob] = useState<Job | null>(null);
-  const [applicants, setApplicants] = useState<Applicant[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
+
+  const job = useQuery(api.jobs.getJob, jobId ? { jobId: jobId as Id<'jobPostings'> } : 'skip');
+  const applicantsRaw = useQuery(
+    api.jobs.getJobApplicantsDetailed,
+    jobId ? { jobId: jobId as Id<'jobPostings'> } : 'skip'
+  );
+  const applicants = (applicantsRaw ?? []) as Applicant[];
+  const loading = job === undefined || applicantsRaw === undefined;
   const [pdfLoading, setPdfLoading] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, [jobId]);
-
-  const fetchData = async () => {
-    try {
-      // Fetch job details
-      const { data: jobData } = await supabase
-        .from('job_postings')
-        .select('id, title, company_name')
-        .eq('id', jobId)
-        .maybeSingle();
-
-      if (jobData) setJob(jobData);
-
-      // Fetch applications with applicant profiles
-      const { data: applications } = await supabase
-        .from('job_applications')
-        .select(`
-          id, status, cover_message, created_at,
-          applicant:profiles!job_applications_applicant_id_fkey(
-            id, username, avatar, skills, skill_category, is_verified
-          )
-        `)
-        .eq('job_id', jobId)
-        .order('created_at', { ascending: false });
-
-      if (applications) {
-        // Fetch videos for each applicant
-        const applicantsWithVideos: Applicant[] = await Promise.all(
-          (applications as unknown as Omit<Applicant, 'videos'>[]).map(async (app) => {
-            // Use RPC function to access public videos (respects RLS via SECURITY DEFINER)
-            const { data: videos } = await supabase
-              .rpc('get_user_public_videos', { target_user_id: app.applicant.id });
-
-            return {
-              ...app,
-              videos: (videos || []).slice(0, 6),
-            } as Applicant;
-          })
-        );
-        setApplicants(applicantsWithVideos);
-      }
-    } catch (error) {
-      console.error('Error fetching applicants:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const updateApplicationStatus = useMutation(api.jobs.updateApplicationStatus);
+  const notifyStatusChange = useAction(api.notifications.notifyStatusChange);
+  const sendNotification = useAction(api.notifications.sendNotification);
 
   const updateStatus = async (applicationId: string, status: string, applicantId: string) => {
-    const { error } = await rpcCall('update_job_application_status', {
-      p_application_id: applicationId,
-      p_status: status,
-    });
-
-    if (!error) {
-      setApplicants(applicants.map(a =>
-        a.id === applicationId ? { ...a, status } : a
-      ));
+    try {
+      await updateApplicationStatus({
+        applicationId: applicationId as Id<'jobApplications'>,
+        status,
+      });
       toast.success(`Application ${status}`, { icon: null });
 
-      // In-app notification + auto-message + email (fire and forget)
-      supabase.functions.invoke('notify-status-change', {
-        body: {
+      if (status === 'shortlisted' || status === 'rejected') {
+        // In-app notification + auto-message + email (fire and forget)
+        notifyStatusChange({
           type: 'job_status',
           recipientId: applicantId,
           status,
-          data: {
-            jobApplicationId: applicationId,
-            jobId: job?.id,
-            jobTitle: job?.title,
-            companyName: job?.company_name,
-          },
-        },
-      }).catch(console.error);
-      supabase.functions.invoke('send-notification', {
-        body: {
+          jobApplicationId: applicationId as Id<'jobApplications'>,
+          jobId: job?._id,
+          jobTitle: job?.title,
+          companyName: job?.companyName,
+        }).catch(console.error);
+        sendNotification({
           type: 'application_status',
           recipientId: applicantId,
-          data: {
-            jobTitle: job?.title,
-            companyName: job?.company_name,
-            status,
-          },
-        },
-      }).catch(console.error);
-    } else {
-      console.error('[JobApplicants] updateStatus error:', error.code, error.message);
-      toast.error(error.message?.includes('policy') || error.message?.includes('permission')
+          jobTitle: job?.title,
+          companyName: job?.companyName,
+          status,
+        }).catch(console.error);
+      }
+    } catch (error) {
+      console.error('[JobApplicants] updateStatus error:', error);
+      const message = error instanceof Error ? error.message : 'Failed to update';
+      toast.error(message.includes('Not authorized')
         ? 'Permission denied. Ensure you own this job.'
-        : `Failed to update: ${error.message}`, { icon: null });
-      fetchData(); // Refetch to ensure UI matches DB
+        : `Failed to update: ${message}`, { icon: null });
     }
   };
 
@@ -154,9 +96,9 @@ export default function JobApplicants() {
     }
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', { 
-      month: 'short', 
+  const formatDate = (date: string | number) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric',
       year: 'numeric'
     });
@@ -165,9 +107,9 @@ export default function JobApplicants() {
   const handleDownloadDossier = async () => {
     setPdfLoading(true);
     const rows = applicants.map((a) => ({
-      applicantName: `@${a.applicant.username || 'user'}`,
+      applicantName: `@${a.applicant?.username || 'user'}`,
       jobRole: job?.title || '—',
-      videoPortfolioUrl: a.videos[0]?.video_url ?? null,
+      videoPortfolioUrl: a.videos[0]?.videoUrl ?? null,
     }));
     const filename = `applicants-${job?.title?.replace(/\s+/g, '-') || 'job'}-${new Date().toISOString().slice(0, 10)}`;
     try {
@@ -260,51 +202,51 @@ export default function JobApplicants() {
           </div>
         ) : (
           applicants.map((applicant) => (
-            <div 
-              key={applicant.id}
+            <div
+              key={applicant._id}
               className="bg-secondary rounded-xl p-4 space-y-4"
             >
               {/* Applicant Header */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  {applicant.applicant.avatar ? (
+                  {applicant.applicant?.avatar ? (
                     <img
                       src={applicant.applicant.avatar}
                       alt={applicant.applicant.username || 'User'}
                       className="h-12 w-12 rounded-full object-cover cursor-pointer"
-                      onClick={() => navigate(`/user/${applicant.applicant.id}`)}
+                      onClick={() => navigate(`/user/${applicant.applicant?.userId}`)}
                       onError={e => { e.currentTarget.style.display = 'none'; }}
                     />
                   ) : (
                     <div
                       className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center cursor-pointer"
-                      onClick={() => navigate(`/user/${applicant.applicant.id}`)}
+                      onClick={() => navigate(`/user/${applicant.applicant?.userId}`)}
                     >
                       <User className="h-6 w-6 text-muted-foreground" />
                     </div>
                   )}
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 
+                      <h3
                         className="font-semibold cursor-pointer hover:underline"
-                        onClick={() => navigate(`/user/${applicant.applicant.id}`)}
+                        onClick={() => navigate(`/user/${applicant.applicant?.userId}`)}
                       >
-                        @{applicant.applicant.username || 'user'}
+                        @{applicant.applicant?.username || 'user'}
                       </h3>
-                      {applicant.applicant.is_verified && (
+                      {applicant.applicant?.isVerified && (
                         <CheckCircle className="h-4 w-4 text-coral" />
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Applied {formatDate(applicant.created_at)}
+                      Applied {formatDate(applicant._creationTime)}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
-                    onClick={() => navigate(`/user/${applicant.applicant.id}`)}
+                    onClick={() => navigate(`/user/${applicant.applicant?.userId}`)}
                   >
                     <User className="h-4 w-4 mr-1" />
                     View Profile
@@ -316,7 +258,7 @@ export default function JobApplicants() {
               </div>
 
               {/* Skills */}
-              {applicant.applicant.skills && applicant.applicant.skills.length > 0 && (
+              {applicant.applicant?.skills && applicant.applicant.skills.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {applicant.applicant.skills.slice(0, 4).map(skill => (
                     <Badge key={skill} variant="outline" className="text-xs">
@@ -332,20 +274,20 @@ export default function JobApplicants() {
                   <p className="text-xs font-medium text-muted-foreground mb-2">Video Portfolio</p>
                   <div className="grid grid-cols-3 gap-2">
                     {applicant.videos.slice(0, 3).map((video) => (
-                      <div 
-                        key={video.id}
+                      <div
+                        key={video._id}
                         className="aspect-[9/16] relative bg-muted rounded-lg overflow-hidden cursor-pointer group"
-                        onClick={() => navigate(`/feed?video=${video.id}`)}
+                        onClick={() => navigate(`/feed?video=${video._id}`)}
                       >
-                        {video.thumbnail_url ? (
-                          <img 
-                            src={video.thumbnail_url}
+                        {video.thumbnailUrl ? (
+                          <img
+                            src={video.thumbnailUrl}
                             alt={video.title || 'Video'}
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <video 
-                            src={video.video_url}
+                          <video
+                            src={video.videoUrl}
                             className="w-full h-full object-cover"
                             muted
                             preload="metadata"
@@ -364,45 +306,45 @@ export default function JobApplicants() {
               )}
 
               {/* Cover Message */}
-              {applicant.cover_message && (
+              {applicant.coverMessage && (
                 <div className="bg-background/50 rounded-lg p-3">
                   <p className="text-xs font-medium text-muted-foreground mb-1">Cover Message</p>
-                  <p className="text-sm">{applicant.cover_message}</p>
+                  <p className="text-sm">{applicant.coverMessage}</p>
                 </div>
               )}
 
               {/* Actions */}
               <div className="flex gap-2 flex-wrap">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
-                  onClick={() => updateStatus(applicant.id, 'shortlisted', applicant.applicant.id)}
-                  disabled={applicant.status === 'shortlisted'}
+                  onClick={() => applicant.applicant && updateStatus(applicant._id, 'shortlisted', applicant.applicant.userId)}
+                  disabled={applicant.status === 'shortlisted' || !applicant.applicant}
                 >
                   <CheckCircle className="h-4 w-4 mr-1" />
                   Shortlist
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
-                  onClick={() => updateStatus(applicant.id, 'reviewed', applicant.applicant.id)}
-                  disabled={applicant.status === 'reviewed'}
+                  onClick={() => applicant.applicant && updateStatus(applicant._id, 'reviewed', applicant.applicant.userId)}
+                  disabled={applicant.status === 'reviewed' || !applicant.applicant}
                 >
                   <Clock className="h-4 w-4 mr-1" />
                   Reviewed
                 </Button>
-                {applicant.status === 'shortlisted' && user && (
+                {applicant.status === 'shortlisted' && user && applicant.applicant && (
                   <StartConversationButton
-                    candidateId={applicant.applicant.id}
+                    candidateId={applicant.applicant.userId}
                     employerId={user.id}
-                    jobApplicationId={applicant.id}
+                    jobApplicationId={applicant._id}
                   />
                 )}
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
-                  onClick={() => updateStatus(applicant.id, 'rejected', applicant.applicant.id)}
-                  disabled={applicant.status === 'rejected'}
+                  onClick={() => applicant.applicant && updateStatus(applicant._id, 'rejected', applicant.applicant.userId)}
+                  disabled={applicant.status === 'rejected' || !applicant.applicant}
                   className="text-destructive hover:text-destructive"
                 >
                   <XCircle className="h-4 w-4" />

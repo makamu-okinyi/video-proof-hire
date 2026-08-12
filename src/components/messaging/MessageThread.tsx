@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useAction } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 import { useAuth } from "@/context/AuthContext";
 
 interface Message {
@@ -27,99 +29,62 @@ interface MessageThreadProps {
 }
 
 export function MessageThread({ conversationId, currentUserId, otherUserId, otherUser }: MessageThreadProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { profile } = useAuth();
+
+  const rawMessages = useQuery(api.messages.getMessages, { conversationId: conversationId as Id<'conversations'> });
+  const messages: Message[] = (rawMessages ?? []).map((m) => ({
+    id: m._id,
+    conversation_id: m.conversationId,
+    sender_id: m.senderId,
+    content: m.content,
+    is_read: m.isRead,
+    created_at: new Date(m._creationTime).toISOString(),
+  }));
+
+  const sendMessageMutation = useMutation(api.messages.sendMessage);
+  const markConversationRead = useMutation(api.messages.markConversationRead);
+  const sendNotification = useAction(api.notifications.sendNotification);
 
   useEffect(() => {
-    fetchMessages();
-    markAsRead();
-
-    // Subscribe to new messages
-    const channel = supabase
-      .channel(`messages:${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`
-        },
-        (payload) => {
-          const newMsg = payload.new as Message;
-          setMessages((prev) => [...prev, newMsg]);
-          if (newMsg.sender_id !== currentUserId) {
-            markAsRead();
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    markConversationRead({ conversationId: conversationId as Id<'conversations'> }).catch(console.error);
   }, [conversationId]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
-
-  const fetchMessages = async () => {
-    const { data } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true });
-
-    if (data) {
-      setMessages(data);
-    }
-  };
-
-  const markAsRead = async () => {
-    await supabase
-      .from('messages')
-      .update({ is_read: true })
-      .eq('conversation_id', conversationId)
-      .neq('sender_id', currentUserId);
-  };
+  }, [messages.length]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
-  const { profile } = useAuth();
 
   const handleSend = async () => {
     if (!newMessage.trim() || sending) return;
 
     setSending(true);
     const messageContent = newMessage.trim();
-    
-    const { error } = await supabase.from('messages').insert({
-      conversation_id: conversationId,
-      sender_id: currentUserId,
-      content: messageContent,
-    });
 
-    if (!error) {
+    try {
+      await sendMessageMutation({
+        conversationId: conversationId as Id<'conversations'>,
+        content: messageContent,
+      });
       setNewMessage("");
-      
+
       // Send email notification (fire and forget)
-      supabase.functions.invoke('send-notification', {
-        body: {
-          type: 'new_message',
-          recipientId: otherUserId,
-          data: {
-            senderName: profile?.username || 'Someone',
-            messagePreview: messageContent.substring(0, 100),
-          },
-        },
+      sendNotification({
+        type: 'new_message',
+        recipientId: otherUserId,
+        senderName: profile?.username || 'Someone',
+        messagePreview: messageContent.substring(0, 100),
       }).catch(console.error);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    } finally {
+      setSending(false);
     }
-    setSending(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

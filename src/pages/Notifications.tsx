@@ -33,9 +33,9 @@ export default function Notifications() {
   const { notifications, unreadCount, isLoading, markRead, markAllRead } = useNotifications();
   const navigate = useNavigate();
 
-  const handleClick = (n: { id: string; is_read: boolean; action_url?: string | null }) => {
-    if (!n.is_read) markRead(n.id);
-    if (n.action_url) navigate(n.action_url);
+  const handleClick = (n: { _id: string; isRead: boolean; actionUrl?: string | null }) => {
+    if (!n.isRead) markRead(n._id);
+    if (n.actionUrl) navigate(n.actionUrl);
   };
 
   return (
@@ -73,10 +73,10 @@ export default function Notifications() {
               const colorClass = typeColors[n.type] || 'text-primary bg-primary/10';
               return (
                 <NeoCard
-                  key={n.id}
+                  key={n._id}
                   className={cn(
                     'p-4 cursor-pointer transition-all hover:neo-pressed',
-                    !n.is_read && 'ring-1 ring-primary/30'
+                    !n.isRead && 'ring-1 ring-primary/30'
                   )}
                   onClick={() => handleClick(n)}
                 >
@@ -93,10 +93,10 @@ export default function Notifications() {
                       <p className="font-medium text-charcoal">{n.title}</p>
                       <p className="text-sm text-cool-grey mt-0.5">{n.message}</p>
                       <p className="text-xs text-cool-grey/70 mt-1">
-                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(n._creationTime), { addSuffix: true })}
                       </p>
                     </div>
-                    {n.action_url && (
+                    {n.actionUrl && (
                       <ChevronRight className="h-5 w-5 text-cool-grey shrink-0" />
                     )}
                   </div>

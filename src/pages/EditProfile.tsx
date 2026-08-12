@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { skillsList } from '@/data/mockData';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_AVATAR_SIZE_MB = 5;
@@ -16,6 +17,7 @@ const MAX_AVATAR_SIZE_MB = 5;
 export default function EditProfile() {
   const navigate = useNavigate();
   const { user, profile, updateProfile, refreshProfile } = useAuth();
+  const generateAvatarUploadUrl = useMutation(api.employer.generateAvatarUploadUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [editUsername, setEditUsername] = useState(profile?.username || '');
@@ -47,13 +49,16 @@ export default function EditProfile() {
     }
     setIsUploadingAvatar(true);
     try {
-      const ext = file.name.split('.').pop() || 'jpg';
-      const fileName = `${user.id}/avatar-${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { contentType: file.type, upsert: true });
-      if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
+      const uploadUrl = await generateAvatarUploadUrl({});
+      const result = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!result.ok) throw new Error('Upload failed');
+      const { storageId } = await result.json() as { storageId: string };
+      const convexUrl = import.meta.env.VITE_CONVEX_URL as string;
+      const publicUrl = `${convexUrl}/api/storage/${storageId}`;
       await updateProfile({ avatar: publicUrl });
       setEditAvatar(publicUrl);
       toast({ title: 'Photo updated', description: 'Your profile photo has been updated' });

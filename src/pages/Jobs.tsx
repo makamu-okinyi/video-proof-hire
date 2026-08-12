@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { JobCard } from '@/components/jobs/JobCard';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -41,10 +42,32 @@ export default function Jobs() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [jobType, setJobType] = useState<JobType>('all');
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('all');
-  const [jobs, setJobs] = useState<JobPosting[]>([]);
-  const [userApplications, setUserApplications] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const { profile, isLoading: authLoading } = useAuth();
+
+  // Convex queries — reactive, no manual refetch needed
+  const jobsData = useQuery(api.jobs.getActiveJobs, {});
+  const myAppsData = useQuery(api.jobs.getMyApplications, {});
+
+  const isLoading = jobsData === undefined;
+
+  // Map Convex camelCase fields to the snake_case shape that JobCard expects
+  const jobs: JobPosting[] = (jobsData ?? []).map((j) => ({
+    id: j._id,
+    title: j.title,
+    description: j.description,
+    company_name: j.companyName ?? null,
+    company_logo: j.companyLogo ?? null,
+    location: j.location ?? null,
+    job_type: j.jobType,
+    experience_level: j.experienceLevel ?? null,
+    skills_required: j.skillsRequired ?? null,
+    salary_min: j.salaryMin ?? null,
+    salary_max: j.salaryMax ?? null,
+    created_at: new Date(j._creationTime).toISOString(),
+  }));
+
+  // Extract applied job IDs from my applications
+  const userApplications: string[] = (myAppsData ?? []).map((a) => a.jobId as string);
 
   // Redirect employers to their dashboard
   useEffect(() => {
@@ -53,43 +76,9 @@ export default function Jobs() {
     }
   }, [profile, authLoading, navigate]);
 
-  useEffect(() => {
-    fetchJobs();
-    if (user) {
-      fetchUserApplications();
-    }
-  }, [user]);
-
-  const fetchJobs = async () => {
-    setIsLoading(true);
-    const { data, error } = await supabase
-      .from('job_postings')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setJobs(data);
-    }
-    setIsLoading(false);
-  };
-
-  const fetchUserApplications = async () => {
-    if (!user) return;
-    
-    const { data, error } = await supabase
-      .from('job_applications')
-      .select('job_id')
-      .eq('applicant_id', user.id);
-
-    if (!error && data) {
-      setUserApplications(data.map(a => a.job_id));
-    }
-  };
-
   const toggleSkill = (skill: string) => {
-    setSelectedSkills(prev => 
-      prev.includes(skill) 
+    setSelectedSkills(prev =>
+      prev.includes(skill)
         ? prev.filter(s => s !== skill)
         : [...prev, skill]
     );
@@ -100,7 +89,7 @@ export default function Jobs() {
                          (job.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
     const matchesJobType = jobType === 'all' || job.job_type === jobType;
     const matchesExperience = experienceLevel === 'all' || job.experience_level === experienceLevel;
-    const matchesSkills = selectedSkills.length === 0 || 
+    const matchesSkills = selectedSkills.length === 0 ||
                          selectedSkills.some(skill => job.skills_required?.includes(skill));
     return matchesSearch && matchesJobType && matchesExperience && matchesSkills;
   });
@@ -123,7 +112,7 @@ export default function Jobs() {
             <p className="text-cool-grey text-sm">Find your next opportunity</p>
           </div>
           <div className="flex gap-2">
-            <Button 
+            <Button
               onClick={() => navigate('/challenges')}
               variant="outline"
               className="neo-extruded border-none"
@@ -131,7 +120,7 @@ export default function Jobs() {
               <Trophy className="h-4 w-4 mr-2" />
               Challenges
             </Button>
-            <Button 
+            <Button
               onClick={() => setShowFilters(!showFilters)}
               className={cn(
                 "neo-extruded border-none",
@@ -183,7 +172,7 @@ export default function Jobs() {
                 </button>
               </Badge>
             ))}
-            <button 
+            <button
               onClick={clearFilters}
               className="text-xs text-cool-grey hover:text-charcoal shrink-0"
             >
@@ -271,7 +260,7 @@ export default function Jobs() {
           <p className="text-sm text-cool-grey">
             {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''} found
           </p>
-          
+
           {isLoading ? (
             <div className="text-center py-12">
               <div className="neo-pressed px-6 py-3 rounded-2xl inline-block text-cool-grey animate-pulse">
@@ -282,8 +271,8 @@ export default function Jobs() {
             <div className="space-y-4">
               {filteredJobs.map((job) => (
                 <div key={job.id} className="neo-extruded rounded-3xl overflow-hidden">
-                  <JobCard 
-                    job={job} 
+                  <JobCard
+                    job={job}
                     hasApplied={userApplications.includes(job.id)}
                   />
                 </div>

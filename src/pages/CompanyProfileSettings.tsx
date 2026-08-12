@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { toast } from 'sonner';
 
 const INDUSTRIES = [
@@ -18,9 +19,8 @@ const INDUSTRIES = [
 
 export default function CompanyProfileSettings() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [form, setForm] = useState({
     company_name: '',
     company_description: '',
@@ -30,41 +30,45 @@ export default function CompanyProfileSettings() {
     company_logo_url: '',
   });
 
+  const employerProfile = useQuery(
+    api.employer.getEmployerProfile,
+    isAuthenticated ? {} : 'skip'
+  );
+  const upsertEmployerProfile = useMutation(api.employer.upsertEmployerProfile);
+
+  const isLoading = employerProfile === undefined;
+
+  // Populate form when data loads
   useEffect(() => {
-    if (!user) return;
-    const load = async () => {
-      const { data } = await supabase
-        .from('employer_profiles')
-        .select('company_name, company_description, company_website, company_size, industry, company_logo_url')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (data) {
-        setForm({
-          company_name: data.company_name ?? '',
-          company_description: data.company_description ?? '',
-          company_website: data.company_website ?? '',
-          company_size: data.company_size ?? '',
-          industry: data.industry ?? '',
-          company_logo_url: data.company_logo_url ?? '',
-        });
-      }
-      setIsLoading(false);
-    };
-    load();
-  }, [user]);
+    if (employerProfile) {
+      setForm({
+        company_name: employerProfile.companyName ?? '',
+        company_description: employerProfile.companyDescription ?? '',
+        company_website: employerProfile.companyWebsite ?? '',
+        company_size: employerProfile.companySize ?? '',
+        industry: employerProfile.industry ?? '',
+        company_logo_url: employerProfile.companyLogoUrl ?? '',
+      });
+    }
+  }, [employerProfile]);
 
   const handleSave = async () => {
-    if (!user) return;
     setIsSaving(true);
-    const { error } = await supabase
-      .from('employer_profiles')
-      .upsert({ user_id: user.id, ...form }, { onConflict: 'user_id' });
-    if (error) {
-      toast.error('Failed to save company profile');
-    } else {
+    try {
+      await upsertEmployerProfile({
+        companyName: form.company_name || undefined,
+        companyDescription: form.company_description || undefined,
+        companyWebsite: form.company_website || undefined,
+        companySize: form.company_size || undefined,
+        industry: form.industry || undefined,
+        companyLogoUrl: form.company_logo_url || undefined,
+      });
       toast.success('Company profile saved');
+    } catch (error) {
+      toast.error('Failed to save company profile');
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
   const set = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>

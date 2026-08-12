@@ -10,7 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { useAuth } from '@/context/AuthContext';
 import { useVideoUpload } from '@/hooks/useVideoUpload';
 import { usePitchDeckUpload } from '@/hooks/usePitchDeckUpload';
@@ -87,57 +89,50 @@ export default function FounderWizard() {
   const { uploading: videoUploading, uploadVideo } = useVideoUpload();
   const { uploading: deckUploading, uploadDeck } = usePitchDeckUpload();
 
+  const createVenture = useMutation(api.ventures.createVenture);
+  const updateVenture = useMutation(api.ventures.updateVenture);
+  const updateFounderTitle = useMutation(api.ventures.updateFounderTitle);
+  const setUserType = useMutation(api.profiles.setUserType);
+
   // Load existing venture for edit mode
+  const existingVenture = useQuery(
+    api.ventures.getVenture,
+    editVentureId ? { ventureId: editVentureId as Id<'ventures'> } : 'skip'
+  );
+
   useEffect(() => {
-    if (!editVentureId || !user) return;
-    (async () => {
+    if (!editVentureId) return;
+    if (existingVenture === undefined) {
       setIsLoadingEdit(true);
-      const { data, error } = await supabase
-        .from('ventures')
-        .select('*')
-        .eq('id', editVentureId)
-        .maybeSingle();
-
-      if (error || !data) {
-        toast.error('Could not load venture');
-        setIsLoadingEdit(false);
-        return;
-      }
-
-      const d = data as Record<string, unknown>;
-      setFormData({
-        name: (d.name as string) || '',
-        tagline: (d.tagline as string) || '',
-        description: (d.description as string) || '',
-        problemStatement: (d.problem_statement as string) || '',
-        solution: (d.solution as string) || '',
-        marketSize: (d.market_size as string) || '',
-        traction: (d.traction as string) || '',
-        businessModel: (d.business_model as string) || '',
-        stage: ((d.stage as string) || 'idea') as FormData['stage'],
-        industry: Array.isArray(d.industry) ? d.industry as string[] : [],
-        techStack: Array.isArray(d.tech_stack) ? d.tech_stack as string[] : [],
-        websiteUrl: (d.website_url as string) || '',
-        githubUrl: (d.github_url as string) || '',
-        demoUrl: (d.demo_url as string) || '',
-        founderTitle: 'CEO & Founder',
-      });
-      setExistingVideoUrl((d.pitch_video_url as string) || null);
-
-      // Load founder title
-      const { data: founderRow } = await supabase
-        .from('venture_founders')
-        .select('title')
-        .eq('venture_id', editVentureId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (founderRow?.title) {
-        setFormData(prev => ({ ...prev, founderTitle: founderRow.title }));
-      }
-
+      return;
+    }
+    if (!existingVenture) {
+      toast.error('Could not load venture');
       setIsLoadingEdit(false);
-    })();
-  }, [editVentureId, user?.id]);
+      return;
+    }
+
+    const d = existingVenture;
+    setFormData({
+      name: d.name || '',
+      tagline: d.tagline || '',
+      description: d.description || '',
+      problemStatement: d.problemStatement || '',
+      solution: d.solution || '',
+      marketSize: d.marketSize || '',
+      traction: d.traction || '',
+      businessModel: d.businessModel || '',
+      stage: (d.stage || 'idea') as FormData['stage'],
+      industry: d.industry || [],
+      techStack: d.techStack || [],
+      websiteUrl: d.websiteUrl || '',
+      githubUrl: d.githubUrl || '',
+      demoUrl: d.demoUrl || '',
+      founderTitle: d.founders?.find(f => f.userId === user?.id)?.title || 'CEO & Founder',
+    });
+    setExistingVideoUrl(d.pitchVideoUrl || null);
+    setIsLoadingEdit(false);
+  }, [editVentureId, existingVenture, user?.id]);
 
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
 
@@ -185,41 +180,37 @@ export default function FounderWizard() {
     try {
       let videoUrl: string | null = existingVideoUrl;
       if (pitchVideoBlob) {
-        videoUrl = await uploadVideo(pitchVideoBlob, user.id);
-        if (!videoUrl) throw new Error('Video upload failed');
+        const { url } = await uploadVideo(pitchVideoBlob, user.id);
+        if (!url) throw new Error('Video upload failed');
+        videoUrl = url;
       }
 
       if (isEdit && editVentureId) {
         // UPDATE existing venture
-        const { error: ventureError } = await supabase
-          .from('ventures')
-          .update({
-            name: formData.name,
-            tagline: formData.tagline,
-            description: formData.description || null,
-            problem_statement: formData.problemStatement || null,
-            solution: formData.solution || null,
-            market_size: formData.marketSize || null,
-            traction: formData.traction || null,
-            business_model: formData.businessModel || null,
-            stage: formData.stage,
-            industry: formData.industry,
-            tech_stack: formData.techStack,
-            website_url: formData.websiteUrl || null,
-            github_url: formData.githubUrl || null,
-            demo_url: formData.demoUrl || null,
-            pitch_video_url: videoUrl,
-          })
-          .eq('id', editVentureId);
-
-        if (ventureError) throw ventureError;
+        await updateVenture({
+          ventureId: editVentureId as Id<'ventures'>,
+          name: formData.name,
+          tagline: formData.tagline,
+          description: formData.description || undefined,
+          problemStatement: formData.problemStatement || undefined,
+          solution: formData.solution || undefined,
+          marketSize: formData.marketSize || undefined,
+          traction: formData.traction || undefined,
+          businessModel: formData.businessModel || undefined,
+          stage: formData.stage,
+          industry: formData.industry,
+          techStack: formData.techStack,
+          websiteUrl: formData.websiteUrl || undefined,
+          githubUrl: formData.githubUrl || undefined,
+          demoUrl: formData.demoUrl || undefined,
+          pitchVideoUrl: videoUrl || undefined,
+        });
 
         // Update founder title
-        await supabase
-          .from('venture_founders')
-          .update({ title: formData.founderTitle })
-          .eq('venture_id', editVentureId)
-          .eq('user_id', user.id);
+        await updateFounderTitle({
+          ventureId: editVentureId as Id<'ventures'>,
+          title: formData.founderTitle,
+        });
 
         if (pitchDeckFile) {
           await uploadDeck(pitchDeckFile, editVentureId, user.id);
@@ -229,41 +220,30 @@ export default function FounderWizard() {
         navigate('/founder');
       } else {
         // INSERT new venture
-        const { data: venture, error: ventureError } = await supabase
-          .from('ventures')
-          .insert({
-            name: formData.name,
-            tagline: formData.tagline,
-            description: formData.description || null,
-            problem_statement: formData.problemStatement || null,
-            solution: formData.solution || null,
-            market_size: formData.marketSize || null,
-            traction: formData.traction || null,
-            business_model: formData.businessModel || null,
-            stage: formData.stage,
-            industry: formData.industry,
-            tech_stack: formData.techStack,
-            website_url: formData.websiteUrl || null,
-            github_url: formData.githubUrl || null,
-            demo_url: formData.demoUrl || null,
-            pitch_video_url: videoUrl,
-            review_status: 'submitted',
-          })
-          .select()
-          .single();
-
-        if (ventureError) throw ventureError;
-
-        const { error: founderError } = await supabase
-          .from('venture_founders')
-          .insert({ venture_id: venture.id, user_id: user.id, role: 'lead', title: formData.founderTitle, is_lead: true });
-        if (founderError) throw founderError;
+        const ventureId = await createVenture({
+          name: formData.name,
+          tagline: formData.tagline,
+          description: formData.description || undefined,
+          problemStatement: formData.problemStatement || undefined,
+          solution: formData.solution || undefined,
+          marketSize: formData.marketSize || undefined,
+          traction: formData.traction || undefined,
+          businessModel: formData.businessModel || undefined,
+          stage: formData.stage,
+          industry: formData.industry,
+          techStack: formData.techStack,
+          websiteUrl: formData.websiteUrl || undefined,
+          githubUrl: formData.githubUrl || undefined,
+          demoUrl: formData.demoUrl || undefined,
+          pitchVideoUrl: videoUrl || undefined,
+          founderTitle: formData.founderTitle,
+        });
 
         if (pitchDeckFile) {
-          await uploadDeck(pitchDeckFile, venture.id, user.id);
+          await uploadDeck(pitchDeckFile, ventureId, user.id);
         }
 
-        await supabase.rpc('update_user_role', { new_role: 'founder' });
+        await setUserType({ userType: 'founder' });
 
         toast.success('Application submitted!');
         navigate('/founder');

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { useAuth } from '@/context/AuthContext';
 import { Venture } from '@/types';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -28,119 +29,48 @@ const stageColors = {
   scale: 'bg-primary/10 text-primary',
 };
 
-// Raw shape of a `ventures` row (with the `venture_founders` join) as returned by
-// Supabase, before mapping to the domain `Venture` type.
-interface VentureRow {
-  id: string;
-  name: string;
-  tagline: string;
-  description?: string;
-  problem_statement?: string;
-  solution?: string;
-  market_size?: string;
-  traction?: string;
-  business_model?: string;
-  stage: Venture['stage'];
-  logo_url?: string;
-  cover_image_url?: string;
-  pitch_video_url?: string;
-  pitch_video_thumbnail?: string;
-  website_url?: string;
-  github_url?: string;
-  demo_url?: string;
-  industry?: string[];
-  tech_stack?: string[];
-  is_fundraising: boolean;
-  funding_goal?: number;
-  funding_raised?: number;
-  hackathon_name?: string;
-  hackathon_cohort?: string;
-  is_active: boolean;
-  is_featured: boolean;
-  created_at: string;
-  updated_at: string;
-  venture_founders?: Venture['founders'];
-}
-
-// Founder preview as actually returned by the join (raw, with nested profile).
-type FounderPreview = { id: string; profiles?: { avatar?: string | null } | null };
+// Founder preview as returned by the Convex join (userId + profile doc).
+type FounderPreview = { _id: string; userId: string; profile?: { avatar?: string; username?: string } | null };
 
 export default function Ventures() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const [ventures, setVentures] = useState<Venture[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchVentures();
-  }, []);
-
-  const fetchVentures = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('ventures')
-        .select(`
-          *,
-          venture_founders (
-            id,
-            user_id,
-            role,
-            title,
-            is_lead,
-            profiles (
-              id,
-              username,
-              avatar
-            )
-          )
-        `)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const transformedVentures: Venture[] = ((data || []) as unknown as VentureRow[]).map((v) => ({
-        id: v.id,
-        name: v.name,
-        tagline: v.tagline,
-        description: v.description,
-        problemStatement: v.problem_statement,
-        solution: v.solution,
-        marketSize: v.market_size,
-        traction: v.traction,
-        businessModel: v.business_model,
-        stage: v.stage,
-        logoUrl: v.logo_url,
-        coverImageUrl: v.cover_image_url,
-        pitchVideoUrl: v.pitch_video_url,
-        pitchVideoThumbnail: v.pitch_video_thumbnail,
-        websiteUrl: v.website_url,
-        githubUrl: v.github_url,
-        demoUrl: v.demo_url,
-        industry: v.industry || [],
-        techStack: v.tech_stack || [],
-        isFundraising: v.is_fundraising,
-        fundingGoal: v.funding_goal,
-        fundingRaised: v.funding_raised,
-        hackathonName: v.hackathon_name,
-        hackathonCohort: v.hackathon_cohort,
-        isActive: v.is_active,
-        isFeatured: v.is_featured,
-        createdAt: new Date(v.created_at),
-        updatedAt: new Date(v.updated_at),
-        founders: v.venture_founders,
-      }));
-
-      setVentures(transformedVentures);
-    } catch (error) {
-      console.error('Error fetching ventures:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const venturesRaw = useQuery(api.ventures.getActiveVentures, {});
+  const loading = venturesRaw === undefined;
+  const ventures: Venture[] = (venturesRaw ?? []).map((v) => ({
+    id: v._id,
+    name: v.name,
+    tagline: v.tagline,
+    description: v.description,
+    problemStatement: v.problemStatement,
+    solution: v.solution,
+    marketSize: v.marketSize,
+    traction: v.traction,
+    businessModel: v.businessModel,
+    stage: v.stage as Venture['stage'],
+    logoUrl: v.logoUrl,
+    coverImageUrl: v.coverImageUrl,
+    pitchVideoUrl: v.pitchVideoUrl,
+    pitchVideoThumbnail: v.pitchVideoThumbnail,
+    websiteUrl: v.websiteUrl,
+    githubUrl: v.githubUrl,
+    demoUrl: v.demoUrl,
+    industry: v.industry || [],
+    techStack: v.techStack || [],
+    isFundraising: v.isFundraising ?? false,
+    fundingGoal: v.fundingGoal,
+    fundingRaised: v.fundingRaised,
+    hackathonName: v.hackathonName,
+    hackathonCohort: v.hackathonCohort,
+    isActive: v.isActive,
+    isFeatured: v.isFeatured,
+    createdAt: new Date(v._creationTime),
+    updatedAt: new Date(v._creationTime),
+    founders: v.founders as unknown as Venture['founders'],
+  }));
 
   const filteredVentures = ventures.filter(v => {
     const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -350,9 +280,9 @@ function VentureCard({ venture, featured, index }: VentureCardProps) {
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/30">
             <div className="flex -space-x-2">
               {(venture.founders as unknown as FounderPreview[]).slice(0, 3).map((founder) => (
-                founder.profiles?.avatar
-                  ? <img key={founder.id} src={founder.profiles.avatar} alt="" className="h-6 w-6 rounded-full border-2 border-background object-cover" onError={e => { e.currentTarget.style.display = 'none'; }} />
-                  : <div key={founder.id} className="h-6 w-6 rounded-full border-2 border-background bg-secondary flex items-center justify-center"><span className="text-[8px] text-muted-foreground font-medium">{founder.profiles?.username?.[0]?.toUpperCase() || '?'}</span></div>
+                founder.profile?.avatar
+                  ? <img key={founder._id} src={founder.profile.avatar} alt="" className="h-6 w-6 rounded-full border-2 border-background object-cover" onError={e => { e.currentTarget.style.display = 'none'; }} />
+                  : <div key={founder._id} className="h-6 w-6 rounded-full border-2 border-background bg-secondary flex items-center justify-center"><span className="text-[8px] text-muted-foreground font-medium">{founder.profile?.username?.[0]?.toUpperCase() || '?'}</span></div>
               ))}
             </div>
             <span className="text-xs text-cool-grey">

@@ -1,104 +1,39 @@
-import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Play, Eye, Trophy, CheckCircle, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { toast } from 'sonner';
-
-interface Submission {
-  id: string;
-  status: string;
-  created_at: string;
-  user: {
-    id: string;
-    username: string | null;
-    avatar: string | null;
-    is_verified: boolean;
-  };
-  video: {
-    id: string;
-    title: string | null;
-    thumbnail_url: string | null;
-    video_url: string;
-    views: number;
-    likes: number;
-  };
-}
-
-interface Challenge {
-  id: string;
-  title: string;
-  prize_amount: number | null;
-}
 
 export default function ChallengeSubmissions() {
   const { challengeId } = useParams<{ challengeId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  
-  const [challenge, setChallenge] = useState<Challenge | null>(null);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-  }, [challengeId]);
+  const challenge = useQuery(
+    api.challenges.getChallenge,
+    challengeId ? { challengeId: challengeId as Id<'challenges'> } : 'skip'
+  );
+  const submissionsRaw = useQuery(
+    api.challenges.getSubmissions,
+    challengeId ? { challengeId: challengeId as Id<'challenges'> } : 'skip'
+  );
+  const submissions = submissionsRaw ?? [];
+  const loading = challenge === undefined || submissionsRaw === undefined;
+  const markSubmissionWinner = useMutation(api.challenges.markSubmissionWinner);
 
-  const fetchData = async () => {
+  const markAsWinner = async (submissionId: Id<'challengeSubmissions'>) => {
     try {
-      // Fetch challenge details
-      const { data: challengeData } = await supabase
-        .from('challenges')
-        .select('id, title, prize_amount')
-        .eq('id', challengeId)
-        .maybeSingle();
-
-      if (challengeData) setChallenge(challengeData);
-
-      // Fetch submissions with user and video data
-      const { data: submissionData } = await supabase
-        .from('challenge_submissions')
-        .select(`
-          id, status, created_at,
-          user:profiles!challenge_submissions_user_id_fkey(
-            id, username, avatar, is_verified
-          ),
-          video:videos!challenge_submissions_video_id_fkey(
-            id, title, thumbnail_url, video_url, views, likes
-          )
-        `)
-        .eq('challenge_id', challengeId)
-        .order('created_at', { ascending: false });
-
-      if (submissionData) {
-        setSubmissions(submissionData as unknown as Submission[]);
-      }
-    } catch (error) {
-      console.error('Error fetching submissions:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const markAsWinner = async (submissionId: string) => {
-    const { error } = await supabase
-      .from('challenge_submissions')
-      .update({ status: 'winner' })
-      .eq('id', submissionId);
-
-    if (!error) {
-      setSubmissions(submissions.map(s => 
-        s.id === submissionId ? { ...s, status: 'winner' } : s
-      ));
+      await markSubmissionWinner({ submissionId });
       toast.success('Winner selected!');
-    } else {
+    } catch (error) {
+      console.error('Error marking winner:', error);
       toast.error('Failed to update status');
     }
   };
 
-  const formatDate = (date: string) => {
+  const formatDate = (date: string | number) => {
     return new Date(date).toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric',
@@ -141,24 +76,24 @@ export default function ChallengeSubmissions() {
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {submissions.map((submission) => (
-              <div 
-                key={submission.id}
+              <div
+                key={submission._id}
                 className="bg-secondary rounded-xl overflow-hidden"
               >
                 {/* Video Thumbnail */}
-                <div 
+                <div
                   className="aspect-[9/16] relative bg-muted cursor-pointer group"
-                  onClick={() => navigate(`/feed?video=${submission.video.id}`)}
+                  onClick={() => navigate(`/feed?video=${submission.video?._id}`)}
                 >
-                  {submission.video.thumbnail_url ? (
-                    <img 
-                      src={submission.video.thumbnail_url}
+                  {submission.video?.thumbnailUrl ? (
+                    <img
+                      src={submission.video.thumbnailUrl}
                       alt={submission.video.title || 'Video'}
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <video 
-                      src={submission.video.video_url}
+                    <video
+                      src={submission.video?.videoUrl}
                       className="w-full h-full object-cover"
                       muted
                       preload="metadata"
@@ -167,7 +102,7 @@ export default function ChallengeSubmissions() {
                   <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Play className="h-10 w-10 text-white" fill="white" />
                   </div>
-                  
+
                   {/* Winner Badge */}
                   {submission.status === 'winner' && (
                     <div className="absolute top-2 left-2">
@@ -180,7 +115,7 @@ export default function ChallengeSubmissions() {
                   {/* Stats */}
                   <div className="absolute bottom-2 left-2 flex items-center gap-2 text-white text-xs">
                     <span className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" /> {submission.video.views}
+                      <Eye className="h-3 w-3" /> {submission.video?.views ?? 0}
                     </span>
                   </div>
                 </div>
@@ -188,31 +123,31 @@ export default function ChallengeSubmissions() {
                 {/* Submission Info */}
                 <div className="p-3 space-y-3">
                   <div className="flex items-center gap-2">
-                    {submission.user.avatar
+                    {submission.user?.avatar
                       ? <img src={submission.user.avatar} alt={submission.user.username || 'User'} className="h-8 w-8 rounded-full object-cover" onError={e => { e.currentTarget.style.display = 'none'; }} />
                       : <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0"><UserIcon className="h-4 w-4 text-muted-foreground" /></div>
                     }
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1">
                         <p className="text-sm font-medium truncate">
-                          @{submission.user.username || 'user'}
+                          @{submission.user?.username || 'user'}
                         </p>
-                        {submission.user.is_verified && (
+                        {submission.user?.isVerified && (
                           <CheckCircle className="h-3 w-3 text-coral flex-shrink-0" />
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {formatDate(submission.created_at)}
+                        {formatDate(submission._creationTime)}
                       </p>
                     </div>
                   </div>
 
                   {submission.status !== 'winner' && (
-                    <Button 
-                      variant="coral" 
+                    <Button
+                      variant="coral"
                       size="sm"
                       className="w-full"
-                      onClick={() => markAsWinner(submission.id)}
+                      onClick={() => markAsWinner(submission._id)}
                     >
                       <Trophy className="h-4 w-4 mr-1" />
                       Select as Winner

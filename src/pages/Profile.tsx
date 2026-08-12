@@ -10,35 +10,24 @@ import { Badge } from '@/components/ui/badge';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard } from '@/components/ui/neo-card';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
-interface UserVideo {
-  id: string;
-  video_url: string;
-  thumbnail_url: string | null;
-  title: string | null;
-  description: string | null;
+type ConvexVideo = {
+  _id: string;
+  _creationTime: number;
+  userId: string;
+  title?: string;
+  description?: string;
+  videoUrl: string;
+  thumbnailUrl?: string;
   views: number;
   likes: number;
-  is_private?: boolean;
-  created_at: string;
-}
-
-interface SavedVideo {
-  id: string;
-  video_url: string;
-  thumbnail_url: string | null;
-  title: string | null;
-  description: string | null;
-  views: number;
-  likes: number;
-  created_at: string;
-  creator_id: string;
-  creator_username: string | null;
-  creator_avatar: string | null;
-}
+  isPrivate?: boolean;
+  skillCategory?: string;
+};
 
 type Tab = 'private' | 'public' | 'saved';
 
@@ -46,88 +35,29 @@ export default function Profile() {
   const navigate = useNavigate();
   const { user, profile, logout, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('public');
-  const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
-  const [savedVideos, setSavedVideos] = useState<SavedVideo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingSaved, setLoadingSaved] = useState(false);
+
+  const myVideos = useQuery(api.videos.getMyVideos, isAuthenticated ? {} : 'skip');
+  const savedVideos = useQuery(api.videos.getSavedVideos, activeTab === 'saved' && isAuthenticated ? {} : 'skip');
+
+  const loading = myVideos === undefined;
+  const loadingSaved = savedVideos === undefined && activeTab === 'saved';
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/auth');
-      return;
     }
-    if (user?.id) {
-      fetchUserVideos();
-    }
-  }, [user?.id, isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate]);
 
-  // Refresh stats when page becomes visible (user returns to profile)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && user?.id) {
-        fetchUserVideos();
-      }
-    };
+  const videos: ConvexVideo[] = (myVideos ?? []) as ConvexVideo[];
+  const saved: ConvexVideo[] = (savedVideos ?? []) as ConvexVideo[];
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [user?.id]);
+  const publicVideos = videos.filter(v => !v.isPrivate);
+  const privateVideos = videos.filter(v => v.isPrivate);
 
-  useEffect(() => {
-    if (activeTab === 'saved' && user?.id && savedVideos.length === 0) {
-      fetchSavedVideos();
-    }
-  }, [activeTab, user?.id]);
-
-  const fetchUserVideos = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('videos')
-        .select('id, video_url, thumbnail_url, title, description, views, likes, is_private, created_at')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching videos:', error);
-        return;
-      }
-
-      setUserVideos((data || []) as UserVideo[]);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Manual refresh function
-  const refreshStats = () => {
-    if (user?.id) {
-      fetchUserVideos();
-      if (activeTab === 'saved') {
-        fetchSavedVideos();
-      }
-    }
-  };
-
-  const fetchSavedVideos = async () => {
-    setLoadingSaved(true);
-    try {
-      setSavedVideos([]);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoadingSaved(false);
-    }
-  };
-
-  const publicVideos = userVideos.filter(v => !v.is_private);
-  const privateVideos = userVideos.filter(v => v.is_private);
-  
   const stats = {
-    views: userVideos.reduce((acc, v) => acc + (v.views || 0), 0),
-    likes: userVideos.reduce((acc, v) => acc + (v.likes || 0), 0),
-    videos: userVideos.length,
+    views: videos.reduce((acc, v) => acc + (v.views || 0), 0),
+    likes: videos.reduce((acc, v) => acc + (v.likes || 0), 0),
+    videos: videos.length,
   };
 
   const formatNumber = (num: number): string => {
@@ -157,7 +87,7 @@ export default function Profile() {
     return null;
   }
 
-  const renderVideoGrid = (videos: UserVideo[], emptyMessage: string, emptyIcon: React.ReactNode) => {
+  const renderVideoGrid = (videoList: ConvexVideo[], emptyMessage: string, emptyIcon: React.ReactNode) => {
     if (loading) {
       return (
         <div className="py-16 text-center">
@@ -166,24 +96,24 @@ export default function Profile() {
       );
     }
 
-    if (videos.length > 0) {
+    if (videoList.length > 0) {
       return (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {videos.map((video) => (
-            <div 
-              key={video.id}
-              onClick={() => handleVideoClick(video.id)}
+          {videoList.map((video) => (
+            <div
+              key={video._id}
+              onClick={() => handleVideoClick(video._id)}
               className="aspect-[9/16] relative neo-extruded rounded-2xl overflow-hidden group cursor-pointer"
             >
-              {video.thumbnail_url ? (
-                <img 
-                  src={video.thumbnail_url} 
+              {video.thumbnailUrl ? (
+                <img
+                  src={video.thumbnailUrl}
                   alt={video.title || 'Video'}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <video 
-                  src={video.video_url}
+                <video
+                  src={video.videoUrl}
                   className="w-full h-full object-cover"
                   muted
                   playsInline
@@ -197,7 +127,7 @@ export default function Profile() {
                 <Eye className="h-3 w-3" />
                 {formatNumber(video.views || 0)}
               </div>
-              {video.is_private && (
+              {video.isPrivate && (
                 <div className="absolute top-2 right-2">
                   <Lock className="h-3 w-3 text-white" />
                 </div>
@@ -207,12 +137,12 @@ export default function Profile() {
         </div>
       );
     }
-    
+
     return (
       <div className="py-16 text-center neo-subtle rounded-3xl">
         {emptyIcon}
         <p className="text-cool-grey mt-3">{emptyMessage}</p>
-        <Button 
+        <Button
           className="mt-4"
           onClick={() => navigate('/create')}
         >
@@ -229,10 +159,10 @@ export default function Profile() {
         <NeoCard className="p-8">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-xl font-semibold text-charcoal">
-            @{profile?.username || user?.user_metadata?.full_name?.replace(/\s+/g, '').toLowerCase() || 'user'}
+            @{profile?.username || (user?.user_metadata?.full_name as string | undefined)?.replace(/\s+/g, '').toLowerCase() || 'user'}
           </h1>
             <div className="flex items-center gap-2">
-              <button onClick={refreshStats} className="neo-subtle p-2 rounded-xl hover:neo-pressed transition-all" title="Refresh stats">
+              <button onClick={() => {}} className="neo-subtle p-2 rounded-xl hover:neo-pressed transition-all" title="Up to date">
                 <RefreshCw className="h-5 w-5 text-cool-grey" />
               </button>
               <button onClick={handleShare} className="neo-subtle p-2 rounded-xl hover:neo-pressed transition-all">
@@ -249,7 +179,7 @@ export default function Profile() {
             <div className="relative">
               {(profile?.avatar || user?.user_metadata?.avatar_url) ? (
                 <img
-                  src={profile?.avatar || user?.user_metadata?.avatar_url}
+                  src={profile?.avatar || user?.user_metadata?.avatar_url as string}
                   alt={profile?.username || 'User'}
                   className="h-24 w-24 rounded-3xl object-cover neo-extruded"
                   onError={e => { e.currentTarget.style.display = 'none'; }}
@@ -286,7 +216,7 @@ export default function Profile() {
               {/* Bio */}
               <div>
                 <p className="font-medium text-charcoal">
-                  {profile?.username || user?.user_metadata?.full_name || user?.user_metadata?.name || 'Your Name'}
+                  {profile?.username || user?.user_metadata?.full_name as string || user?.user_metadata?.name as string || 'Your Name'}
                 </p>
                 <p className="text-sm text-cool-grey mt-1">
                   {profile?.bio || 'Add a bio to tell employers about yourself'}
@@ -307,8 +237,8 @@ export default function Profile() {
           )}
 
           {/* Edit Profile Button */}
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full mt-6 neo-extruded border-none"
             size="lg"
             onClick={() => navigate('/profile/edit')}
@@ -371,23 +301,23 @@ export default function Profile() {
               <div className="py-16 text-center">
                 <p className="text-cool-grey animate-pulse">Loading saved videos...</p>
               </div>
-            ) : savedVideos.length > 0 ? (
+            ) : saved.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {savedVideos.map((video) => (
-                  <div 
-                    key={video.id}
-                    onClick={() => handleVideoClick(video.id)}
+                {saved.map((video) => (
+                  <div
+                    key={video._id}
+                    onClick={() => handleVideoClick(video._id)}
                     className="aspect-[9/16] relative neo-extruded rounded-2xl overflow-hidden group cursor-pointer"
                   >
-                    {video.thumbnail_url ? (
-                      <img 
-                        src={video.thumbnail_url} 
+                    {video.thumbnailUrl ? (
+                      <img
+                        src={video.thumbnailUrl}
                         alt={video.title || 'Video'}
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <video 
-                        src={video.video_url}
+                      <video
+                        src={video.videoUrl}
                         className="w-full h-full object-cover"
                         muted
                         playsInline
@@ -400,9 +330,6 @@ export default function Profile() {
                     <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs">
                       <Eye className="h-3 w-3" />
                       {formatNumber(video.views || 0)}
-                    </div>
-                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/50 rounded px-1.5 py-0.5">
-                      <span className="text-white text-[10px]">@{video.creator_username || 'user'}</span>
                     </div>
                   </div>
                 ))}
@@ -419,7 +346,7 @@ export default function Profile() {
 
         {/* Logout Section */}
         <NeoCard className="p-4">
-          <button 
+          <button
             onClick={handleLogout}
             className="w-full flex items-center justify-between py-3 text-destructive hover:bg-destructive/5 rounded-xl px-4 transition-colors"
           >

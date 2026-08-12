@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Play, Send, Video, Trophy } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,18 +6,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-
-interface Video {
-  id: string;
-  title: string | null;
-  thumbnail_url: string | null;
-  video_url: string;
-  description: string | null;
-}
 
 interface SubmitChallengeModalProps {
   isOpen: boolean;
@@ -34,32 +28,13 @@ interface SubmitChallengeModalProps {
 export function SubmitChallengeModal({ isOpen, onClose, challenge }: SubmitChallengeModalProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [videos, setVideos] = useState<Video[]>([]);
-  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [selectedVideoId, setSelectedVideoId] = useState<Id<'videos'> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && user) {
-      fetchUserVideos();
-    }
-  }, [isOpen, user]);
-
-  const fetchUserVideos = async () => {
-    if (!user) return;
-    setIsLoading(true);
-    
-    const { data, error } = await supabase
-      .from('videos')
-      .select('id, title, thumbnail_url, video_url, description')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setVideos(data);
-    }
-    setIsLoading(false);
-  };
+  const myVideos = useQuery(api.videos.getMyVideos, isOpen && user ? {} : 'skip');
+  const videos = myVideos ?? [];
+  const isLoading = isOpen && !!user && myVideos === undefined;
+  const submitToChallenge = useMutation(api.challenges.submitToChallenge);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -75,28 +50,21 @@ export function SubmitChallengeModal({ isOpen, onClose, challenge }: SubmitChall
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase
-        .from('challenge_submissions')
-        .insert({
-          challenge_id: challenge.id,
-          user_id: user.id,
-          video_id: selectedVideoId,
-        });
-
-      if (error) {
-        if (error.code === '23505') {
-          toast.error('You have already submitted to this challenge');
-        } else {
-          throw error;
-        }
-      } else {
-        toast.success('Submission successful! Good luck!');
-        onClose();
-        setSelectedVideoId(null);
-      }
+      await submitToChallenge({
+        challengeId: challenge.id as Id<'challenges'>,
+        videoId: selectedVideoId,
+      });
+      toast.success('Submission successful! Good luck!');
+      onClose();
+      setSelectedVideoId(null);
     } catch (error) {
-      console.error('Error submitting to challenge:', error);
-      toast.error('Failed to submit');
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('Already submitted')) {
+        toast.error('You have already submitted to this challenge');
+      } else {
+        console.error('Error submitting to challenge:', error);
+        toast.error('Failed to submit');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -181,18 +149,18 @@ export function SubmitChallengeModal({ isOpen, onClose, challenge }: SubmitChall
                 <div className="grid grid-cols-3 gap-2 pr-4">
                   {videos.map((video) => (
                     <Card
-                      key={video.id}
+                      key={video._id}
                       className={cn(
                         "relative aspect-[9/16] overflow-hidden cursor-pointer transition-all",
-                        selectedVideoId === video.id
+                        selectedVideoId === video._id
                           ? "ring-2 ring-primary"
                           : "hover:ring-1 hover:ring-border"
                       )}
-                      onClick={() => setSelectedVideoId(video.id)}
+                      onClick={() => setSelectedVideoId(video._id)}
                     >
-                      {video.thumbnail_url ? (
+                      {video.thumbnailUrl ? (
                         <img
-                          src={video.thumbnail_url}
+                          src={video.thumbnailUrl}
                           alt={video.title || 'Video'}
                           className="w-full h-full object-cover"
                         />
@@ -201,7 +169,7 @@ export function SubmitChallengeModal({ isOpen, onClose, challenge }: SubmitChall
                           <Play className="h-6 w-6 text-muted-foreground" />
                         </div>
                       )}
-                      {selectedVideoId === video.id && (
+                      {selectedVideoId === video._id && (
                         <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
                           <div className="bg-primary text-primary-foreground rounded-full p-1">
                             <Play className="h-4 w-4" />

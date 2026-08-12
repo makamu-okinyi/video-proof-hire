@@ -1,77 +1,26 @@
-import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ChevronLeft, Eye, Play, BadgeCheck, Globe, User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
-
-interface UserVideo {
-  id: string;
-  video_url: string;
-  thumbnail_url: string | null;
-  title: string | null;
-  description: string | null;
-  views: number;
-  likes: number;
-  created_at: string;
-}
-
-interface UserProfileData {
-  id: string;
-  username: string | null;
-  avatar: string | null;
-  bio: string | null;
-  skills: string[] | null;
-  skill_category: string;
-  is_verified: boolean;
-}
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 
 export default function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<UserProfileData | null>(null);
-  const [videos, setVideos] = useState<UserVideo[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (userId) {
-      fetchUserData();
-    }
-  }, [userId]);
+  const profile = useQuery(
+    api.profiles.getPublicProfile,
+    userId ? { userId } : 'skip'
+  );
+  const videos = useQuery(
+    api.videos.getUserVideos,
+    userId ? { userId } : 'skip'
+  );
 
-  const fetchUserData = async () => {
-    try {
-      // Fetch profile using secure RPC function (excludes email)
-      const { data: profileData, error: profileError } = await supabase
-        .rpc('get_public_profile', { profile_id: userId });
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        return;
-      }
-
-      if (profileData && profileData.length > 0) {
-        setProfile(profileData[0]);
-      }
-
-      // Fetch videos using secure RPC function (doesn't expose user_id directly)
-      const { data: videosData, error: videosError } = await supabase
-        .rpc('get_user_public_videos', { target_user_id: userId });
-
-      if (videosError) {
-        console.error('Error fetching videos:', videosError);
-        return;
-      }
-
-      setVideos(videosData || []);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = profile === undefined || videos === undefined;
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
@@ -83,10 +32,12 @@ export default function UserProfile() {
     navigate(`/feed?video=${videoId}`);
   };
 
+  const videoList = videos ?? [];
+
   const stats = {
-    views: videos.reduce((acc, v) => acc + (v.views || 0), 0),
-    likes: videos.reduce((acc, v) => acc + (v.likes || 0), 0),
-    videos: videos.length,
+    views: videoList.reduce((acc, v) => acc + (v.views || 0), 0),
+    likes: videoList.reduce((acc, v) => acc + (v.likes || 0), 0),
+    videos: videoList.length,
   };
 
   if (loading) {
@@ -113,7 +64,7 @@ export default function UserProfile() {
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg px-4 py-3 border-b border-border">
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="text-muted-foreground hover:text-foreground"
           >
@@ -132,7 +83,7 @@ export default function UserProfile() {
               ? <img src={profile.avatar} alt={profile.username || 'User'} className="h-20 w-20 rounded-full object-cover border-2 border-coral" onError={e => { e.currentTarget.style.display = 'none'; }} />
               : <div className="h-20 w-20 rounded-full bg-secondary border-2 border-border flex items-center justify-center"><User className="h-9 w-9 text-muted-foreground" /></div>
             }
-            {profile.is_verified && (
+            {profile.isVerified && (
               <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-coral flex items-center justify-center border-2 border-background">
                 <BadgeCheck className="h-4 w-4 text-background" />
               </div>
@@ -184,23 +135,23 @@ export default function UserProfile() {
         </div>
 
         <div className="p-1">
-          {videos.length > 0 ? (
+          {videoList.length > 0 ? (
             <div className="grid grid-cols-3 gap-1">
-              {videos.map((video) => (
-                <div 
-                  key={video.id}
-                  onClick={() => handleVideoClick(video.id)}
+              {videoList.map((video) => (
+                <div
+                  key={video._id}
+                  onClick={() => handleVideoClick(video._id)}
                   className="aspect-[9/16] relative bg-secondary rounded-lg overflow-hidden group cursor-pointer"
                 >
-                  {video.thumbnail_url ? (
-                    <img 
-                      src={video.thumbnail_url} 
+                  {video.thumbnailUrl ? (
+                    <img
+                      src={video.thumbnailUrl}
                       alt={video.title || 'Video'}
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <video 
-                      src={video.video_url}
+                    <video
+                      src={video.videoUrl}
                       className="w-full h-full object-cover"
                       muted
                       playsInline

@@ -4,7 +4,9 @@ import { Heart, MessageCircle, Share2, Bookmark, Play, Pause, Volume2, VolumeX }
 import { Video } from '@/types';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { CommentsSheet } from './CommentsSheet';
@@ -17,6 +19,16 @@ interface VideoCardProps {
 export function VideoCard({ video, isActive = false }: VideoCardProps) {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const likeVideoMutation = useMutation(api.videos.likeVideo);
+  const saveVideoMutation = useMutation(api.videos.saveVideo);
+  const hasLiked = useQuery(
+    api.videos.hasLikedVideo,
+    isAuthenticated ? { videoId: video.id as Id<'videos'> } : 'skip'
+  );
+  const hasSaved = useQuery(
+    api.videos.hasSavedVideo,
+    isAuthenticated ? { videoId: video.id as Id<'videos'> } : 'skip'
+  );
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
@@ -26,6 +38,15 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
   const [showPlayButton, setShowPlayButton] = useState(true);
   const [showComments, setShowComments] = useState(false);
   const [commentsCount] = useState(video.comments);
+
+  // Sync server like/save state
+  useEffect(() => {
+    if (hasLiked !== undefined) setIsLiked(hasLiked);
+  }, [hasLiked]);
+
+  useEffect(() => {
+    if (hasSaved !== undefined) setIsSaved(hasSaved);
+  }, [hasSaved]);
 
   // Auto-play when video becomes active
   useEffect(() => {
@@ -84,18 +105,7 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
     setLikes(prev => wasLiked ? prev - 1 : prev + 1);
 
     try {
-      // Use direct table operations with the likes table
-      if (wasLiked) {
-        await supabase
-          .from('likes')
-          .delete()
-          .eq('user_id', user?.id)
-          .eq('video_id', video.id);
-      } else {
-        await supabase
-          .from('likes')
-          .insert({ user_id: user?.id, video_id: video.id });
-      }
+      await likeVideoMutation({ videoId: video.id as Id<'videos'> });
     } catch (error) {
       // Revert on error
       setIsLiked(wasLiked);
@@ -114,6 +124,13 @@ export function VideoCard({ video, isActive = false }: VideoCardProps) {
     const wasSaved = isSaved;
     setIsSaved(!isSaved);
     toast.success(wasSaved ? 'Removed from saved' : 'Saved to collection');
+
+    try {
+      await saveVideoMutation({ videoId: video.id as Id<'videos'> });
+    } catch (error) {
+      setIsSaved(wasSaved);
+      toast.error('Failed to save video');
+    }
   };
 
   const handleShare = async () => {

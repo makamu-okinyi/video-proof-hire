@@ -8,7 +8,9 @@ import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuthActions } from '@convex-dev/auth/react';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { z } from 'zod';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { AuthBackground } from '@/components/auth/AuthBackground';
@@ -50,6 +52,8 @@ export default function Auth() {
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [bioLoading, setBioLoading] = useState(false);
   const { user, login, signup, signInWithOAuth, signInWithWebAuthn, registerWebAuthn, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
+  const { signIn } = useAuthActions();
+  const setUserTypeMutation = useMutation(api.profiles.setUserType);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -63,7 +67,7 @@ export default function Auth() {
   useEffect(() => {
     if (user && profileNeedsCompletion && !username) {
       // Get name from Google OAuth metadata
-      const googleName = user.user_metadata?.full_name || user.user_metadata?.name || '';
+      const googleName = (user.user_metadata?.full_name as string) || (user.user_metadata?.name as string) || '';
       if (googleName) {
         setUsername(googleName);
       }
@@ -164,8 +168,18 @@ export default function Auth() {
             toast.error(error.message || 'Signup failed. Please try again.');
           }
         } else {
-          supabase.functions.invoke('welcome-email', { body: { userId: '', username, email } }).catch(console.error);
-          setStep('confirmation');
+          // Send welcome email via Convex HTTP action (fire and forget)
+          const convexSiteUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
+          if (convexSiteUrl) {
+            fetch(`${convexSiteUrl}/welcome-email`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: '', username, email }),
+            }).catch(console.error);
+          }
+          // With Convex auth, signup signs in immediately — go to profile setup
+          setJustLoggedIn(true);
+          setStep('userType');
         }
       }
     } catch (error) {
@@ -210,18 +224,18 @@ export default function Auth() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) {
-        toast.error('Failed to send reset email. Please try again.');
-      } else {
+      await signIn("password", { email: resetEmail, flow: "reset" });
+      setResetEmailSent(true);
+      toast.success('Password reset code sent to your email!');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message.toLowerCase() : '';
+      if (msg.includes('not found') || msg.includes('no user')) {
+        // Don't reveal if email exists — show success anyway
         setResetEmailSent(true);
-        toast.success('Password reset email sent!');
+        toast.success('If that email exists, you\'ll receive a reset code.');
+      } else {
+        toast.error('Failed to send reset email. Please try again.');
       }
-    } catch (error) {
-      toast.error('An unexpected error occurred');
     }
     setLoading(false);
   };
@@ -263,22 +277,15 @@ export default function Auth() {
 
     setLoading(true);
     try {
-      // Use the secure database function to update role
-      const { error: roleError } = await supabase.rpc('update_user_role', {
-        new_role: userType
-      });
-
-      if (roleError) {
-        toast.error('Failed to set account type');
-        setLoading(false);
-        return;
-      }
+      // Set user type in Convex profile
+      await setUserTypeMutation({ userType });
 
       // Update profile info
       await updateProfile({
         username: username || null,
         skill_category: selectedCategory || 'other',
         bio: bio || null,
+        user_type: userType,
       });
 
       // Refresh to get updated profile

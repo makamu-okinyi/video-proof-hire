@@ -207,10 +207,9 @@ export function DashboardSidebar() {
       <div className={cn("p-4 border-t border-border/30 relative", isCollapsed && "p-2")}>
         <div className={cn("neo-subtle p-4 rounded-2xl relative z-10", isCollapsed && "p-2")}>
           {(() => {
-            const avatarUrl = profile?.avatar || user?.user_metadata?.avatar_url;
+            const avatarUrl = profile?.avatar;
             const displayName = profile?.username
-              || user?.user_metadata?.full_name
-              || user?.user_metadata?.name
+              || profile?.full_name
               || user?.email?.split('@')[0]
               || 'User';
             return (

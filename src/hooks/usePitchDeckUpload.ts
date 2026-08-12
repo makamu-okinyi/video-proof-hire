@@ -1,11 +1,18 @@
-import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from "react";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 
 interface UsePitchDeckUploadReturn {
   uploading: boolean;
   progress: number;
   error: string | null;
-  uploadDeck: (file: File, ventureId: string, userId: string, title?: string) => Promise<string | null>;
+  uploadDeck: (
+    file: File,
+    ventureId: string,
+    _userId: string,
+    title?: string
+  ) => Promise<string | null>;
 }
 
 export function usePitchDeckUpload(): UsePitchDeckUploadReturn {
@@ -13,101 +20,64 @@ export function usePitchDeckUpload(): UsePitchDeckUploadReturn {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  const generateUploadUrl = useMutation(api.ventures.generatePitchDeckUploadUrl);
+  const addPitchDeck = useMutation(api.ventures.addPitchDeck);
+
   const uploadDeck = async (
     file: File,
     ventureId: string,
-    userId: string,
-    title: string = 'Pitch Deck'
+    _userId: string,
+    title = "Pitch Deck"
   ): Promise<string | null> => {
     setUploading(true);
     setProgress(0);
     setError(null);
 
     try {
-      // Validate file type
       const allowedTypes = [
-        'application/pdf',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        "application/pdf",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
       ];
-
       if (!allowedTypes.includes(file.type)) {
-        throw new Error('Please upload a PDF or PowerPoint file');
+        throw new Error("Please upload a PDF or PowerPoint file");
       }
-
-      // Validate file size (max 50MB)
-      const maxSize = 50 * 1024 * 1024;
-      if (file.size > maxSize) {
-        throw new Error('File size must be less than 50MB');
+      if (file.size > 50 * 1024 * 1024) {
+        throw new Error("File size must be less than 50MB");
       }
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${ventureId}/${Date.now()}.${fileExt}`;
 
       setProgress(20);
+      const uploadUrl = await generateUploadUrl({});
+      setProgress(40);
 
-      // Upload to Supabase Storage
-      const { data, error: uploadError } = await supabase.storage
-        .from('pitch-decks')
-        .upload(fileName, file, {
-          contentType: file.type,
-          upsert: false,
-        });
+      const result = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!result.ok) throw new Error("Upload failed");
 
-      if (uploadError) {
-        throw uploadError;
-      }
+      const { storageId } = (await result.json()) as {
+        storageId: Id<"_storage">;
+      };
+      setProgress(70);
 
-      setProgress(60);
+      const convexUrl = import.meta.env.VITE_CONVEX_URL as string;
+      const fileUrl = `${convexUrl}/api/storage/${storageId}`;
 
-      // Get a signed URL (bucket is private) — valid for 1 year
-      const { data: urlData, error: signError } = await supabase.storage
-        .from('pitch-decks')
-        .createSignedUrl(data.path, 60 * 60 * 24 * 365);
-
-      if (signError || !urlData?.signedUrl) {
-        throw new Error('Failed to generate deck URL');
-      }
-
-      // Mark previous decks as not current
-      await supabase
-        .from('pitch_decks')
-        .update({ is_current: false })
-        .eq('venture_id', ventureId);
-
-      setProgress(80);
-
-      // Get next version number
-      const { data: existingDecks } = await supabase
-        .from('pitch_decks')
-        .select('version')
-        .eq('venture_id', ventureId)
-        .order('version', { ascending: false })
-        .limit(1);
-
-      const nextVersion = existingDecks && existingDecks.length > 0 
-        ? existingDecks[0].version + 1 
-        : 1;
-
-      // Create pitch_deck record
-      const { error: insertError } = await supabase.from('pitch_decks').insert({
-        venture_id: ventureId,
+      await addPitchDeck({
+        ventureId: ventureId as Id<"ventures">,
         title,
-        file_url: urlData.signedUrl,
-        file_type: file.type === 'application/pdf' ? 'pdf' : 'pptx',
-        version: nextVersion,
-        is_current: true,
-        uploaded_by: userId,
+        fileUrl,
+        fileType: file.type === "application/pdf" ? "pdf" : "pptx",
+        storageId,
       });
 
-      if (insertError) {
-        throw insertError;
-      }
-
       setProgress(100);
-      return urlData.signedUrl;
+      return fileUrl;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to upload pitch deck';
+      const message =
+        err instanceof Error ? err.message : "Failed to upload pitch deck";
       setError(message);
       return null;
     } finally {
@@ -115,10 +85,5 @@ export function usePitchDeckUpload(): UsePitchDeckUploadReturn {
     }
   };
 
-  return {
-    uploading,
-    progress,
-    error,
-    uploadDeck,
-  };
+  return { uploading, progress, error, uploadDeck };
 }

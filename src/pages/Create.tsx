@@ -15,7 +15,8 @@ import { useCamera } from '@/hooks/useCamera';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useVideoUpload } from '@/hooks/useVideoUpload';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { toast } from 'sonner';
 
 type Step = 'record' | 'preview' | 'details';
@@ -49,6 +50,7 @@ const skillCategories: { value: string; label: string; Icon: ElementType }[] = [
 export default function Create() {
   const navigate = useNavigate();
   const { user, isAuthenticated, profile, isLoading: authLoading } = useAuth();
+  const createVideoMutation = useMutation(api.videos.createVideo);
   const [step, setStep] = useState<Step>('record');
   const [videoSource, setVideoSource] = useState<VideoSource | null>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
@@ -197,28 +199,24 @@ export default function Create() {
         return;
       }
 
-      // Upload video to storage
-      const videoUrl = await uploadVideo(videoBlob, user.id);
-      
+      // Upload video to Convex storage
+      const { url: videoUrl, storageId } = await uploadVideo(videoBlob, user.id);
+
       if (!videoUrl) {
         toast.error('Failed to upload video');
         return;
       }
 
-      // Save video record to database
-      const { error } = await supabase.from('videos').insert({
-        user_id: user.id,
+      // Save video record to Convex database
+      await createVideoMutation({
+        videoUrl,
         title: caption,
         description: caption,
-        video_url: videoUrl,
-        thumbnail_url: null, // Could generate thumbnail in future
-        is_private: visibility === 'recruiters', // Recruiters-only videos are private
-        skill_category: skillCategory || 'other',
+        thumbnailUrl: undefined,
+        isPrivate: visibility === 'recruiters',
+        skillCategory: skillCategory || 'other',
+        storageId: storageId ?? undefined,
       });
-
-      if (error) {
-        throw error;
-      }
 
       toast.success('Video posted successfully!');
       navigate('/feed');

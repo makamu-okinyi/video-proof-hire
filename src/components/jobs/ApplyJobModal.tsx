@@ -8,16 +8,18 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import type { Id } from '../../../convex/_generated/dataModel';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
-interface Video {
-  id: string;
-  title: string | null;
-  thumbnail_url: string | null;
-  video_url: string;
-  description: string | null;
+interface VideoItem {
+  _id: string;
+  title?: string;
+  thumbnailUrl?: string;
+  videoUrl: string;
+  description?: string;
 }
 
 interface ApplyJobModalProps {
@@ -33,17 +35,15 @@ interface ApplyJobModalProps {
 
 export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
   const { user, profile } = useAuth();
-  const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideoIds, setSelectedVideoIds] = useState<string[]>([]);
   const [coverMessage, setCoverMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && user) {
-      fetchUserVideos();
-    }
-  }, [isOpen, user]);
+  const videosData = useQuery(api.videos.getMyVideos, {});
+  const videos: VideoItem[] = videosData ?? [];
+  const isLoading = videosData === undefined;
+
+  const applyToJob = useMutation(api.jobs.applyToJob);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -53,22 +53,6 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
-
-  const fetchUserVideos = async () => {
-    if (!user) return;
-    setIsLoading(true);
-
-    const { data, error } = await supabase
-      .from('videos')
-      .select('id, title, thumbnail_url, video_url, description')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setVideos(data);
-    }
-    setIsLoading(false);
-  };
 
   const toggleVideoSelection = (videoId: string) => {
     setSelectedVideoIds((prev) =>
@@ -85,27 +69,21 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from('job_applications').insert({
-        job_id: job.id,
-        applicant_id: user.id,
-        cover_message: coverMessage || null,
+      await applyToJob({
+        jobId: job.id as Id<'jobPostings'>,
+        coverMessage: coverMessage || undefined,
       });
-
-      if (error) {
-        if (error.code === '23505') {
-          toast.error('You have already applied to this job');
-        } else {
-          throw error;
-        }
-      } else {
-        toast.success('Application submitted successfully!');
-        onClose();
-        setCoverMessage('');
-        setSelectedVideoIds([]);
-      }
-    } catch (error) {
+      toast.success('Application submitted successfully!');
+      onClose();
+      setCoverMessage('');
+      setSelectedVideoIds([]);
+    } catch (error: unknown) {
       console.error('Error applying to job:', error);
-      toast.error('Failed to submit application');
+      if (error instanceof Error && error.message.includes('Already applied')) {
+        toast.error('You have already applied to this job');
+      } else {
+        toast.error('Failed to submit application');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -193,18 +171,18 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
                     <div className="grid grid-cols-3 gap-2 pr-4">
                       {videos.map((video) => (
                         <Card
-                          key={video.id}
+                          key={video._id}
                           className={cn(
                             'relative aspect-[9/16] overflow-hidden cursor-pointer transition-all neo-extruded-sm border-0',
-                            selectedVideoIds.includes(video.id)
+                            selectedVideoIds.includes(video._id)
                               ? 'ring-2 ring-brand'
                               : 'hover:ring-1 hover:ring-border'
                           )}
-                          onClick={() => toggleVideoSelection(video.id)}
+                          onClick={() => toggleVideoSelection(video._id)}
                         >
-                          {video.thumbnail_url ? (
+                          {video.thumbnailUrl ? (
                             <img
-                              src={video.thumbnail_url}
+                              src={video.thumbnailUrl}
                               alt={video.title || 'Video'}
                               className="w-full h-full object-cover"
                             />
@@ -213,7 +191,7 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
                               <Play className="h-6 w-6 text-muted-foreground" />
                             </div>
                           )}
-                          {selectedVideoIds.includes(video.id) && (
+                          {selectedVideoIds.includes(video._id) && (
                             <div className="absolute inset-0 bg-brand/20 flex items-center justify-center">
                               <div className="bg-primary text-primary-foreground rounded-full p-1">
                                 <Play className="h-4 w-4" />

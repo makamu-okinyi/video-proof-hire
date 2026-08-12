@@ -1,20 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { X, Send, Heart, Loader2, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
-
-interface Comment {
-  id: string;
-  content: string;
-  created_at: string;
-  user_id: string;
-  username: string | null;
-  avatar: string | null;
-}
 
 interface CommentsSheetProps {
   isOpen: boolean;
@@ -25,67 +18,21 @@ interface CommentsSheetProps {
 
 export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange }: CommentsSheetProps) {
   const { user, isAuthenticated, profile } = useAuth();
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [newComment, setNewComment] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (isOpen && videoId) {
-      fetchComments();
-    }
-  }, [isOpen, videoId]);
+  const comments = useQuery(
+    api.videos.getComments,
+    isOpen ? { videoId: videoId as Id<'videos'> } : 'skip'
+  );
+  const addCommentMutation = useMutation(api.videos.addComment);
 
-  const fetchComments = async () => {
-    setLoading(true);
-    try {
-      // Query the comments table with a join to profiles
-      const { data, error } = await supabase
-        .from('comments')
-        .select(`
-          id,
-          content,
-          created_at,
-          user_id,
-          profiles!comments_user_id_fkey (
-            username,
-            avatar
-          )
-        `)
-        .eq('video_id', videoId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      type RawComment = {
-        id: string;
-        content: string;
-        created_at: string;
-        user_id: string;
-        profiles?: { username?: string | null; avatar?: string | null } | null;
-      };
-      const commentsData: Comment[] = ((data || []) as unknown as RawComment[]).map((c) => ({
-        id: c.id,
-        content: c.content,
-        created_at: c.created_at,
-        user_id: c.user_id,
-        username: c.profiles?.username || 'User',
-        avatar: c.profiles?.avatar,
-      }));
-
-      setComments(commentsData);
-      onCommentsCountChange?.(commentsData.length);
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = comments === undefined;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isAuthenticated || !user) {
       toast.error('Please sign in to comment');
       return;
@@ -95,18 +42,12 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('comments')
-        .insert({
-          video_id: videoId,
-          user_id: user.id,
-          content: newComment.trim(),
-        });
-
-      if (error) throw error;
-
+      await addCommentMutation({
+        videoId: videoId as Id<'videos'>,
+        content: newComment.trim(),
+      });
       setNewComment('');
-      fetchComments();
+      onCommentsCountChange?.((comments?.length ?? 0) + 1);
       toast.success('Comment added!');
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -116,30 +57,14 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
     }
   };
 
-  const handleDeleteComment = async (commentId: string) => {
-    try {
-      const { error } = await supabase
-        .from('comments')
-        .delete()
-        .eq('id', commentId)
-        .eq('user_id', user?.id);
-
-      if (error) throw error;
-
-      setComments(prev => prev.filter(c => c.id !== commentId));
-      onCommentsCountChange?.(comments.length - 1);
-      toast.success('Comment deleted');
-    } catch (error) {
-      toast.error('Failed to delete comment');
-    }
-  };
-
   if (!isOpen) return null;
+
+  const commentList = comments ?? [];
 
   return (
     <div className="fixed inset-0 z-50">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
@@ -148,8 +73,8 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
       <div className="absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl max-h-[70vh] flex flex-col animate-slide-up">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="font-semibold text-lg">{comments.length} Comments</h2>
-          <button 
+          <h2 className="font-semibold text-lg">{commentList.length} Comments</h2>
+          <button
             onClick={onClose}
             className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center"
           >
@@ -163,25 +88,24 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : comments.length === 0 ? (
+          ) : commentList.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No comments yet</p>
               <p className="text-sm text-muted-foreground mt-1">Be the first to comment!</p>
             </div>
           ) : (
-            comments.map((comment) => (
-              <div key={comment.id} className="flex gap-3">
-                {comment.avatar
-                  ? <img src={comment.avatar} alt={comment.username || 'User'} className="h-9 w-9 rounded-full object-cover flex-shrink-0" onError={e => { e.currentTarget.style.display = 'none'; }} />
-                  : <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"><User className="h-4 w-4 text-muted-foreground" /></div>
-                }
+            commentList.map((comment) => (
+              <div key={comment._id} className="flex gap-3">
+                <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm">
-                      @{comment.username || 'user'}
+                      @{comment.userId.slice(0, 8)}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(comment._creationTime), { addSuffix: true })}
                     </span>
                   </div>
                   <p className="text-sm mt-1 text-foreground/90">{comment.content}</p>
@@ -189,14 +113,6 @@ export function CommentsSheet({ isOpen, onClose, videoId, onCommentsCountChange 
                     <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                       <Heart className="h-3.5 w-3.5" />
                     </button>
-                    {comment.user_id === user?.id && (
-                      <button 
-                        onClick={() => handleDeleteComment(comment.id)}
-                        className="text-xs text-destructive hover:text-destructive/80"
-                      >
-                        Delete
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>

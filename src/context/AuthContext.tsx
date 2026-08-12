@@ -1,7 +1,7 @@
-import React, { createContext, useEffect, useState, ReactNode } from "react";
-import { supabase } from '@/integrations/supabase/client';
-import type { Session, User, Provider } from '@supabase/supabase-js';
-import * as webauthn from '@/lib/webauthn';
+import React, { createContext, useContext, useEffect, ReactNode } from "react";
+import { useConvexAuth, useQuery, useMutation } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { api } from "../../convex/_generated/api";
 
 interface Profile {
   id: string;
@@ -9,29 +9,30 @@ interface Profile {
   user_type?: string;
   skill_category?: string;
   is_verified?: boolean;
-  created_at?: string;
-  updated_at?: string;
   bio?: string | null;
   skills?: string[] | null;
   avatar?: string | null;
+  banner_url?: string | null;
+  company_name?: string | null;
+  industry?: string | null;
+  full_name?: string | null;
 }
 
-/** Matches Supabase app_role enum */
-type AppRole = 'talent' | 'employer' | 'founder' | 'investor' | 'judge';
-
-interface UserRoleRow {
-  role: AppRole;
+interface SyntheticUser {
+  id: string;
+  email?: string;
+  user_metadata: Record<string, unknown>;
 }
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: SyntheticUser | null;
+  session: null;
   profile: Profile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ error: Error | null }>;
   signup: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<{ error: Error | null }>;
-  signInWithOAuth: (provider: Provider, redirectTo?: string) => Promise<{ error: Error | null; url?: string | null }>;
+  signInWithOAuth: (provider: string, redirectTo?: string) => Promise<{ error: Error | null; url?: string | null }>;
   signInWithWebAuthn: () => Promise<{ error: Error | null }>;
   registerWebAuthn: () => Promise<{ error: Error | null }>;
   logout: () => Promise<void>;
@@ -42,192 +43,161 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
+  const { signIn, signOut } = useAuthActions();
 
-  const fetchProfile = async (userId: string) => {
-    const [{ data: profileData, error: profileError }, { data: roleData }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
-      supabase.from('user_roles').select('role').eq('user_id', userId).order('created_at', { ascending: true }).limit(1).maybeSingle(),
-    ]);
+  const convexProfile = useQuery(
+    api.profiles.getMyProfile,
+    isAuthenticated ? {} : "skip"
+  );
+  const myUserId = useQuery(
+    api.profiles.getMyUserId,
+    isAuthenticated ? {} : "skip"
+  );
 
-    if (profileError) return;
+  const upsertProfile = useMutation(api.profiles.upsertProfile);
 
-    const existingRole = (roleData as UserRoleRow | null)?.role;
-    const userType = existingRole || profileData?.user_type;
+  const isLoading =
+    authLoading ||
+    (isAuthenticated && (myUserId === undefined || convexProfile === undefined));
 
-    // Auto-bootstrap profile from user_metadata if missing role or profile
-    if (!userType || !profileData) {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      const meta = authUser?.user_metadata as Record<string, string> | undefined;
-      if (meta?.user_type) {
-        if (!existingRole) {
-          await supabase.rpc('update_user_role', { new_role: meta.user_type }).catch(console.error);
+  const user: SyntheticUser | null =
+    isAuthenticated && myUserId
+      ? {
+          id: myUserId,
+          user_metadata: {
+            username: convexProfile?.username,
+            user_type: convexProfile?.userType,
+          },
         }
-        const upsertData = {
-          id: userId,
-          username: meta.username || profileData?.username || null,
-          skill_category: meta.skill_category || profileData?.skill_category || null,
-          bio: meta.bio || profileData?.bio || null,
-        };
-        await supabase.from('profiles').upsert(upsertData, { onConflict: 'id' }).catch(console.error);
-        setProfile({ ...profileData, ...upsertData, user_type: meta.user_type } as Profile);
-        return;
-      }
-    }
+      : null;
 
-    if (profileData) {
-      setProfile({ ...profileData, user_type: userType } as Profile);
-    }
-  };
-
-  useEffect(() => {
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        // Use setTimeout to avoid Supabase deadlock issues
-        setTimeout(() => {
-          fetchProfile(session.user.id);
-        }, 0);
-      } else {
-        setProfile(null);
-      }
-
-      // Handle OAuth callback - clean up URL after successful sign in
-      if (event === 'SIGNED_IN' && typeof window !== 'undefined') {
-        const url = window.location.href;
-        if (url.includes('#access_token') || url.includes('?code=')) {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      }
-    });
-
-    // Get initial session
-    const handleInitialSession = async () => {
-      try {
-        // Check for OAuth callback in URL hash (implicit flow) or code (PKCE flow)
-        const hashParams = window.location.hash;
-        const searchParams = window.location.search;
-        const hasOAuthCallback = hashParams.includes('access_token') || searchParams.includes('code=');
-
-        if (hasOAuthCallback) {
-          // Let Supabase handle the OAuth callback automatically via detectSessionInUrl
-          // Just wait a moment for it to process
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-
-        // Get the current session (will be set if OAuth callback was processed)
-        const { data: sessData, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-        }
-
-        const currentSession = sessData?.session;
-        setSession(currentSession ?? null);
-        setUser(currentSession?.user ?? null);
-        
-        if (currentSession?.user) {
-          await fetchProfile(currentSession.user.id);
-        }
-      } catch (err) {
-        console.error('Error getting initial session:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    handleInitialSession();
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const profile: Profile | null =
+    isAuthenticated && myUserId && convexProfile !== undefined
+      ? convexProfile
+        ? {
+            id: myUserId,
+            username: convexProfile.username,
+            user_type: convexProfile.userType,
+            skill_category: convexProfile.skillCategory,
+            is_verified: convexProfile.isVerified,
+            bio: convexProfile.bio,
+            skills: convexProfile.skills,
+            avatar: convexProfile.avatar,
+            banner_url: convexProfile.bannerUrl,
+            company_name: convexProfile.companyName,
+            industry: convexProfile.industry,
+            full_name: convexProfile.fullName,
+          }
+        : null
+      : null;
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    try {
+      await signIn("password", { email, password, flow: "signIn" });
+      return { error: null };
+    } catch (err) {
+      return { error: err instanceof Error ? err : new Error(String(err)) };
+    }
   };
 
-  const signup = async (email: string, password: string, metadata?: Record<string, unknown>) => {
-    const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: redirectUrl, data: metadata || {} } });
-    return { error };
+  const signup = async (
+    email: string,
+    password: string,
+    metadata?: Record<string, unknown>
+  ) => {
+    try {
+      await signIn("password", {
+        email,
+        password,
+        flow: "signUp",
+        name: (metadata?.username as string) || undefined,
+      });
+      return { error: null };
+    } catch (err) {
+      return { error: err instanceof Error ? err : new Error(String(err)) };
+    }
+  };
+
+  const signInWithOAuth = async (provider: string, redirectTo?: string) => {
+    try {
+      await signIn("google", {
+        redirectTo: redirectTo || `${window.location.origin}/auth`,
+      });
+      return { error: null, url: null };
+    } catch (err) {
+      return {
+        error: err instanceof Error ? err : new Error(String(err)),
+        url: null,
+      };
+    }
   };
 
   const signInWithWebAuthn = async () => {
-    const result = await webauthn.authenticateWebAuthn();
-    if (!result.ok || !result.assertion) return { error: new Error('Biometric auth failed or cancelled') };
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-    const fnUrl = `${supabaseUrl}/functions/v1/webauthn-verify`;
-    try {
-      const payload = {
-        credentialId: result.credentialId,
-        clientDataJSON: result.clientDataJSON ? btoa(String.fromCharCode(...new Uint8Array(result.clientDataJSON))) : null,
-        authenticatorData: result.authenticatorData ? btoa(String.fromCharCode(...new Uint8Array(result.authenticatorData))) : null,
-        signature: result.signature ? btoa(String.fromCharCode(...new Uint8Array(result.signature))) : null,
-        userHandle: result.userHandle ? btoa(String.fromCharCode(...new Uint8Array(result.userHandle))) : null,
-      };
-      const res = await fetch(fnUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${anonKey}` },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) return { error: new Error(data.error || 'Verification failed') };
-      if (data.access_token && data.refresh_token) {
-        await supabase.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token });
-        return { error: null };
-      }
-      return { error: new Error('No session returned') };
-    } catch (err) {
-      return { error: err instanceof Error ? err : new Error('Biometric sign-in failed') };
-    }
+    return {
+      error: new Error(
+        "Biometric sign-in is not yet available. Please use email/password or Google."
+      ),
+    };
   };
 
   const registerWebAuthn = async () => {
-    if (!user?.id || !user?.email) return { error: new Error('Not logged in') };
-    const result = await webauthn.registerWebAuthn(user.id, user.email);
-    return result.ok ? { error: null } : { error: new Error(result.error) };
-  };
-
-  const signInWithOAuth = async (provider: Provider, redirectTo?: string) => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: redirectTo || `${window.location.origin}/auth`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
-    });
-    return { error, url: data?.url };
+    return {
+      error: new Error(
+        "Biometric registration is not yet available. Please use email/password or Google."
+      ),
+    };
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
+    await signOut();
   };
 
   const updateProfile = async (data: Partial<Profile>) => {
-    if (!user) return;
-    const { error } = await supabase.from('profiles').upsert({ id: user.id, ...data }, { onConflict: 'id' });
-    if (!error) setProfile((prev) => prev ? { ...prev, ...data } : { id: user.id, ...data } as Profile);
+    await upsertProfile({
+      username: data.username ?? undefined,
+      userType: data.user_type ?? undefined,
+      skillCategory: data.skill_category ?? undefined,
+      bio: data.bio ?? undefined,
+      skills: data.skills ?? undefined,
+      avatar: data.avatar ?? undefined,
+      bannerUrl: data.banner_url ?? undefined,
+      companyName: data.company_name ?? undefined,
+      industry: data.industry ?? undefined,
+      fullName: data.full_name ?? undefined,
+    });
   };
 
-  const refreshProfile = async () => { if (user) await fetchProfile(user.id); };
+  const refreshProfile = async () => {
+    // Convex queries are reactive — no manual refresh needed
+  };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, isAuthenticated: !!session, isLoading, login, signup, signInWithOAuth, signInWithWebAuthn, registerWebAuthn, logout, updateProfile, refreshProfile }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session: null,
+        profile,
+        isAuthenticated,
+        isLoading,
+        login,
+        signup,
+        signInWithOAuth,
+        signInWithWebAuthn,
+        registerWebAuthn,
+        logout,
+        updateProfile,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() { const context = React.useContext(AuthContext); if (context === undefined) throw new Error('useAuth must be used within AuthProvider'); return context; 
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined)
+    throw new Error("useAuth must be used within AuthProvider");
+  return context;
 }

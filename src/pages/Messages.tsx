@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { MessageThread } from "@/components/messaging/MessageThread";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -30,63 +32,32 @@ interface Conversation {
 
 export default function Messages() {
   const { user, profile } = useAuth();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchConversations();
-    }
-  }, [user]);
-
-  const fetchConversations = async () => {
-    if (!user) return;
-
-    const { data: convos } = await supabase
-      .from('conversations')
-      .select('*')
-      .or(`employer_id.eq.${user.id},candidate_id.eq.${user.id}`)
-      .order('updated_at', { ascending: false });
-
-    if (!convos) {
-      setLoading(false);
-      return;
-    }
-
-    // Fetch other user profiles and last messages using secure RPC (excludes email)
-    const enrichedConversations = await Promise.all(
-      convos.map(async (convo) => {
-        const otherUserId = convo.employer_id === user.id ? convo.candidate_id : convo.employer_id;
-        
-        const [profileResult, messagesResult, unreadResult] = await Promise.all([
-          supabase.rpc('get_public_profile', { profile_id: otherUserId }),
-          supabase.from('messages')
-            .select('content, created_at, is_read, sender_id')
-            .eq('conversation_id', convo.id)
-            .order('created_at', { ascending: false })
-            .limit(1),
-          supabase.from('messages')
-            .select('id', { count: 'exact' })
-            .eq('conversation_id', convo.id)
-            .eq('is_read', false)
-            .neq('sender_id', user.id)
-        ]);
-
-        const profileData = profileResult.data?.[0];
-        return {
-          ...convo,
-          other_user_id: otherUserId,
-          other_user: profileData ? { username: profileData.username, avatar: profileData.avatar } : { username: null, avatar: null },
-          last_message: messagesResult.data?.[0],
-          unread_count: unreadResult.count || 0
-        };
-      })
-    );
-
-    setConversations(enrichedConversations);
-    setLoading(false);
-  };
+  const rawConversations = useQuery(api.messages.getMyConversations, user ? {} : 'skip');
+  const loading = !!user && rawConversations === undefined;
+  const conversations: Conversation[] = (rawConversations ?? []).map((c) => ({
+    id: c._id,
+    employer_id: c.employerId,
+    candidate_id: c.candidateId,
+    job_application_id: c.jobApplicationId ?? null,
+    created_at: new Date(c._creationTime).toISOString(),
+    updated_at: new Date(c._creationTime).toISOString(),
+    other_user_id: c.employerId === user?.id ? c.candidateId : c.employerId,
+    other_user: {
+      username: c.otherProfile?.username ?? null,
+      avatar: c.otherProfile?.avatar ?? null,
+    },
+    last_message: c.lastMessage
+      ? {
+          content: c.lastMessage.content,
+          created_at: new Date(c.lastMessage._creationTime).toISOString(),
+          is_read: c.lastMessage.isRead,
+          sender_id: c.lastMessage.senderId,
+        }
+      : undefined,
+    unread_count: c.unreadCount,
+  }));
 
   if (!user) {
     return (

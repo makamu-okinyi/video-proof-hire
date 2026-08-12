@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -28,7 +29,6 @@ function formatDeadlineForInput(iso: string | null): string {
 export default function CreateChallenge() {
   const navigate = useNavigate();
   const { challengeId } = useParams<{ challengeId: string }>();
-  const { user } = useAuth();
   const isEdit = !!challengeId;
 
   const [title, setTitle] = useState('');
@@ -41,32 +41,27 @@ export default function CreateChallenge() {
   const [skills, setSkills] = useState<string[]>([]);
   const [videoPrompt, setVideoPrompt] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(isEdit);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const existingChallenge = useQuery(
+    api.challenges.getChallenge,
+    challengeId ? { challengeId: challengeId as Id<'challenges'> } : 'skip'
+  );
+  const loadingData = isEdit && existingChallenge === undefined;
+  const createChallenge = useMutation(api.challenges.createChallenge);
+  const updateChallenge = useMutation(api.challenges.updateChallenge);
+
   useEffect(() => {
-    if (!challengeId || !user) return;
-    const fetchChallenge = async () => {
-      setLoadingData(true);
-      const { data, error } = await supabase
-        .from('challenges')
-        .select('*')
-        .eq('id', challengeId)
-        .eq('employer_id', user.id)
-        .maybeSingle();
-      setLoadingData(false);
-      if (error || !data) return;
-      setTitle(data.title || '');
-      setDescription(data.description || '');
-      setPrizeDescription(data.prize_description || '');
-      setPrizeAmount(data.prize_amount != null ? String(data.prize_amount) : '');
-      setDeadline(formatDeadlineForInput(data.deadline));
-      setIsFeatured(data.is_featured ?? false);
-      setSkills(Array.isArray(data.skills_tags) ? data.skills_tags : []);
-      setVideoPrompt((data as Record<string, unknown>)?.video_prompt as string || '');
-    };
-    fetchChallenge();
-  }, [challengeId, user?.id]);
+    if (!existingChallenge) return;
+    setTitle(existingChallenge.title || '');
+    setDescription(existingChallenge.description || '');
+    setPrizeDescription(existingChallenge.prizeDescription || '');
+    setPrizeAmount(existingChallenge.prizeAmount != null ? String(existingChallenge.prizeAmount) : '');
+    setDeadline(formatDeadlineForInput(existingChallenge.deadline ?? null));
+    setIsFeatured(existingChallenge.isFeatured ?? false);
+    setSkills(Array.isArray(existingChallenge.skillsTags) ? existingChallenge.skillsTags : []);
+    setVideoPrompt(existingChallenge.videoPrompt || '');
+  }, [existingChallenge]);
 
   const addSkill = () => {
     const trimmedSkill = skillInput.trim();
@@ -113,33 +108,29 @@ export default function CreateChallenge() {
 
     try {
       if (isEdit && challengeId) {
-        const { error } = await supabase
-          .from('challenges')
-          .update({
-            title: validation.data.title,
-            description: validation.data.description,
-            prize_description: validation.data.prize_description,
-            prize_amount: prizeAmount ? parseInt(prizeAmount) : null,
-            deadline: deadline || null,
-            is_featured: isFeatured,
-            skills_tags: validation.data.skills_tags,
-          })
-          .eq('id', challengeId)
-          .eq('employer_id', user?.id);
-        if (error) throw error;
-        toast.success('Challenge updated!');
-      } else {
-        const { error } = await supabase.from('challenges').insert({
-          employer_id: user?.id,
+        await updateChallenge({
+          challengeId: challengeId as Id<'challenges'>,
           title: validation.data.title,
           description: validation.data.description,
-          prize_description: validation.data.prize_description,
-          prize_amount: prizeAmount ? parseInt(prizeAmount) : null,
-          deadline: deadline || null,
-          is_featured: isFeatured,
-          skills_tags: validation.data.skills_tags,
+          prizeDescription: validation.data.prize_description || undefined,
+          prizeAmount: prizeAmount ? parseInt(prizeAmount) : undefined,
+          deadline: deadline || undefined,
+          isFeatured,
+          skillsTags: validation.data.skills_tags,
+          videoPrompt: videoPrompt || undefined,
         });
-        if (error) throw error;
+        toast.success('Challenge updated!');
+      } else {
+        await createChallenge({
+          title: validation.data.title,
+          description: validation.data.description,
+          prizeDescription: validation.data.prize_description || undefined,
+          prizeAmount: prizeAmount ? parseInt(prizeAmount) : undefined,
+          deadline: deadline || undefined,
+          isFeatured,
+          skillsTags: validation.data.skills_tags,
+          videoPrompt: videoPrompt || undefined,
+        });
         toast.success('Challenge created!');
       }
       navigate('/employer');

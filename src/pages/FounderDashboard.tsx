@@ -114,8 +114,8 @@ export default function FounderDashboard() {
   const { user, profile } = useAuth();
   const emailPrefix = user?.email ? user.email.split('@')[0] : null;
   const displayName = profile?.username
-    || user?.user_metadata?.full_name?.split(' ')[0]
-    || user?.user_metadata?.name?.split(' ')[0]
+    || (user?.user_metadata?.full_name as string | undefined)?.split(' ')[0]
+    || (user?.user_metadata?.name as string | undefined)?.split(' ')[0]
     || (emailPrefix ? emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1) : 'there');
   const { data: ventures, isLoading } = useFounderVentures(user?.id);
   const { data: jobApplications } = useApplicantJobApplications(user?.id);
