@@ -14,6 +14,7 @@ import { FounderRoute } from "@/components/auth/FounderRoute";
 import { EmployerRoute } from "@/components/auth/EmployerRoute";
 import { AuthProvider } from "@/context/AuthContext";
 import { PWAUpdatePrompt } from "@/components/pwa/PWAUpdatePrompt";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import Index from "./pages/Index";
 import Feed from "./pages/Feed";
 import Jobs from "./pages/Jobs";
@@ -54,6 +55,7 @@ const App = () => (
         <Sonner />
         <PWAUpdatePrompt />
         <BrowserRouter>
+          <ScrollToTop />
           <OrganicBackground />
           <ErrorBoundary>
           <Suspense fallback={
