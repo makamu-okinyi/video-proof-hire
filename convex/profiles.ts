@@ -36,8 +36,9 @@ export const getProfileBySlug = query({
 
 export const upsertProfile = mutation({
   args: {
+    // userType is intentionally not settable here — use setUserType, which
+    // restricts values to the self-service allowlist.
     username: v.optional(v.string()),
-    userType: v.optional(v.string()),
     skillCategory: v.optional(v.string()),
     bio: v.optional(v.string()),
     skills: v.optional(v.array(v.string())),
@@ -108,9 +109,16 @@ export const bootstrapProfile = internalMutation({
   },
 });
 
+// Self-service roles only. "admin" and "judge" are privileged and must be
+// granted out-of-band (see grantAdminByEmail), never by the user themselves.
+const SELF_SERVICE_USER_TYPES = ["talent", "employer", "founder", "investor"];
+
 export const setUserType = mutation({
   args: { userType: v.string() },
   handler: async (ctx, { userType }) => {
+    if (!SELF_SERVICE_USER_TYPES.includes(userType)) {
+      throw new Error(`Cannot self-assign userType "${userType}"`);
+    }
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
     const existing = await ctx.db
@@ -122,5 +130,29 @@ export const setUserType = mutation({
     } else {
       await ctx.db.insert("profiles", { userId, userType });
     }
+  },
+});
+
+// Protected admin bootstrap — only reachable via `npx convex run` with a
+// deploy key (i.e. from the CLI, never from client code), since it is not
+// exported to the public mutation surface the frontend calls.
+export const grantAdminByEmail = internalMutation({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", email))
+      .first();
+    if (!user) throw new Error(`No user found with email ${email}`);
+    const existing = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .first();
+    if (existing) {
+      await ctx.db.patch(existing._id, { userType: "admin" });
+    } else {
+      await ctx.db.insert("profiles", { userId: user._id, userType: "admin" });
+    }
+    return { userId: user._id };
   },
 });

@@ -156,7 +156,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (data: Partial<Profile>) => {
     await upsertProfile({
       username: data.username ?? undefined,
-      userType: data.user_type ?? undefined,
       skillCategory: data.skill_category ?? undefined,
       bio: data.bio ?? undefined,
       skills: data.skills ?? undefined,

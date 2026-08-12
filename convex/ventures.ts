@@ -1,6 +1,17 @@
-import { query, mutation, action, QueryCtx, MutationCtx } from "./_generated/server";
+import { query, mutation, QueryCtx, MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+
+async function requireAdmin(ctx: QueryCtx | MutationCtx): Promise<string> {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) throw new Error("Not authenticated");
+  const profile = await ctx.db
+    .query("profiles")
+    .withIndex("by_userId", (q) => q.eq("userId", userId))
+    .first();
+  if (profile?.userType !== "admin") throw new Error("Not authorized");
+  return userId;
+}
 
 async function withFounderProfiles<T extends { userId: string }>(
   ctx: QueryCtx | MutationCtx,
@@ -88,6 +99,7 @@ export const getFounderVentures = query({
 export const getAllVentures = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const ventures = await ctx.db.query("ventures").order("desc").collect();
     return await Promise.all(
       ventures.map(async (v) => ({
@@ -108,6 +120,7 @@ export const getAllVentures = query({
 export const getPendingVentures = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const ventures = await ctx.db
       .query("ventures")
       .withIndex("by_reviewStatus", (q) => q.eq("reviewStatus", "submitted"))
@@ -233,6 +246,7 @@ export const updateVenture = mutation({
 export const updateVentureStatus = mutation({
   args: { ventureId: v.id("ventures"), reviewStatus: v.string() },
   handler: async (ctx, { ventureId, reviewStatus }) => {
+    await requireAdmin(ctx);
     await ctx.db.patch(ventureId, { reviewStatus });
   },
 });
