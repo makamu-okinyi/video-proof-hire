@@ -17,7 +17,6 @@ import {
   ChevronRight,
   Bookmark,
   Building,
-  TrendingUp,
   Menu,
   X
 } from 'lucide-react';
@@ -44,10 +43,11 @@ const founderItems: NavGroup = {
   ],
 };
 
+// "Venture Engine" (the review/analytics dashboard at /admin) is already the
+// Main Menu "Dashboard" link for admins — don't repeat it here.
 const adminItems: NavGroup = {
   title: 'Program Admin',
   items: [
-    { icon: TrendingUp, label: 'Venture Engine', path: '/admin' },
     { icon: Building, label: 'Employer Hub', path: '/employer' },
     { icon: Plus, label: 'Post a Job', path: '/employer/jobs/create' },
     { icon: Trophy, label: 'Challenges', path: '/challenges' },
@@ -56,12 +56,16 @@ const adminItems: NavGroup = {
 };
 
 
-export function DashboardSidebar() {
+interface DashboardSidebarProps {
+  isCollapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
+}
+
+export function DashboardSidebar({ isCollapsed, onCollapsedChange }: DashboardSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, logout, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>(['Main Menu', 'Management']);
 
   const toggleGroup = (title: string) => {
@@ -87,7 +91,7 @@ export function DashboardSidebar() {
   const isFounder = profile?.user_type === 'founder' || profile?.user_type === 'talent';
 
   const dashboardPath = isAdmin ? '/admin' : isEmployer ? '/employer' : isFounder ? '/founder' : '/feed';
-  const settingsPath = isAdmin ? '/admin' : isEmployer ? '/employer/settings' : '/profile/edit';
+  const settingsPath = isEmployer ? '/employer/settings' : '/profile/edit';
 
   const mainMenuItems: NavGroup = {
     title: 'Main Menu',
@@ -162,7 +166,7 @@ export function DashboardSidebar() {
       {/* Collapse Toggle - Desktop Only */}
       <div className="hidden lg:flex justify-end px-4 mb-2">
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={() => onCollapsedChange(!isCollapsed)}
           className="neo-subtle p-2 rounded-xl hover:neo-pressed transition-all duration-300"
         >
           {isCollapsed ? (
@@ -222,7 +226,13 @@ export function DashboardSidebar() {
                 {!isCollapsed && (
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-charcoal truncate">{displayName}</p>
-                    <p className="text-xs text-cool-grey capitalize">{profile?.user_type || 'visitor'}</p>
+                    {isAdmin ? (
+                      <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground">
+                        Admin
+                      </span>
+                    ) : (
+                      <p className="text-xs text-cool-grey capitalize">{profile?.user_type || 'visitor'}</p>
+                    )}
                   </div>
                 )}
               </div>

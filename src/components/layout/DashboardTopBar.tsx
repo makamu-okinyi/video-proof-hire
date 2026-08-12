@@ -1,7 +1,8 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, Bell, ChevronRight } from 'lucide-react';
+import { Search, Bell, ChevronRight, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useAuth } from '@/context/AuthContext';
 
 const routeLabels: Record<string, string> = {
   '/': 'Dashboard',
@@ -52,12 +53,20 @@ export function DashboardTopBar() {
   const navigate = useNavigate();
   const breadcrumbs = getBreadcrumbs(location.pathname);
   const { unreadCount } = useNotifications();
+  const { profile } = useAuth();
+  const isAdmin = profile?.user_type === 'admin';
 
   return (
     <header className="sticky top-0 z-30 bg-background border-b border-border">
       <div className="flex items-center justify-between px-4 lg:px-8 py-4">
         {/* Breadcrumbs */}
         <nav className="flex items-center gap-2 text-sm ml-14 lg:ml-0">
+          {isAdmin && (
+            <span className="hidden sm:inline-flex items-center gap-1 mr-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-primary text-primary-foreground shrink-0">
+              <ShieldCheck className="h-3 w-3" />
+              Admin Mode
+            </span>
+          )}
           {breadcrumbs.map((crumb, index) => (
             <div key={crumb.path} className="flex items-center gap-2">
               {index > 0 && (
