@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Settings, Edit2, Share2,
   Eye, Bookmark, LogOut, ChevronRight,
-  BadgeCheck, Lock, Globe, Play, RefreshCw, User
+  BadgeCheck, Lock, Globe, Play, User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -164,9 +164,6 @@ export default function Profile() {
             @{profile?.username || (user?.user_metadata?.full_name as string | undefined)?.replace(/\s+/g, '').toLowerCase() || 'user'}
           </h1>
             <div className="flex items-center gap-2">
-              <button onClick={() => {}} className="neo-subtle p-2 rounded-xl hover:neo-pressed transition-all" title="Up to date">
-                <RefreshCw className="h-5 w-5 text-cool-grey" />
-              </button>
               <button onClick={handleShare} className="neo-subtle p-2 rounded-xl hover:neo-pressed transition-all">
                 <Share2 className="h-5 w-5 text-cool-grey" />
               </button>

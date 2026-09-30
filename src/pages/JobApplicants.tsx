@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { StartConversationButton } from '@/components/messaging/StartConversationButton';
 import { RocketLoader } from '@/components/ui/RocketLoader';
+import { ApplicantDossier } from '@/components/employer/ApplicantDossier';
 
 type Applicant = {
   _id: Id<'jobApplications'>;
@@ -48,6 +49,7 @@ export default function JobApplicants() {
   const applicants = (applicantsRaw ?? []) as Applicant[];
   const loading = job === undefined || applicantsRaw === undefined;
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [dossierFor, setDossierFor] = useState<Id<'jobApplications'> | null>(null);
 
   const updateApplicationStatus = useMutation(api.jobs.updateApplicationStatus);
   const notifyStatusChange = useAction(api.notifications.notifyStatusChange);
@@ -237,6 +239,9 @@ export default function JobApplicants() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setDossierFor(applicant._id)}>
+                    Dossier
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -348,6 +353,7 @@ export default function JobApplicants() {
           ))
         )}
       </div>
+      <ApplicantDossier applicationId={dossierFor} onClose={() => setDossierFor(null)} />
     </div>
   );
 }

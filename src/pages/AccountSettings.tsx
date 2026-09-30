@@ -5,8 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PasskeysManager } from '@/components/settings/PasskeysManager';
 import { ChangePasswordPanel } from '@/components/settings/ChangePasswordPanel';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { DataRightsPanel } from '@/components/settings/DataRightsPanel';
 import { LegalLinks } from '@/components/legal/LegalLinks';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -51,17 +49,12 @@ export default function AccountSettings() {
               <Bell className="h-5 w-5" />
               Notifications
             </CardTitle>
-            <CardDescription>Configure notification preferences</CardDescription>
+            <CardDescription>Where you will see updates</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="email-notifs">Email notifications</Label>
-              <Switch id="email-notifs" defaultChecked />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="push-notifs">Push notifications</Label>
-              <Switch id="push-notifs" defaultChecked />
-            </div>
+          <CardContent>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              New applicants, application updates and messages appear in the notification bell at the top of the app, so nothing is sent to your email.
+            </p>
           </CardContent>
         </Card>
 
@@ -76,10 +69,6 @@ export default function AccountSettings() {
           </CardHeader>
           <CardContent className="space-y-4">
             <ChangePasswordPanel />
-            <div className="flex items-center justify-between">
-              <Label htmlFor="2fa">Two-factor authentication</Label>
-              <Switch id="2fa" />
-            </div>
           </CardContent>
         </Card>
 

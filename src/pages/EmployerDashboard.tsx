@@ -7,6 +7,7 @@ import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/componen
 import { StatCard } from '@/components/dashboard/StatCard';
 import { useAuth } from '@/context/AuthContext';
 import { useEmployerAnalytics } from '@/hooks/useEmployerAnalytics';
+import { HiringInsights } from '@/components/employer/HiringInsights';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 
@@ -47,6 +48,8 @@ export default function EmployerDashboard() {
           <StatCard title="Total Applicants" value={String(analytics?.totalApplicants ?? 0)} />
           <StatCard title="Challenges" value={String(analytics?.challenges ?? 0)} />
         </div>
+
+        <HiringInsights />
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

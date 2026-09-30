@@ -182,6 +182,23 @@ export default defineSchema({
     .index("by_applicantId", ["applicantId"])
     .index("by_jobId_applicantId", ["jobId", "applicantId"]),
 
+  // Structured reviewer input on an application (1 to 5 per criterion, plus an optional note).
+  applicationAssessments: defineTable({
+    applicationId: v.id("jobApplications"),
+    reviewerId: v.string(),
+    scores: v.object({
+      communication: v.number(),
+      technical: v.number(),
+      problemSolving: v.number(),
+      roleFit: v.number(),
+      presentation: v.number(),
+    }),
+    note: v.optional(v.string()),
+    updatedAt: v.number(),
+  })
+    .index("by_applicationId", ["applicationId"])
+    .index("by_application_reviewer", ["applicationId", "reviewerId"]),
+
   challenges: defineTable({
     employerId: v.string(),
     title: v.string(),
