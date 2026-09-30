@@ -121,3 +121,32 @@ export const revokeAdminByEmail = internalMutation({
     return { userId: user._id };
   },
 });
+
+/**
+ * Make the admin set exactly `emails`: any other admin profile is demoted to "talent". CLI only:
+ *   npx convex run admin:restrictAdminsTo '{"emails":["a@x.com","b@y.com"]}'
+ * Listed emails that have not signed up yet are reported under `pendingSignup`.
+ */
+export const restrictAdminsTo = internalMutation({
+  args: { emails: v.array(v.string()) },
+  handler: async (ctx, { emails }) => {
+    const keep = new Set(emails.map((e) => e.trim().toLowerCase()));
+    const demoted: string[] = [];
+    const admins: string[] = [];
+    const profiles = await ctx.db.query("profiles").collect();
+    for (const p of profiles) {
+      if (p.userType !== "admin") continue;
+      const user = await ctx.db.get(p.userId);
+      const email = user?.email?.trim().toLowerCase() ?? "";
+      if (keep.has(email)) {
+        admins.push(email);
+      } else {
+        await ctx.db.patch(p._id, { userType: "talent" });
+        await logAdminAction(ctx, p.userId, "admin_revoked", { detail: "restrictAdminsTo" });
+        demoted.push(email || String(p.userId));
+      }
+    }
+    const pendingSignup = [...keep].filter((e) => !admins.includes(e));
+    return { demoted, admins, pendingSignup };
+  },
+});
