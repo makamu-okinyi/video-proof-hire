@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, ReactNode } from "react";
-import { useConvexAuth, useQuery, useMutation } from "convex/react";
+import { useConvexAuth, useQuery, useMutation, useAction } from "convex/react";
+import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
+import { defaultDeviceLabel, describePasskeyError, isPasskeySupported } from "@/lib/webauthn";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
 
@@ -33,8 +35,10 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ error: Error | null }>;
   signup: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<{ error: Error | null }>;
   signInWithOAuth: (provider: string, redirectTo?: string) => Promise<{ error: Error | null; url?: string | null }>;
-  signInWithWebAuthn: () => Promise<{ error: Error | null }>;
-  registerWebAuthn: () => Promise<{ error: Error | null }>;
+  /** Sign in with a passkey. Pass `email` for email-first, omit it for usernameless (discoverable). */
+  signInWithWebAuthn: (opts?: { email?: string }) => Promise<{ error: Error | null }>;
+  /** Register a passkey for the signed-in user. */
+  registerWebAuthn: (deviceLabel?: string) => Promise<{ error: Error | null }>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -56,6 +60,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const upsertProfile = useMutation(api.profiles.upsertProfile);
+  const getRegistrationOptions = useAction(api.passkeysNode.registrationOptions);
+  const verifyRegistration = useAction(api.passkeysNode.verifyRegistration);
+  const getAuthenticationOptions = useAction(api.passkeysNode.authenticationOptions);
+
+  // A suspended account is signed out immediately; the sign-in screen explains why.
+  useEffect(() => {
+    if (isAuthenticated && convexProfile?.status === "suspended") {
+      try {
+        sessionStorage.setItem("donjo-suspended", "1");
+      } catch {
+        /* storage unavailable */
+      }
+      void signOut();
+    }
+  }, [isAuthenticated, convexProfile?.status, signOut]);
 
   const isLoading =
     authLoading ||
@@ -119,34 +138,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signInWithOAuth = async (provider: string, redirectTo?: string) => {
+  // Google / Apple sign-in are placeholders ("Coming soon") until credentials are supplied.
+  // See the TODO in convex/auth.ts. This never throws and never calls the backend.
+  const signInWithOAuth = async (_provider: string, _redirectTo?: string) => {
+    return {
+      error: new Error("Social sign-in is coming soon. Please use email and password or a passkey."),
+      url: null,
+    };
+  };
+
+  const signInWithWebAuthn = async (opts?: { email?: string }) => {
+    if (!isPasskeySupported()) {
+      return { error: new Error("Passkeys are not supported in this browser. Please use your password instead.") };
+    }
     try {
-      await signIn("google", {
-        redirectTo: redirectTo || `${window.location.origin}/auth`,
-      });
-      return { error: null, url: null };
+      const optionsJSON = await getAuthenticationOptions({ email: opts?.email?.trim() || undefined });
+      const assertion = await startAuthentication({ optionsJSON });
+      await signIn("passkey", { response: JSON.stringify(assertion) });
+      return { error: null };
     } catch (err) {
-      return {
-        error: err instanceof Error ? err : new Error(String(err)),
-        url: null,
-      };
+      return { error: new Error(describePasskeyError(err, "signin")) };
     }
   };
 
-  const signInWithWebAuthn = async () => {
-    return {
-      error: new Error(
-        "Biometric sign-in is not yet available. Please use email/password or Google."
-      ),
-    };
-  };
-
-  const registerWebAuthn = async () => {
-    return {
-      error: new Error(
-        "Biometric registration is not yet available. Please use email/password or Google."
-      ),
-    };
+  const registerWebAuthn = async (deviceLabel?: string) => {
+    if (!isPasskeySupported()) {
+      return { error: new Error("Passkeys are not supported in this browser.") };
+    }
+    try {
+      const optionsJSON = await getRegistrationOptions({});
+      const attestation = await startRegistration({ optionsJSON });
+      const result = await verifyRegistration({
+        response: attestation,
+        deviceLabel: deviceLabel?.trim() || defaultDeviceLabel(),
+      });
+      if (!result.ok) return { error: new Error(result.error || "We could not add your passkey.") };
+      return { error: null };
+    } catch (err) {
+      return { error: new Error(describePasskeyError(err, "register")) };
+    }
   };
 
   const logout = async () => {

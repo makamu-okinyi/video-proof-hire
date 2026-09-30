@@ -1,31 +1,18 @@
-import { useState } from 'react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Bell, Shield, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/context/AuthContext';
-import { getStoredCredentialForUser } from '@/lib/webauthn';
-import { toast } from 'sonner';
+import { PasskeysManager } from '@/components/settings/PasskeysManager';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { DataRightsPanel } from '@/components/settings/DataRightsPanel';
+import { LegalLinks } from '@/components/legal/LegalLinks';
 import { BottomNav } from '@/components/layout/BottomNav';
 
 export default function AccountSettings() {
+  useDocumentTitle('Account settings');
   const navigate = useNavigate();
-  const { user, registerWebAuthn } = useAuth();
-  const [bioLoading, setBioLoading] = useState(false);
-  const hasBiometric = user ? !!getStoredCredentialForUser(user.id) : false;
-
-  const handleEnableFingerprint = async () => {
-    setBioLoading(true);
-    try {
-      const { error } = await registerWebAuthn();
-      if (error) toast.error(error.message);
-      else toast.success('Fingerprint enabled. You can sign in with it next time.');
-    } finally {
-      setBioLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -91,31 +78,39 @@ export default function AccountSettings() {
               Change Password
             </Button>
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="flex items-center gap-2">
-                  <Fingerprint className="h-4 w-4" />
-                  Fingerprint / Biometric
-                </Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {hasBiometric ? 'Enabled — sign in with fingerprint on login' : 'Enable passwordless sign-in'}
-                </p>
-              </div>
-              <Button
-                variant={hasBiometric ? 'secondary' : 'default'}
-                size="sm"
-                disabled={bioLoading || hasBiometric}
-                onClick={handleEnableFingerprint}
-                className="pointer-events-auto"
-              >
-                {bioLoading ? '...' : hasBiometric ? 'Enabled' : 'Enable'}
-              </Button>
-            </div>
-            <div className="flex items-center justify-between">
               <Label htmlFor="2fa">Two-factor authentication</Label>
               <Switch id="2fa" />
             </div>
           </CardContent>
         </Card>
+
+        {/* Passkeys */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Fingerprint className="h-5 w-5" />
+              Passkeys
+            </CardTitle>
+            <CardDescription>Sign in with your fingerprint, face or device PIN</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PasskeysManager />
+          </CardContent>
+        </Card>
+        {/* Your data */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Your data
+            </CardTitle>
+            <CardDescription>Download or delete your personal data</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DataRightsPanel />
+          </CardContent>
+        </Card>
+        <LegalLinks className="pt-2" />
       </main>
 
       <BottomNav />

@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useRef, type ElementType } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -9,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { skillsList } from '@/data/mockData';
+import { skillsList } from '@/lib/skills';
 import { cn } from '@/lib/utils';
 import { useCamera } from '@/hooks/useCamera';
 import { useFileUpload } from '@/hooks/useFileUpload';
@@ -48,6 +49,7 @@ const skillCategories: { value: string; label: string; Icon: ElementType }[] = [
 ];
 
 export default function Create() {
+  useDocumentTitle('Post a video');
   const navigate = useNavigate();
   const { user, isAuthenticated, profile, isLoading: authLoading } = useAuth();
   const createVideoMutation = useMutation(api.videos.createVideo);

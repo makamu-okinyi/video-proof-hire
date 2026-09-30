@@ -1,9 +1,11 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Star, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BottomNav } from '@/components/layout/BottomNav';
 
 export default function MyShortlist() {
+  useDocumentTitle('My shortlist');
   const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-background pb-20">

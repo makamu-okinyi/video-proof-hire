@@ -68,7 +68,7 @@ export function DashboardTopBar() {
             </span>
           )}
           {breadcrumbs.map((crumb, index) => (
-            <div key={crumb.path} className="flex items-center gap-2">
+            <div key={`${crumb.path}-${index}`} className="flex items-center gap-2">
               {index > 0 && (
                 <ChevronRight className="h-4 w-4 text-cool-grey" />
               )}
@@ -87,15 +87,7 @@ export function DashboardTopBar() {
 
         {/* Search & Actions */}
         <div className="flex items-center gap-3">
-          {/* Neomorphic Search */}
-          <div className="hidden md:flex items-center gap-2 neo-inset px-4 py-2 w-64">
-            <Search className="h-4 w-4 text-cool-grey" />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="flex-1 bg-transparent border-none outline-none text-sm text-charcoal placeholder:text-cool-grey"
-            />
-          </div>
+
 
           {/* Notifications */}
           <button

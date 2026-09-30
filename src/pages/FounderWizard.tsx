@@ -8,7 +8,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { Field } from '@/components/ui/field';
+import { MultiSelect } from '@/components/ui/select';
+import { LocationFields, fromLocationValue, toLocationValue } from '@/components/profile/LocationFields';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Badge } from '@/components/ui/badge';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -53,6 +56,8 @@ interface FormData {
   githubUrl: string;
   demoUrl: string;
   founderTitle: string;
+  county: string;
+  country: string;
 }
 
 const initialFormData: FormData = {
@@ -60,6 +65,7 @@ const initialFormData: FormData = {
   marketSize: '', traction: '', businessModel: '', stage: 'idea',
   industry: [], techStack: [], websiteUrl: '', githubUrl: '', demoUrl: '',
   founderTitle: 'CEO & Founder',
+  county: '', country: '',
 };
 
 const steps: { id: WizardStep; title: string; icon: React.ReactNode }[] = [
@@ -72,6 +78,7 @@ const steps: { id: WizardStep; title: string; icon: React.ReactNode }[] = [
 ];
 
 export default function FounderWizard() {
+  useDocumentTitle('Venture application');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editVentureId = searchParams.get('edit');
@@ -129,6 +136,8 @@ export default function FounderWizard() {
       githubUrl: d.githubUrl || '',
       demoUrl: d.demoUrl || '',
       founderTitle: d.founders?.find(f => f.userId === user?.id)?.title || 'CEO & Founder',
+      county: d.county || '',
+      country: d.country || '',
     });
     setExistingVideoUrl(d.pitchVideoUrl || null);
     setIsLoadingEdit(false);
@@ -204,6 +213,7 @@ export default function FounderWizard() {
           githubUrl: formData.githubUrl || undefined,
           demoUrl: formData.demoUrl || undefined,
           pitchVideoUrl: videoUrl || undefined,
+          ...(fromLocationValue(toLocationValue(formData.county, formData.country)).county ? { county: formData.county, country: 'Kenya' } : formData.country ? { country: formData.country } : {}),
         });
 
         // Update founder title
@@ -237,6 +247,7 @@ export default function FounderWizard() {
           demoUrl: formData.demoUrl || undefined,
           pitchVideoUrl: videoUrl || undefined,
           founderTitle: formData.founderTitle,
+          ...(formData.county ? { county: formData.county, country: 'Kenya' } : formData.country ? { country: formData.country } : {}),
         });
 
         if (pitchDeckFile) {
@@ -264,25 +275,21 @@ export default function FounderWizard() {
       case 'basics':
         return (
           <motion.div {...variants} className="space-y-5">
-            <div className="space-y-2">
-              <Label>Venture Name *</Label>
-              <Input value={formData.name} onChange={e => updateFormData({ name: e.target.value })} placeholder="e.g., PayStack, Andela" className="h-12" />
-            </div>
-            <div className="space-y-2">
-              <Label>One-Line Pitch *</Label>
-              <Input value={formData.tagline} onChange={e => updateFormData({ tagline: e.target.value })} placeholder="Making payments easier in Africa" maxLength={100} className="h-12" />
-              <p className="text-xs text-cool-grey">{formData.tagline.length}/100</p>
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea value={formData.description} onChange={e => updateFormData({ description: e.target.value })} placeholder="Tell us more..." className="min-h-[100px]" />
-            </div>
-            <div className="space-y-2">
-              <Label>Stage</Label>
+            <Field label="Venture name" required>
+              <Input value={formData.name} onChange={e => updateFormData({ name: e.target.value })} placeholder="e.g., PayStack, Andela" autoComplete="organization" />
+            </Field>
+            <Field label="One-line pitch" required counter={{ length: formData.tagline.length, max: 100 }}>
+              <Input value={formData.tagline} onChange={e => updateFormData({ tagline: e.target.value })} placeholder="Making payments easier in Africa" maxLength={100} />
+            </Field>
+            <Field label="Description" optional>
+              <Textarea value={formData.description} onChange={e => updateFormData({ description: e.target.value })} placeholder="Tell us more..." rows={4} />
+            </Field>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Stage</legend>
               <div className="flex flex-wrap gap-2">
                 {(['idea', 'prototype', 'mvp', 'growth', 'scale'] as const).map(s => (
-                  <button key={s} onClick={() => updateFormData({ stage: s })} className={cn(
-                    "px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                  <button key={s} type="button" aria-pressed={formData.stage === s} onClick={() => updateFormData({ stage: s })} className={cn(
+                    "min-h-11 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                     formData.stage === s
                       ? "neo-pressed text-charcoal ring-2 ring-primary/50 ring-offset-2 ring-offset-background"
                       : "neo-extruded text-cool-grey hover:text-charcoal"
@@ -291,28 +298,22 @@ export default function FounderWizard() {
                   </button>
                 ))}
               </div>
-            </div>
+            </fieldset>
+            <LocationFields
+              label="Where is the venture based?"
+              hint="Optional, but it helps the Donjo team see where ventures are emerging."
+              value={toLocationValue(formData.county, formData.country)}
+              onChange={(v) => { const f = fromLocationValue(v); updateFormData({ county: f.county, country: v.county === '__outside__' ? v.country : f.country }); }}
+            />
           </motion.div>
         );
       case 'problem':
         return (
           <motion.div {...variants} className="space-y-5">
-            <div className="space-y-2">
-              <Label>The Problem *</Label>
-              <Textarea value={formData.problemStatement} onChange={e => updateFormData({ problemStatement: e.target.value })} placeholder="What painful problem are you solving?" className="min-h-[120px]" />
-            </div>
-            <div className="space-y-2">
-              <Label>Your Solution</Label>
-              <Textarea value={formData.solution} onChange={e => updateFormData({ solution: e.target.value })} placeholder="How does your product solve this?" className="min-h-[120px]" />
-            </div>
-            <div className="space-y-2">
-              <Label>Market Size</Label>
-              <Input value={formData.marketSize} onChange={e => updateFormData({ marketSize: e.target.value })} placeholder="e.g., $5B in East Africa" className="h-12" />
-            </div>
-            <div className="space-y-2">
-              <Label>Traction</Label>
-              <Input value={formData.traction} onChange={e => updateFormData({ traction: e.target.value })} placeholder="e.g., 500 beta users" className="h-12" />
-            </div>
+            <Field label="The problem" required><Textarea value={formData.problemStatement} onChange={e => updateFormData({ problemStatement: e.target.value })} placeholder="What painful problem are you solving?" rows={5} /></Field>
+            <Field label="Your solution" optional><Textarea value={formData.solution} onChange={e => updateFormData({ solution: e.target.value })} placeholder="How does your product solve this?" rows={5} /></Field>
+            <Field label="Market size" optional><Input value={formData.marketSize} onChange={e => updateFormData({ marketSize: e.target.value })} placeholder="e.g., $5B in East Africa" /></Field>
+            <Field label="Traction" optional><Input value={formData.traction} onChange={e => updateFormData({ traction: e.target.value })} placeholder="e.g., 500 beta users" /></Field>
           </motion.div>
         );
       case 'team':
@@ -323,43 +324,21 @@ export default function FounderWizard() {
               <p className="font-semibold text-charcoal">You're the Lead Founder</p>
               <p className="text-cool-grey text-sm mt-1">Invite co-founders later.</p>
             </div>
-            <div className="space-y-2">
-              <Label>Your Title *</Label>
-              <Input value={formData.founderTitle} onChange={e => updateFormData({ founderTitle: e.target.value })} placeholder="CEO & Co-Founder" className="h-12" />
-            </div>
-            <div className="space-y-2">
-              <Label>Business Model</Label>
-              <Input value={formData.businessModel} onChange={e => updateFormData({ businessModel: e.target.value })} placeholder="SaaS, Marketplace, etc." className="h-12" />
-            </div>
+            <Field label="Your title" required><Input value={formData.founderTitle} onChange={e => updateFormData({ founderTitle: e.target.value })} placeholder="CEO & Co-Founder" /></Field>
+            <Field label="Business model" optional><Input value={formData.businessModel} onChange={e => updateFormData({ businessModel: e.target.value })} placeholder="SaaS, Marketplace, etc." /></Field>
           </motion.div>
         );
       case 'tech':
         return (
           <motion.div {...variants} className="space-y-5">
-            <div className="space-y-2">
-              <Label>Industry *</Label>
-              <div className="flex flex-wrap gap-2">
-                {INDUSTRIES.map(i => (
-                  <Badge key={i} variant={formData.industry.includes(i) ? "default" : "outline"} className="cursor-pointer transition-all" onClick={() => toggleArrayItem('industry', i)}>{i}</Badge>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Tech Stack</Label>
-              <div className="flex flex-wrap gap-2">
-                {TECH_STACK.map(t => (
-                  <Badge key={t} variant={formData.techStack.includes(t) ? "default" : "outline"} className="cursor-pointer transition-all" onClick={() => toggleArrayItem('techStack', t)}>{t}</Badge>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Website</Label>
-              <Input value={formData.websiteUrl} onChange={e => updateFormData({ websiteUrl: e.target.value })} placeholder="https://..." className="h-12" />
-            </div>
-            <div className="space-y-2">
-              <Label>GitHub</Label>
-              <Input value={formData.githubUrl} onChange={e => updateFormData({ githubUrl: e.target.value })} placeholder="https://github.com/..." className="h-12" />
-            </div>
+            <Field label="Industry" required hint="Choose all that apply.">
+              <MultiSelect values={formData.industry} onValuesChange={(v) => updateFormData({ industry: v })} options={INDUSTRIES.map((i) => ({ value: i, label: i }))} placeholder="Select industries" searchPlaceholder="Search industries" />
+            </Field>
+            <Field label="Tech stack" optional>
+              <MultiSelect values={formData.techStack} onValuesChange={(v) => updateFormData({ techStack: v })} options={TECH_STACK.map((t) => ({ value: t, label: t }))} placeholder="Select technologies" searchPlaceholder="Search technologies" />
+            </Field>
+            <Field label="Website" optional><Input value={formData.websiteUrl} onChange={e => updateFormData({ websiteUrl: e.target.value })} placeholder="https://..." /></Field>
+            <Field label="GitHub" optional><Input value={formData.githubUrl} onChange={e => updateFormData({ githubUrl: e.target.value })} placeholder="https://github.com/..." /></Field>
           </motion.div>
         );
       case 'pitch':
@@ -406,7 +385,7 @@ export default function FounderWizard() {
 
             {/* Pitch Deck Upload */}
             <div className="space-y-2 pt-4 border-t border-border/30">
-              <Label>Pitch Deck (Optional)</Label>
+              <p className="text-sm font-medium">Pitch deck <span className="text-xs font-normal text-muted-foreground">Optional</span></p>
               {pitchDeckFile ? (
                 <div className="neo-subtle rounded-2xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">

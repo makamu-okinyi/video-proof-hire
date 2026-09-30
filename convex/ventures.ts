@@ -1,17 +1,9 @@
 import { query, mutation, QueryCtx, MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
-
-async function requireAdmin(ctx: QueryCtx | MutationCtx): Promise<string> {
-  const userId = await getAuthUserId(ctx);
-  if (!userId) throw new Error("Not authenticated");
-  const profile = await ctx.db
-    .query("profiles")
-    .withIndex("by_userId", (q) => q.eq("userId", userId))
-    .first();
-  if (profile?.userType !== "admin") throw new Error("Not authorized");
-  return userId;
-}
+import { getActiveUserId as getAuthUserId } from "./lib/auth";
+import { requireAdmin } from "./lib/admin";
+import { KENYA_COUNTIES } from "./lib/kenya";
+import { applyVentureReview } from "./lib/review";
 
 async function withFounderProfiles<T extends { userId: string }>(
   ctx: QueryCtx | MutationCtx,
@@ -166,13 +158,17 @@ export const createVenture = mutation({
     hackathonName: v.optional(v.string()),
     hackathonCohort: v.optional(v.string()),
     founderTitle: v.optional(v.string()),
+    county: v.optional(v.string()),
+    country: v.optional(v.string()),
   },
   handler: async (ctx, { founderTitle, ...args }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+    if (args.county && !KENYA_COUNTIES.includes(args.county)) throw new Error("Unknown county");
     const ventureId = await ctx.db.insert("ventures", {
       ...args,
       reviewStatus: "submitted",
+      statusHistory: [{ status: "submitted", at: Date.now(), by: userId }],
       isActive: true,
       isFeatured: false,
     });
@@ -226,7 +222,10 @@ export const updateVenture = mutation({
     isFundraising: v.optional(v.boolean()),
     fundingGoal: v.optional(v.number()),
     fundingRaised: v.optional(v.number()),
-    reviewStatus: v.optional(v.string()),
+    county: v.optional(v.string()),
+    country: v.optional(v.string()),
+    // reviewStatus is deliberately NOT settable here: it is an admin decision
+    // (see updateVentureStatus). Letting founders patch it allowed self-approval.
   },
   handler: async (ctx, { ventureId, ...updates }) => {
     const userId = await getAuthUserId(ctx);
@@ -237,6 +236,7 @@ export const updateVenture = mutation({
       .filter((q) => q.eq(q.field("userId"), userId))
       .first();
     if (!founder) throw new Error("Not authorized");
+    if (updates.county && !KENYA_COUNTIES.includes(updates.county)) throw new Error("Unknown county");
     await ctx.db.patch(ventureId, Object.fromEntries(
       Object.entries(updates).filter(([, v]) => v !== undefined)
     ));
@@ -244,10 +244,10 @@ export const updateVenture = mutation({
 });
 
 export const updateVentureStatus = mutation({
-  args: { ventureId: v.id("ventures"), reviewStatus: v.string() },
-  handler: async (ctx, { ventureId, reviewStatus }) => {
-    await requireAdmin(ctx);
-    await ctx.db.patch(ventureId, { reviewStatus });
+  args: { ventureId: v.id("ventures"), reviewStatus: v.string(), reason: v.optional(v.string()) },
+  handler: async (ctx, { ventureId, reviewStatus, reason }) => {
+    const adminId = await requireAdmin(ctx);
+    await applyVentureReview(ctx, adminId, ventureId, reviewStatus, { reason });
   },
 });
 

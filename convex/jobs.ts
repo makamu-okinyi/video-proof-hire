@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getActiveUserId as getAuthUserId } from "./lib/auth";
+import { assertWithinPlan } from "./lib/plans";
 
 export const getActiveJobs = query({
   args: { limit: v.optional(v.number()) },
@@ -9,6 +10,7 @@ export const getActiveJobs = query({
       .query("jobPostings")
       .withIndex("by_isActive", (q) => q.eq("isActive", true))
       .order("desc")
+      .filter((q) => q.neq(q.field("adminHidden"), true))
       .take(limit);
   },
 });
@@ -52,6 +54,12 @@ export const createJob = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+    const activeJobs = await ctx.db
+      .query("jobPostings")
+      .withIndex("by_employerId", (q) => q.eq("employerId", userId))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+    await assertWithinPlan(ctx, userId, "activeJobs", activeJobs.length);
     return await ctx.db.insert("jobPostings", { ...args, employerId: userId, isActive: true });
   },
 });
@@ -77,6 +85,15 @@ export const updateJob = mutation({
     if (!userId) throw new Error("Not authenticated");
     const job = await ctx.db.get(jobId);
     if (!job || job.employerId !== userId) throw new Error("Not authorized");
+    if (updates.isActive === true && !job.isActive) {
+      if (job.adminHidden) throw new Error("This job was unpublished by a moderator");
+      const activeJobs = await ctx.db
+        .query("jobPostings")
+        .withIndex("by_employerId", (q) => q.eq("employerId", userId))
+        .filter((q) => q.eq(q.field("isActive"), true))
+        .collect();
+      await assertWithinPlan(ctx, userId, "activeJobs", activeJobs.length);
+    }
     await ctx.db.patch(jobId, Object.fromEntries(
       Object.entries(updates).filter(([, v]) => v !== undefined)
     ));
@@ -98,11 +115,15 @@ export const applyToJob = mutation({
       )
       .first();
     if (existing) throw new Error("Already applied");
+    const target = await ctx.db.get(jobId);
+    if (!target || !target.isActive || target.adminHidden) throw new Error("This job is no longer accepting applications");
     return await ctx.db.insert("jobApplications", {
       jobId,
       applicantId: userId,
       status: "pending",
       coverMessage,
+      updatedAt: Date.now(),
+      statusHistory: [{ status: "pending", at: Date.now(), by: userId }],
     });
   },
 });
@@ -203,7 +224,17 @@ export const updateApplicationStatus = mutation({
     if (!app) throw new Error("Application not found");
     const job = await ctx.db.get(app.jobId);
     if (!job || job.employerId !== userId) throw new Error("Not authorized");
-    await ctx.db.patch(applicationId, { status });
+    if (status !== app.status) {
+      const now = Date.now();
+      await ctx.db.patch(applicationId, {
+        status,
+        updatedAt: now,
+        statusHistory: [
+          ...(app.statusHistory ?? [{ status: "pending", at: app._creationTime }]),
+          { status, at: now, by: userId },
+        ],
+      });
+    }
   },
 });
 

@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useFounderVentures, FounderVenture } from '@/hooks/useFounderVenture';
@@ -5,7 +6,7 @@ import { useApplicantJobApplications } from '@/hooks/useApplicantJobApplications
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
 import { 
-  Rocket, FileText, Users, Calendar, Bell, Briefcase,
+  Rocket, FileText, Briefcase,
   Clock, CheckCircle, AlertCircle,
   Video
 } from 'lucide-react';
@@ -71,7 +72,7 @@ function VentureCard({ venture, navigate }: { venture: FounderVenture; navigate:
           </div>
         )}
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <div className="grid grid-cols-2 gap-3 lg:gap-4">
           <div className="neo-subtle rounded-2xl p-4 text-center">
             <Video className="h-5 w-5 mx-auto mb-2 text-green-600" />
             <p className="text-xs text-cool-grey">Pitch Video</p>
@@ -86,20 +87,10 @@ function VentureCard({ venture, navigate }: { venture: FounderVenture; navigate:
               {venture.pitch_deck_count > 0 ? 'Uploaded ✓' : 'Not uploaded'}
             </p>
           </div>
-          <div className="neo-subtle rounded-2xl p-4 text-center">
-            <Users className="h-5 w-5 mx-auto mb-2 text-primary" />
-            <p className="text-xs text-cool-grey">Mentors</p>
-            <p className="text-sm font-semibold text-charcoal">—</p>
-          </div>
-          <div className="neo-subtle rounded-2xl p-4 text-center">
-            <Calendar className="h-5 w-5 mx-auto mb-2 text-primary" />
-            <p className="text-xs text-cool-grey">Next Session</p>
-            <p className="text-sm font-semibold text-charcoal">—</p>
-          </div>
         </div>
 
         <div className="flex flex-wrap gap-3 mt-5">
-          <Button onClick={() => navigate(`/apply?edit=${venture.id}`)} className="neo-extruded border-none">
+          <Button onClick={() => navigate(`/apply?edit=${venture.id}`)} >
             <FileText className="h-4 w-4 mr-2" />
             Edit Application
           </Button>
@@ -110,6 +101,7 @@ function VentureCard({ venture, navigate }: { venture: FounderVenture; navigate:
 }
 
 export default function FounderDashboard() {
+  useDocumentTitle('Founder dashboard');
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const emailPrefix = user?.email ? user.email.split('@')[0] : null;
@@ -128,7 +120,7 @@ export default function FounderDashboard() {
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-charcoal mb-1">
             Welcome, {displayName}
           </h1>
-          <p className="text-cool-grey text-sm lg:text-base">Track your venture application and upcoming sessions.</p>
+          <p className="text-cool-grey text-sm lg:text-base">Track your venture application and job applications.</p>
         </div>
 
         {/* Venture Status Cards */}
@@ -142,7 +134,7 @@ export default function FounderDashboard() {
           <NeoCard className="p-5 lg:p-8">
             <div className="text-center py-8">
               <p className="text-cool-grey mb-4">You haven&apos;t submitted a venture yet.</p>
-              <Button onClick={() => navigate('/apply')} className="neo-extruded border-none">
+              <Button onClick={() => navigate('/apply')}>
                 <Rocket className="h-4 w-4 mr-2" />
                 Apply to Program
               </Button>
@@ -217,7 +209,7 @@ export default function FounderDashboard() {
             )}
             {ventures && ventures.length > 0 && (!jobApplications || jobApplications.length === 0) && (
               <div className="text-center">
-                <Button variant="outline" size="sm" onClick={() => navigate('/jobs')} className="neo-extruded border-none">
+                <Button variant="outline" size="sm" onClick={() => navigate('/jobs')} >
                   <Briefcase className="h-4 w-4 mr-2" />
                   Browse Jobs
                 </Button>
@@ -225,34 +217,6 @@ export default function FounderDashboard() {
             )}
           </NeoCardContent>
         </NeoCard>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Mentor Sessions */}
-          <NeoCard className="p-5 lg:p-6">
-            <NeoCardHeader>
-              <NeoCardTitle className="text-lg flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                Upcoming Mentor Sessions
-              </NeoCardTitle>
-            </NeoCardHeader>
-            <NeoCardContent className="mt-4">
-              <p className="text-cool-grey text-sm text-center py-6">No sessions scheduled yet. Sessions will appear here once assigned.</p>
-            </NeoCardContent>
-          </NeoCard>
-
-          {/* Announcements */}
-          <NeoCard className="p-5 lg:p-6">
-            <NeoCardHeader>
-              <NeoCardTitle className="text-lg flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary" />
-                Cohort Announcements
-              </NeoCardTitle>
-            </NeoCardHeader>
-            <NeoCardContent className="mt-4">
-              <p className="text-cool-grey text-sm text-center py-6">No announcements at this time. Check back for program updates.</p>
-            </NeoCardContent>
-          </NeoCard>
-        </div>
       </div>
     </DashboardLayout>
   );

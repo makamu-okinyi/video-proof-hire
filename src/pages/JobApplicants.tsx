@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Play, Eye, CheckCircle, XCircle, Clock, User, Download, Loader2 } from 'lucide-react';
@@ -34,6 +35,7 @@ type Applicant = {
 };
 
 export default function JobApplicants() {
+  useDocumentTitle('Job applicants');
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();

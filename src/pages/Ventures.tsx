@@ -1,3 +1,5 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { SearchInput } from '@/components/ui/input';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -33,6 +35,7 @@ const stageColors = {
 type FounderPreview = { _id: string; userId: string; profile?: { avatar?: string; username?: string } | null };
 
 export default function Ventures() {
+  useDocumentTitle('Ventures');
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,15 +105,7 @@ export default function Ventures() {
         </div>
 
         {/* Search */}
-        <div className="neo-pressed px-4 py-3 rounded-2xl flex items-center gap-3">
-          <Search className="h-5 w-5 text-cool-grey" />
-          <input
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search ventures..."
-            className="flex-1 bg-transparent outline-none text-charcoal placeholder:text-cool-grey"
-          />
-        </div>
+        <SearchInput value={searchQuery} onValueChange={setSearchQuery} placeholder="Search ventures" aria-label="Search ventures" />
 
         {/* Industry Filter */}
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">

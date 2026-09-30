@@ -4,6 +4,9 @@ import { ChevronLeft, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Field } from '@/components/ui/field';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { errorMessage } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useQuery, useMutation } from 'convex/react';
@@ -27,6 +30,8 @@ function formatDeadlineForInput(iso: string | null): string {
 }
 
 export default function CreateChallenge() {
+  const isEditRoute = !!useParams<{ challengeId: string }>().challengeId;
+  useDocumentTitle(isEditRoute ? 'Edit challenge' : 'Create a challenge');
   const navigate = useNavigate();
   const { challengeId } = useParams<{ challengeId: string }>();
   const isEdit = !!challengeId;
@@ -136,7 +141,7 @@ export default function CreateChallenge() {
       navigate('/employer');
     } catch (error) {
       console.error('Error creating challenge:', error);
-      toast.error('Failed to create challenge');
+      toast.error(errorMessage(error, 'Failed to save the challenge'));
     } finally {
       setLoading(false);
     }
@@ -166,122 +171,67 @@ export default function CreateChallenge() {
       </div>
 
       {/* Form */}
-      <div className="p-4 space-y-6 pb-12">
+      <div className="p-4 sm:p-6 space-y-6 pb-12 max-w-3xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold">{isEdit ? 'Edit Challenge' : 'Create Challenge'}</h1>
           <p className="text-muted-foreground text-sm">{isEdit ? 'Update your challenge' : 'Launch a competition to discover top talent'}</p>
         </div>
 
         {/* Basic Info */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Challenge Title * <span className="text-muted-foreground text-xs">(max 200 chars)</span></label>
-            <Input
-              placeholder="e.g. Build a React Component Challenge"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={200}
-              className={errors.title ? 'border-destructive' : ''}
-            />
-            {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Description * <span className="text-muted-foreground text-xs">(max 10,000 chars)</span></label>
-            <Textarea
-              placeholder="Describe the challenge, what participants need to create, and judging criteria..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={5}
-              maxLength={10000}
-              className={errors.description ? 'border-destructive' : ''}
-            />
-            <div className="flex justify-between">
-              {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
-              <p className="text-xs text-muted-foreground ml-auto">{description.length}/10,000</p>
-            </div>
-          </div>
-        </div>
+        <section className="space-y-5" aria-labelledby="ch-basics">
+          <h2 id="ch-basics" className="font-semibold">Challenge details</h2>
+          <Field label="Challenge title" required error={errors.title} counter={{ length: title.length, max: 200 }}>
+            <Input placeholder="e.g. Build a React component" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} autoComplete="off" />
+          </Field>
+          <Field label="Description" required hint="What participants need to create, and how you will judge it." error={errors.description} counter={{ length: description.length, max: 10000 }}>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={6} maxLength={10000} />
+          </Field>
+        </section>
 
         {/* Prize Info */}
-        <div className="space-y-4">
-          <h2 className="font-semibold">Prize Information</h2>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Prize Amount ($)</label>
-            <Input
-              type="number"
-              placeholder="500"
-              value={prizeAmount}
-              onChange={(e) => setPrizeAmount(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Prize Description <span className="text-muted-foreground text-xs">(max 500 chars)</span></label>
-            <Input
-              placeholder="e.g. Cash prize + interview opportunity"
-              value={prizeDescription}
-              onChange={(e) => setPrizeDescription(e.target.value)}
-              maxLength={500}
-            />
-            <p className="text-xs text-muted-foreground">{prizeDescription.length}/500</p>
-          </div>
-        </div>
+        <section className="space-y-5" aria-labelledby="ch-prize">
+          <h2 id="ch-prize" className="font-semibold">Prize</h2>
+          <Field label="Prize amount (USD)" optional>
+            <Input type="number" min={0} step={50} placeholder="500" value={prizeAmount} onChange={(e) => setPrizeAmount(e.target.value)} />
+          </Field>
+          <Field label="Prize description" optional counter={{ length: prizeDescription.length, max: 500 }} error={errors.prize_description}>
+            <Input placeholder="e.g. Cash prize and an interview" value={prizeDescription} onChange={(e) => setPrizeDescription(e.target.value)} maxLength={500} />
+          </Field>
+        </section>
 
         {/* Skills Tags */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium">Skill Tags <span className="text-muted-foreground text-xs">(max 20 tags, 50 chars each)</span></label>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Add a skill tag"
-              value={skillInput}
-              onChange={(e) => setSkillInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
-              maxLength={50}
-            />
-            <Button variant="outline" size="icon" onClick={addSkill} disabled={skills.length >= 20}>
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          {skills.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {skills.map(skill => (
-                <Badge key={skill} variant="secondary" className="gap-1">
-                  {skill}
-                  <button onClick={() => removeSkill(skill)}>
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
+        <section className="space-y-3" aria-labelledby="ch-skills">
+          <Field label="Skill tags" optional id="ch-skills" hint="Press Enter to add. Up to 20 tags.">
+            <div className="flex gap-2">
+              <Input placeholder="Add a skill tag" value={skillInput} onChange={(e) => setSkillInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())} maxLength={50} enterKeyHint="done" />
+              <Button type="button" variant="outline" size="icon" aria-label="Add skill tag" onClick={addSkill} disabled={skills.length >= 20} className="h-11 w-11 shrink-0">
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
+          </Field>
+          {skills.length > 0 && (
+            <ul className="flex flex-wrap gap-2" aria-label="Added skill tags">
+              {skills.map((skill) => (
+                <li key={skill}>
+                  <Badge variant="secondary" className="gap-1">
+                    {skill}
+                    <button type="button" onClick={() => removeSkill(skill)} aria-label={`Remove ${skill}`}><X className="h-3 w-3" /></button>
+                  </Badge>
+                </li>
+              ))}
+            </ul>
           )}
-          <p className="text-xs text-muted-foreground">{skills.length}/20 skill tags</p>
-        </div>
+        </section>
 
         {/* Deadline */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Deadline</label>
-          <Input
-            type="datetime-local"
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-          />
-        </div>
+        <Field label="Deadline" optional>
+          <Input type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+        </Field>
 
         {/* Video Prompt */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Video Submission Guidance <span className="text-muted-foreground text-xs">(optional)</span></label>
-          <p className="text-xs text-muted-foreground">Tell participants what to include in their video submission. This will be shown when they submit an entry.</p>
-          <Textarea
-            placeholder="e.g. In your video, please demonstrate: your solution approach, a working demo, and explain the technical decisions you made."
-            value={videoPrompt}
-            onChange={(e) => setVideoPrompt(e.target.value)}
-            rows={4}
-            maxLength={1000}
-          />
-          <p className="text-xs text-muted-foreground text-right">{videoPrompt.length}/1,000</p>
-        </div>
+        <Field label="Video submission guidance" optional hint="Shown to participants when they submit an entry." counter={{ length: videoPrompt.length, max: 1000 }}>
+          <Textarea placeholder="e.g. Demonstrate your approach, a working demo, and explain your technical decisions." value={videoPrompt} onChange={(e) => setVideoPrompt(e.target.value)} rows={4} maxLength={1000} />
+        </Field>
 
         {/* Featured Toggle */}
         <div className="flex items-center justify-between py-4 border-t border-border">

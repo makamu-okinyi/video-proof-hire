@@ -1,11 +1,11 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getActiveUserId as getAuthUserId } from "./lib/auth";
 
 export const getPublicVideos = query({
   args: { skillCategory: v.optional(v.string()), limit: v.optional(v.number()) },
   handler: async (ctx, { skillCategory, limit = 50 }) => {
-    let q = ctx.db.query("videos");
+    const q = ctx.db.query("videos");
     if (skillCategory) {
       const results = await q
         .withIndex("by_skillCategory", (qi) => qi.eq("skillCategory", skillCategory))

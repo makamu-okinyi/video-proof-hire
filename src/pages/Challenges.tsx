@@ -1,3 +1,5 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { SearchInput } from '@/components/ui/input';
 import { useState } from 'react';
 import { Search, Trophy, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +25,7 @@ interface Challenge {
 }
 
 export default function Challenges() {
+  useDocumentTitle('Challenges');
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'featured'>('all');
@@ -79,15 +82,7 @@ export default function Challenges() {
         </div>
 
         {/* Search */}
-        <div className="neo-pressed px-4 py-3 rounded-2xl flex items-center gap-3">
-          <Search className="h-5 w-5 text-cool-grey" />
-          <input
-            placeholder="Search challenges..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 bg-transparent outline-none text-charcoal placeholder:text-cool-grey"
-          />
-        </div>
+        <SearchInput value={searchQuery} onValueChange={setSearchQuery} placeholder="Search challenges" aria-label="Search challenges" />
 
         {/* Tabs */}
         <div className="flex gap-2">

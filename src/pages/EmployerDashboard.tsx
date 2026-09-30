@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useNavigate } from 'react-router-dom';
 import { Settings, Briefcase, Plus, Trophy, TrendingUp, Edit2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { api } from '../../convex/_generated/api';
 const chartData = [4, 7, 5, 9, 6, 8, 10, 7, 6, 9, 11, 8];
 
 export default function EmployerDashboard() {
+  useDocumentTitle('Employer dashboard');
   const navigate = useNavigate();
   const { profile, user } = useAuth();
   const { data: analytics } = useEmployerAnalytics(user?.id ?? profile?.id);

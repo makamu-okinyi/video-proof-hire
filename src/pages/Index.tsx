@@ -35,7 +35,7 @@ const Index = () => {
     );
   }
 
-  return <Auth />;
+  return <Auth pageTitle="Donjo: prove your skills, get hired" heading="Donjo" />;
 };
 
 export default Index;

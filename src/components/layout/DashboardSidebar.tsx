@@ -17,6 +17,8 @@ import {
   ChevronRight,
   Bookmark,
   Building,
+  Compass,
+  MessageSquare,
   Menu,
   X
 } from 'lucide-react';
@@ -39,7 +41,20 @@ const founderItems: NavGroup = {
   title: 'Applicant Hub',
   items: [
     { icon: Plus, label: 'Apply to Program', path: '/apply' },
+    { icon: Compass, label: 'Discover', path: '/feed' },
     { icon: Briefcase, label: 'Jobs', path: '/jobs' },
+    { icon: Trophy, label: 'Challenges', path: '/challenges' },
+    { icon: MessageSquare, label: 'Messages', path: '/messages' },
+  ],
+};
+
+const employerItems: NavGroup = {
+  title: 'Hiring',
+  items: [
+    { icon: Plus, label: 'Post a Job', path: '/employer/jobs/create' },
+    { icon: Trophy, label: 'Challenges', path: '/employer/challenges/create' },
+    { icon: Bookmark, label: 'Shortlist', path: '/employer/shortlist' },
+    { icon: MessageSquare, label: 'Messages', path: '/messages' },
   ],
 };
 
@@ -52,6 +67,7 @@ const adminItems: NavGroup = {
     { icon: Plus, label: 'Post a Job', path: '/employer/jobs/create' },
     { icon: Trophy, label: 'Challenges', path: '/challenges' },
     { icon: Bookmark, label: 'Shortlist', path: '/employer/shortlist' },
+    { icon: MessageSquare, label: 'Messages', path: '/messages' },
   ],
 };
 
@@ -66,7 +82,7 @@ export function DashboardSidebar({ isCollapsed, onCollapsedChange }: DashboardSi
   const navigate = useNavigate();
   const { profile, logout, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(['Main Menu', 'Management']);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(['Main Menu', 'Applicant Hub', 'Hiring', 'Program Admin', 'Account']);
 
   const toggleGroup = (title: string) => {
     setExpandedGroups(prev =>
@@ -110,6 +126,7 @@ export function DashboardSidebar({ isCollapsed, onCollapsedChange }: DashboardSi
   const navGroups = [
     mainMenuItems,
     ...(isFounder ? [founderItems] : []),
+    ...(isEmployer ? [employerItems] : []),
     ...(isAdmin ? [adminItems] : []),
     managementItems,
   ];
@@ -156,7 +173,7 @@ export function DashboardSidebar({ isCollapsed, onCollapsedChange }: DashboardSi
           </div>
           {!isCollapsed && (
             <div className="transition-opacity duration-300">
-              <h1 className="text-lg font-bold text-charcoal">Donjo</h1>
+              <p className="text-lg font-bold text-charcoal">Donjo</p>
               <p className="text-xs text-cool-grey">Venture Engine</p>
             </div>
           )}
@@ -213,6 +230,7 @@ export function DashboardSidebar({ isCollapsed, onCollapsedChange }: DashboardSi
           {(() => {
             const avatarUrl = profile?.avatar;
             const displayName = profile?.username
+              || profile?.company_name
               || profile?.full_name
               || user?.email?.split('@')[0]
               || 'User';

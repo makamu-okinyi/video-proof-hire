@@ -1,6 +1,6 @@
 import { useState, useEffect, type ElementType } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Briefcase, ChevronLeft, Loader2, Fingerprint, ChevronDown, Rocket, ShieldCheck, Code2, Palette, BarChart3, Package } from 'lucide-react';
+import { ArrowRight, Mail, Lock, User, Briefcase, ChevronLeft, Rocket, ShieldCheck, Code2, Palette, BarChart3, Package } from 'lucide-react';
 import { RocketLoader } from '@/components/ui/RocketLoader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,14 @@ import { api } from '../../convex/_generated/api';
 import { z } from 'zod';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { AuthBackground } from '@/components/auth/AuthBackground';
+import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
+import { PasskeyButton } from '@/components/auth/PasskeyButton';
+import { Field } from '@/components/ui/field';
+import { PasswordInput } from '@/components/ui/input';
+import { LocationFields, fromLocationValue, type LocationValue } from '@/components/profile/LocationFields';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { LEGAL_VERSION } from '@/data/legal';
+import { LegalLinks } from '@/components/legal/LegalLinks';
 
 // Validation schemas
 const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
@@ -36,10 +44,10 @@ const skillCategories: { value: SkillCategory; label: string; Icon: ElementType 
   { value: 'other', label: 'Other', Icon: Package },
 ];
 
-export default function Auth() {
+export default function Auth({ pageTitle = 'Sign in or create an account', heading = 'Sign in to Donjo' }: { pageTitle?: string; heading?: string }) {
+  useDocumentTitle(pageTitle);
   const [step, setStep] = useState<Step>('welcome');
   const [isLogin, setIsLogin] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState<UserType>('talent');
@@ -47,13 +55,26 @@ export default function Auth() {
   const [selectedCategory, setSelectedCategory] = useState<SkillCategory | null>(null);
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('donjo-suspended')) {
+        sessionStorage.removeItem('donjo-suspended');
+        toast.error('This account has been suspended. Contact the Donjo team if you think this is a mistake.');
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+  const [geo, setGeo] = useState<LocationValue>({ county: '', country: '' });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetEmailSent, setResetEmailSent] = useState(false);
-  const [bioLoading, setBioLoading] = useState(false);
-  const { user, login, signup, signInWithOAuth, signInWithWebAuthn, registerWebAuthn, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
+  const { user, login, signup, signInWithWebAuthn, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
   const { signIn } = useAuthActions();
   const setUserTypeMutation = useMutation(api.profiles.setUserType);
+  const acceptTermsMutation = useMutation(api.profiles.acceptTerms);
+  const upsertLocation = useMutation(api.profiles.upsertProfile);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -73,6 +94,37 @@ export default function Auth() {
       }
     }
   }, [user, profileNeedsCompletion, username]);
+
+  // Finish a fresh signup: create the profile from the signup form choices, then route.
+  const [pendingSignup, setPendingSignup] = useState<{
+    userType: UserType;
+    username: string | null;
+    skillCategory: string;
+    location: LocationValue;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!pendingSignup || isLoading || !isAuthenticated || profile) return;
+    const pending = pendingSignup;
+    setPendingSignup(null);
+    (async () => {
+      try {
+        await setUserTypeMutation({ userType: pending.userType });
+        await updateProfile({
+          username: pending.username,
+          skill_category: pending.skillCategory,
+          user_type: pending.userType,
+        });
+        await acceptTermsMutation({ version: LEGAL_VERSION });
+        const loc = fromLocationValue(pending.location);
+        if (loc.county || loc.country) await upsertLocation(loc);
+        navigate(pending.userType === 'employer' ? '/employer' : '/feed', { replace: true });
+      } catch {
+        toast.error('Your account was created but profile setup failed. Please finish setup.');
+        setStep('userType');
+      }
+    })();
+  }, [pendingSignup, isLoading, isAuthenticated, profile, setUserTypeMutation, updateProfile, navigate]);
 
   // Handle authentication state changes and redirects
   useEffect(() => {
@@ -114,6 +166,10 @@ export default function Auth() {
 
     // Validate password (only for signup)
     if (!isLogin) {
+      if (!acceptedTerms) {
+        toast.error('Please agree to the Terms of Use and Privacy Policy to continue.');
+        return;
+      }
       const passwordResult = passwordSchema.safeParse(password);
       if (!passwordResult.success) {
         toast.error(passwordResult.error.errors[0].message);
@@ -168,9 +224,14 @@ export default function Auth() {
             toast.error(error.message || 'Signup failed. Please try again.');
           }
         } else {
-          // With Convex auth, signup signs in immediately — go to profile setup
-          setJustLoggedIn(true);
-          setStep('userType');
+          // Convex auth signs the user in immediately. The profile is created by the
+          // effect below once the session is live, using the choices made on this form.
+          setPendingSignup({
+            userType,
+            username: username.trim() || null,
+            skillCategory: selectedCategory || 'other',
+            location: geo,
+          });
         }
       }
     } catch (error) {
@@ -179,29 +240,19 @@ export default function Auth() {
     setLoading(false);
   };
 
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
+  const handlePasskeySignIn = async () => {
+    // Email-first when a valid email is typed, otherwise usernameless (discoverable credential).
+    const typed = emailSchema.safeParse(email);
+    setPasskeyLoading(true);
     try {
-      const { error, url } = await signInWithOAuth('google', `${window.location.origin}/auth`);
-
+      const { error } = await signInWithWebAuthn(typed.success ? { email: typed.data } : undefined);
       if (error) {
-        console.error('Google sign-in error:', error);
-        toast.error('Google sign-in failed. Please try again.');
-        setGoogleLoading(false);
-        return;
+        toast.error(error.message);
+      } else {
+        setJustLoggedIn(true);
       }
-
-      // If we got a URL, redirect to it (this is the OAuth provider's login page)
-      if (url) {
-        window.location.href = url;
-        return;
-      }
-
-      // Keep loading state until redirect happens
-    } catch (err) {
-      console.error('Google sign-in unexpected error:', err);
-      toast.error('An unexpected error occurred');
-      setGoogleLoading(false);
+    } finally {
+      setPasskeyLoading(false);
     }
   };
 
@@ -229,18 +280,6 @@ export default function Auth() {
       }
     }
     setLoading(false);
-  };
-
-  const handleBiometricClick = async () => {
-    setBioLoading(true);
-    try {
-      const { error } = await signInWithWebAuthn();
-      if (error) {
-        toast.info('Use password to sign in, or enable fingerprint after logging in.');
-      }
-    } finally {
-      setBioLoading(false);
-    }
   };
 
   const handleUserTypeSelect = (type: UserType) => {
@@ -281,6 +320,8 @@ export default function Auth() {
 
       // Refresh to get updated profile
       await refreshProfile();
+      await acceptTermsMutation({ version: LEGAL_VERSION });
+      { const loc = fromLocationValue(geo); if (loc.county || loc.country) await upsertLocation(loc); }
 
       // Redirect based on user type (employer = hiring dashboard; talent -> feed,
       // then useRoleBasedRedirect routes founders on to /founder).
@@ -384,8 +425,7 @@ export default function Auth() {
         <div className="text-center space-y-2">
           <Logo size="xl" className="justify-center" />
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Donjo
-          </h1>
+            {heading}</h1>
           <p className="text-muted-foreground text-sm">
             Prove your skills, get hired
           </p>
@@ -469,14 +509,7 @@ export default function Auth() {
           >
             <ChevronLeft className="h-4 w-4" /> Back
           </button>
-          <div className="flex-1 flex justify-center">
-            <div className="relative">
-              <select className="neo-extruded-sm px-4 py-2.5 text-sm font-medium text-foreground appearance-none cursor-pointer pointer-events-auto pr-8 min-w-[120px]" defaultValue="en">
-                <option value="en">English</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            </div>
-          </div>
+          <div className="flex-1" />
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 max-w-md mx-auto w-full">
@@ -489,84 +522,59 @@ export default function Auth() {
           </div>
 
           <div className="w-full space-y-4">
-            {/* Email or username */}
-            <div className="space-y-1.5">
-              <label className="text-sm text-muted-foreground">Email or username</label>
-              <div className="neo-inset">
-                <Input
-                  type="email"
-                  placeholder=""
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 rounded-[inherit] border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-4"
-                />
-              </div>
-            </div>
+            <form
+              className="space-y-5"
+              noValidate
+              onSubmit={(e) => { e.preventDefault(); if (!loading && email && password) void handleAuth(); }}
+            >
+            <Field label="Email" required>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete={isLogin ? 'username' : 'email'} />
+            </Field>
 
-            {/* Password */}
-            <div className="space-y-1.5">
-              <label className="text-sm text-muted-foreground">Password</label>
-              <div className="neo-inset relative">
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder=""
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 rounded-[inherit] border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 pl-4 pr-12"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground pointer-events-auto"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-              {!isLogin && <PasswordStrengthIndicator password={password} />}
-            </div>
+            <Field label="Password" required hint={!isLogin ? 'At least 8 characters with upper and lower case letters and a number.' : undefined}>
+              <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={isLogin ? 'current-password' : 'new-password'} />
+            </Field>
+            {!isLogin && <PasswordStrengthIndicator password={password} />}
 
-            {/* Signup-only: Username + Niche */}
+            {/* Signup-only: Username + Niche + Location + consent */}
             {!isLogin && (
               <>
-                <div className="space-y-1.5">
-                  <label className="text-sm text-muted-foreground">
-                    {userType === 'employer' ? 'Company / Display name' : 'Username'} (optional)
-                  </label>
-                  <div className="neo-inset">
-                    <Input
-                      type="text"
-                      placeholder={userType === 'employer' ? 'Acme Inc.' : '@username'}
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="h-12 rounded-[inherit] border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-4"
-                      maxLength={50}
-                    />
-                  </div>
-                </div>
+                <Field label={userType === 'employer' ? 'Company / display name' : 'Username'} optional counter={{ length: username.length, max: 50 }}>
+                  <Input type="text" placeholder={userType === 'employer' ? 'Acme Inc.' : '@username'} value={username} onChange={(e) => setUsername(e.target.value)} maxLength={50} autoComplete="nickname" />
+                </Field>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground">
-                    {userType === 'employer' ? 'Industry / Sector' : 'Your field'}
-                  </label>
+                <fieldset className="space-y-2">
+                  <legend className="text-sm font-medium">{userType === 'employer' ? 'Industry / sector' : 'Your field'}</legend>
                   <div className="grid grid-cols-2 gap-2">
                     {skillCategories.map((cat) => (
                       <button
                         key={cat.value}
                         type="button"
+                        aria-pressed={selectedCategory === cat.value}
                         onClick={() => setSelectedCategory(cat.value as SkillCategory)}
                         className={cn(
-                          "p-3 rounded-xl border-2 text-left transition-all duration-200 flex items-center gap-2",
-                          selectedCategory === cat.value
-                            ? "border-brand bg-brand/5"
-                            : "border-border hover:border-brand/50"
+                          "p-3 rounded-xl border text-left transition-all duration-200 flex items-center gap-2 min-h-11",
+                          selectedCategory === cat.value ? "border-brand-strong bg-brand/10" : "border-[hsl(var(--field-border))] hover:border-brand-strong/60"
                         )}
                       >
                         <cat.Icon className="h-4 w-4 text-brand-strong shrink-0" />
-                        <span className="text-xs font-medium">{cat.label}</span>
+                        <span className="text-sm font-medium">{cat.label}</span>
                       </button>
                     ))}
                   </div>
-                </div>
+                </fieldset>
+
+                <LocationFields value={geo} onChange={setGeo} />
+
+                <label className="flex items-start gap-3 text-sm text-foreground">
+                  <input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[hsl(var(--brand-strong))]" required />
+                  <span>
+                    I agree to the{' '}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium underline">Terms of Use</a>{' '}
+                    and{' '}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium underline">Privacy Policy</a>.
+                  </span>
+                </label>
               </>
             )}
 
@@ -574,12 +582,13 @@ export default function Auth() {
             <Button
               variant="default"
               className="w-full h-14 rounded-full font-semibold mt-4"
-              onClick={handleAuth}
-              disabled={loading || !email || !password}
+              type="submit"
+              disabled={loading || !email || !password || (!isLogin && !acceptedTerms)}
             >
               {loading ? 'Loading...' : isLogin ? 'Log in' : 'Create Account'}
               {!loading && <ArrowRight className="h-5 w-5 ml-2" />}
             </Button>
+            </form>
 
             {/* Forgot password */}
             {isLogin && (
@@ -599,18 +608,6 @@ export default function Auth() {
               </p>
             )}
 
-            {/* Biometric (WebAuthn passkey) */}
-            <div className="flex justify-center py-4">
-              <button
-                type="button"
-                onClick={handleBiometricClick}
-                disabled={bioLoading}
-                className="w-16 h-16 neo-inset flex items-center justify-center text-muted-foreground hover:text-brand-strong transition-colors pointer-events-auto disabled:opacity-50"
-              >
-                {bioLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : <Fingerprint className="h-8 w-8" />}
-              </button>
-            </div>
-
             {/* Toggle sign in / sign up */}
             <p className="text-center text-sm text-muted-foreground pt-2">
               {isLogin ? "Don't have an account? " : 'Already have an account? '}
@@ -625,35 +622,18 @@ export default function Auth() {
           </div>
 
           </div>
-          {/* Google Sign In - below main form, secondary */}
-          <div className="mt-6 w-full">
-            <div className="relative py-2">
-              <span className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
-              </span>
-              <span className="relative flex justify-center text-xs uppercase">
-                <span className="px-2 bg-background text-muted-foreground">or continue with</span>
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full mt-4 rounded-full"
-              onClick={handleGoogleSignIn}
-              disabled={loading || googleLoading}
-            >
-              {googleLoading ? (
-                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-              ) : (
-                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-              )}
-              {googleLoading ? 'Connecting...' : 'Continue with Google'}
-            </Button>
+          {/* Passkey + social sign-in, below the main form */}
+          <div className="mt-6 w-full space-y-4">
+            {isLogin && (
+              <PasskeyButton
+                onClick={handlePasskeySignIn}
+                loading={passkeyLoading}
+                disabled={loading}
+                label="Sign in with a passkey"
+              />
+            )}
+            <SocialAuthButtons />
+            <LegalLinks className="pt-2" />
           </div>
         </div>
       </div>
@@ -726,16 +706,9 @@ export default function Auth() {
 
             <div className="space-y-4">
               {/* Email */}
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  type="email"
-                  placeholder="Email address"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  className="pl-12 h-14 text-base"
-                />
-              </div>
+              <Field label="Email address" required>
+                <Input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} autoComplete="email" />
+              </Field>
 
               {/* Submit */}
               <Button
@@ -843,17 +816,9 @@ export default function Auth() {
 
         <div className="space-y-6 flex-1">
           {/* Username / Company Name */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              {userType === 'employer' ? 'Company Name' : 'Username'} (optional)
-            </label>
-            <Input
-              placeholder={userType === 'employer' ? 'Acme Inc.' : '@username'}
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="h-14 text-base"
-            />
-          </div>
+          <Field label={userType === 'employer' ? 'Company name' : 'Username'} optional>
+            <Input placeholder={userType === 'employer' ? 'Acme Inc.' : '@username'} value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="nickname" />
+          </Field>
 
           {/* Skill Category - Only for talent */}
           {userType === 'talent' && (
@@ -943,13 +908,6 @@ export default function Auth() {
   return (
     <div className="min-h-screen relative">
       <AuthBackground />
-      {googleLoading && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center">
-          <Loader2 className="h-12 w-12 animate-spin text-brand-strong mb-4" />
-          <p className="text-lg font-medium text-foreground">Redirecting to Google...</p>
-          <p className="text-sm text-muted-foreground mt-1">Please wait</p>
-        </div>
-      )}
       {step === 'welcome' && renderWelcome()}
       {step === 'login' && renderLoginSignup()}
       {step === 'forgotPassword' && renderForgotPassword()}

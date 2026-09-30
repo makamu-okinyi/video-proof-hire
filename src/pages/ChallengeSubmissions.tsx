@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Play, Eye, Trophy, CheckCircle, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Id } from '../../convex/_generated/dataModel';
 import { toast } from 'sonner';
 
 export default function ChallengeSubmissions() {
+  useDocumentTitle('Challenge entries');
   const { challengeId } = useParams<{ challengeId: string }>();
   const navigate = useNavigate();
 

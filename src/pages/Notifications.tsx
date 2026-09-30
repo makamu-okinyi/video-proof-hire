@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Bell, CheckCircle, Briefcase, Rocket, MessageCircle, ChevronRight } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard } from '@/components/ui/neo-card';
@@ -30,6 +31,7 @@ const typeColors: Record<string, string> = {
 };
 
 export default function Notifications() {
+  useDocumentTitle('Notifications');
   const { notifications, unreadCount, isLoading, markRead, markAllRead } = useNotifications();
   const navigate = useNavigate();
 

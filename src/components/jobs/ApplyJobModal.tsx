@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Play, Send, X, Video } from 'lucide-react';
@@ -165,7 +166,10 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
                   ) : videos.length === 0 ? (
                     <div className="neo-pressed text-sm text-muted-foreground py-6 text-center space-y-2">
                       <Video className="h-8 w-8 mx-auto opacity-40" />
-                      <p>No videos yet. Create videos to showcase your skills!</p>
+                      <p>No videos yet. Record a short proof video to showcase your skills.</p>
+                      <Link to="/create" className="inline-block text-sm font-semibold text-brand-strong hover:underline">
+                        Record your first video
+                      </Link>
                     </div>
                   ) : (
                     <div className="grid grid-cols-3 gap-2 pr-4">

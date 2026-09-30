@@ -1,3 +1,5 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { SearchInput } from '@/components/ui/input';
 import { useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, MapPin, Briefcase, X, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -35,6 +37,7 @@ const skillsList = [
 ];
 
 export default function Jobs() {
+  useDocumentTitle('Jobs');
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -134,15 +137,7 @@ export default function Jobs() {
         </div>
 
         {/* Search */}
-        <div className="neo-pressed px-4 py-3 rounded-2xl flex items-center gap-3">
-          <Search className="h-5 w-5 text-cool-grey" />
-          <input
-            placeholder="Search jobs, companies..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 bg-transparent outline-none text-charcoal placeholder:text-cool-grey"
-          />
-        </div>
+        <SearchInput value={searchQuery} onValueChange={setSearchQuery} placeholder="Search jobs, companies" aria-label="Search jobs and companies" />
 
         {/* Active Filters Preview */}
         {hasActiveFilters && !showFilters && (

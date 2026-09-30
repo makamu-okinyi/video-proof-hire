@@ -13,8 +13,12 @@ import { ReviewerRoute } from "@/components/auth/ReviewerRoute";
 import { FounderRoute } from "@/components/auth/FounderRoute";
 import { EmployerRoute } from "@/components/auth/EmployerRoute";
 import { AuthProvider } from "@/context/AuthContext";
+import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
+import { ConsentGate } from "@/components/legal/ConsentGate";
+import { PasskeyNudge } from "@/components/auth/PasskeyNudge";
 import { PWAUpdatePrompt } from "@/components/pwa/PWAUpdatePrompt";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
+import { legalDocs } from "@/data/legal";
 import Index from "./pages/Index";
 import Feed from "./pages/Feed";
 import Jobs from "./pages/Jobs";
@@ -41,7 +45,18 @@ const JobApplicants = lazy(() => import("./pages/JobApplicants"));
 const ChallengeSubmissions = lazy(() => import("./pages/ChallengeSubmissions"));
 const FounderWizard = lazy(() => import("./pages/FounderWizard"));
 const FounderDashboard = lazy(() => import("./pages/FounderDashboard"));
-const AdminPanel = lazy(() => import("./pages/AdminPanel"));
+const ConsoleShell = lazy(() => import("@/components/admin/console/ConsoleShell").then((m) => ({ default: m.ConsoleShell })));
+const AdminOverview = lazy(() => import("./pages/admin/Overview"));
+const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
+const AdminUsers = lazy(() => import("./pages/admin/Users"));
+const AdminReview = lazy(() => import("./pages/admin/Review"));
+const AdminGeography = lazy(() => import("./pages/admin/Geography"));
+const AdminVelocity = lazy(() => import("./pages/admin/Velocity"));
+const AdminModeration = lazy(() => import("./pages/admin/Moderation"));
+const AdminPlans = lazy(() => import("./pages/admin/Plans"));
+const AdminSystem = lazy(() => import("./pages/admin/System"));
+const LegalPage = lazy(() => import("./pages/LegalPage"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const Messages = lazy(() => import("./pages/Messages"));
 
 const queryClient = new QueryClient();
@@ -56,6 +71,9 @@ const App = () => (
         <PWAUpdatePrompt />
         <BrowserRouter>
           <ScrollToTop />
+          <PasskeyNudge />
+          <AnalyticsTracker />
+          <ConsentGate />
           <OrganicBackground />
           <ErrorBoundary>
           <Suspense fallback={
@@ -69,14 +87,29 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/feed" element={<Feed />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/privacy" element={<LegalPage doc={legalDocs.privacy} />} />
+            <Route path="/terms" element={<LegalPage doc={legalDocs.terms} />} />
+            <Route path="/cookies" element={<LegalPage doc={legalDocs.cookies} />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/ventures" element={<ReviewerRoute><Ventures /></ReviewerRoute>} />
             <Route path="/ventures/:id" element={<ReviewerRoute><VentureDetail /></ReviewerRoute>} />
             <Route path="/apply" element={<FounderRoute><FounderWizard /></FounderRoute>} />
             <Route path="/founder" element={<FounderRoute><FounderDashboard /></FounderRoute>} />
             <Route path="/founder/dashboard" element={<Navigate to="/founder" replace />} />
-            <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
-            <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminRoute><ConsoleShell /></AdminRoute>}>
+              <Route index element={<AdminOverview />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="review" element={<AdminReview />} />
+              <Route path="geography" element={<AdminGeography />} />
+              <Route path="velocity" element={<AdminVelocity />} />
+              <Route path="moderation" element={<AdminModeration />} />
+              <Route path="plans" element={<AdminPlans />} />
+              <Route path="system" element={<AdminSystem />} />
+              {/* /admin/dashboard and anything else under /admin lands on the overview */}
+              <Route path="*" element={<Navigate to="/admin" replace />} />
+            </Route>
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/challenges" element={<Challenges />} />
             <Route path="/create" element={<Create />} />

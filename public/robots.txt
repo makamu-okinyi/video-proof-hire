@@ -1,14 +1,34 @@
 User-agent: Googlebot
 Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /cookies
+Disallow: /admin
 
 User-agent: Bingbot
 Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /cookies
+Disallow: /admin
 
 User-agent: Twitterbot
 Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /cookies
+Disallow: /admin
 
 User-agent: facebookexternalhit
 Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /cookies
+Disallow: /admin
 
 User-agent: *
 Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /cookies
+Disallow: /admin

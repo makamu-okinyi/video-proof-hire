@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building2, Globe, Loader2 } from 'lucide-react';
+import { ArrowLeft, Building2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Field } from '@/components/ui/field';
+import { Select } from '@/components/ui/select';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { LocationFields, fromLocationValue, toLocationValue, type LocationValue } from '@/components/profile/LocationFields';
 import { useAuth } from '@/context/AuthContext';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { toast } from 'sonner';
@@ -18,6 +20,7 @@ const INDUSTRIES = [
 ];
 
 export default function CompanyProfileSettings() {
+  useDocumentTitle('Company profile');
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
@@ -35,6 +38,12 @@ export default function CompanyProfileSettings() {
     isAuthenticated ? {} : 'skip'
   );
   const upsertEmployerProfile = useMutation(api.employer.upsertEmployerProfile);
+  const upsertProfile = useMutation(api.profiles.upsertProfile);
+  const myProfile = useQuery(api.profiles.getMyProfile, isAuthenticated ? {} : 'skip');
+  const [location, setLocation] = useState<LocationValue>({ county: '', country: '' });
+  useEffect(() => {
+    if (myProfile) setLocation(toLocationValue(myProfile.county, myProfile.country));
+  }, [myProfile]);
 
   const isLoading = employerProfile === undefined;
 
@@ -63,6 +72,7 @@ export default function CompanyProfileSettings() {
         industry: form.industry || undefined,
         companyLogoUrl: form.company_logo_url || undefined,
       });
+      await upsertProfile(fromLocationValue(location));
       toast.success('Company profile saved');
     } catch (error) {
       toast.error('Failed to save company profile');
@@ -93,50 +103,35 @@ export default function CompanyProfileSettings() {
               <h2 className="font-semibold text-foreground">Company Info</h2>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="company_name">Company Name</Label>
-              <Input id="company_name" value={form.company_name} onChange={set('company_name')} placeholder="Acme Inc." maxLength={100} />
+            <Field label="Company name" counter={{ length: form.company_name.length, max: 100 }}>
+              <Input value={form.company_name} onChange={set('company_name')} placeholder="Acme Inc." maxLength={100} autoComplete="organization" />
+            </Field>
+
+            <Field label="About the company" optional counter={{ length: form.company_description.length, max: 500 }}>
+              <Textarea value={form.company_description} onChange={set('company_description')} placeholder="What does your company do? What is the mission?" rows={4} maxLength={500} />
+            </Field>
+
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <Field label="Industry" optional>
+                <Select value={form.industry} onValueChange={(v) => setForm((p) => ({ ...p, industry: v }))} placeholder="Select industry" options={INDUSTRIES.map((i) => ({ value: i, label: i }))} />
+              </Field>
+              <Field label="Company size" optional>
+                <Select value={form.company_size} onValueChange={(v) => setForm((p) => ({ ...p, company_size: v }))} placeholder="Select size" options={['1–10', '11–50', '51–200', '201–500', '500+'].map((s) => ({ value: s, label: `${s} employees` }))} />
+              </Field>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="company_description">About the Company</Label>
-              <Textarea id="company_description" value={form.company_description} onChange={set('company_description')} placeholder="What does your company do? What's the mission?" rows={4} maxLength={500} className="resize-none" />
-            </div>
+            <LocationFields value={location} onChange={setLocation} label="Company location" hint="Where your team is mainly based." />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="industry">Industry</Label>
-                <Select value={form.industry} onValueChange={v => setForm(p => ({ ...p, industry: v }))}>
-                  <SelectTrigger id="industry"><SelectValue placeholder="Select industry" /></SelectTrigger>
-                  <SelectContent>
-                    {INDUSTRIES.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
+            <Field label="Website" optional>
+              <Input value={form.company_website} onChange={set('company_website')} placeholder="https://yourcompany.com" type="url" maxLength={255} />
+            </Field>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="company_size">Company Size</Label>
-                <Select value={form.company_size} onValueChange={v => setForm(p => ({ ...p, company_size: v }))}>
-                  <SelectTrigger id="company_size"><SelectValue placeholder="Select size" /></SelectTrigger>
-                  <SelectContent>
-                    {['1–10', '11–50', '51–200', '201–500', '500+'].map(s => <SelectItem key={s} value={s}>{s} employees</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="company_website" className="flex items-center gap-1.5"><Globe className="h-3.5 w-3.5" />Website</Label>
-              <Input id="company_website" value={form.company_website} onChange={set('company_website')} placeholder="https://yourcompany.com" type="url" maxLength={255} />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="company_logo_url">Logo URL</Label>
-              <Input id="company_logo_url" value={form.company_logo_url} onChange={set('company_logo_url')} placeholder="https://yourcompany.com/logo.png" type="url" maxLength={500} />
-              {form.company_logo_url && (
-                <img src={form.company_logo_url} alt="Logo preview" className="h-12 w-12 rounded-xl object-contain neo-extruded-sm p-1 mt-2" onError={e => (e.currentTarget.style.display = 'none')} />
-              )}
-            </div>
+            <Field label="Logo URL" optional hint="A direct link to your logo image.">
+              <Input value={form.company_logo_url} onChange={set('company_logo_url')} placeholder="https://yourcompany.com/logo.png" type="url" maxLength={500} />
+            </Field>
+            {form.company_logo_url && (
+              <img src={form.company_logo_url} alt="Logo preview" className="h-12 w-12 rounded-xl object-contain neo-extruded-sm p-1" onError={(e) => (e.currentTarget.style.display = 'none')} />
+            )}
 
             <Button className="w-full" onClick={handleSave} disabled={isSaving}>
               {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</> : 'Save Company Profile'}

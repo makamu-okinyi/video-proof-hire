@@ -1,166 +1,69 @@
 /**
- * WebAuthn (Passwordless Biometric) utilities for Donjo.
- * Uses navigator.credentials.create for registration and navigator.credentials.get for login.
- * MVP: Stores credential in localStorage; full flow requires Edge Function verification.
+ * Browser-side passkey (WebAuthn) helpers. The actual ceremonies run through
+ * @simplewebauthn/browser; verification happens on the Convex backend.
  */
+import { browserSupportsWebAuthn } from '@simplewebauthn/browser';
 
-const STORAGE_KEY = 'donjo_webauthn_credentials';
-const RP_NAME = 'Donjo Startup Garage';
-const RP_ID = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-
-export interface StoredCredential {
-  credentialId: string;
-  userId: string;
-  userEmail: string;
-  publicKey: string;
-  registeredAt: string;
-}
-
-function base64urlEncode(buf: ArrayBuffer): string {
-  const bytes = new Uint8Array(buf);
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function base64urlDecode(str: string): ArrayBuffer {
-  str = str.replace(/-/g, '+').replace(/_/g, '/');
-  while (str.length % 4) str += '=';
-  const bin = atob(str);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes.buffer;
-}
-
-function randomChallenge(): Uint8Array {
-  return crypto.getRandomValues(new Uint8Array(32));
-}
-
-export function isWebAuthnSupported(): boolean {
-  return typeof window !== 'undefined' &&
-    typeof window.PublicKeyCredential === 'function' &&
-    typeof navigator?.credentials?.create === 'function';
-}
-
-export function getStoredCredentialForUser(userId: string): StoredCredential | null {
+/** True when this browser can create / use passkeys at all. */
+export function isPasskeySupported(): boolean {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const all: StoredCredential[] = JSON.parse(raw);
-    return all.find((c) => c.userId === userId) ?? null;
+    return typeof window !== 'undefined' && browserSupportsWebAuthn();
   } catch {
-    return null;
+    return false;
   }
 }
 
-export function getAnyStoredCredential(): StoredCredential | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const all: StoredCredential[] = JSON.parse(raw);
-    return all[0] ?? null;
-  } catch {
-    return null;
-  }
+/** A friendly default name for a new passkey, e.g. "Chrome on Windows". */
+export function defaultDeviceLabel(): string {
+  if (typeof navigator === 'undefined') return 'My passkey';
+  const ua = navigator.userAgent;
+  const os = /Windows/i.test(ua)
+    ? 'Windows'
+    : /iPhone|iPad|iPod/i.test(ua)
+      ? 'iOS'
+      : /Android/i.test(ua)
+        ? 'Android'
+        : /Mac OS X|Macintosh/i.test(ua)
+          ? 'Mac'
+          : /Linux|CrOS/i.test(ua)
+            ? 'Linux'
+            : null;
+  const browser = /Edg\//i.test(ua)
+    ? 'Edge'
+    : /OPR\/|Opera/i.test(ua)
+      ? 'Opera'
+      : /Firefox\//i.test(ua)
+        ? 'Firefox'
+        : /Chrome\//i.test(ua)
+          ? 'Chrome'
+          : /Safari\//i.test(ua)
+            ? 'Safari'
+            : 'Browser';
+  return os ? `${browser} on ${os}` : browser;
 }
 
-function storeCredential(cred: StoredCredential): void {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  const all: StoredCredential[] = raw ? JSON.parse(raw) : [];
-  const idx = all.findIndex((c) => c.userId === cred.userId);
-  if (idx >= 0) all[idx] = cred;
-  else all.push(cred);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-}
+export type PasskeyFlow = 'register' | 'signin';
 
-/**
- * Register a new WebAuthn credential. User must be logged in.
- */
-export async function registerWebAuthn(userId: string, userEmail: string): Promise<{ ok: boolean; error?: string }> {
-  if (!isWebAuthnSupported()) return { ok: false, error: 'Biometric auth not supported' };
-  try {
-    const challenge = randomChallenge();
-    const options: CredentialCreationOptions = {
-      publicKey: {
-        rp: { name: RP_NAME, id: RP_ID === 'localhost' ? 'localhost' : RP_ID },
-        user: {
-          id: new TextEncoder().encode(userId),
-          name: userEmail,
-          displayName: userEmail.split('@')[0],
-        },
-        challenge: challenge as BufferSource,
-        pubKeyCredParams: [
-          { type: 'public-key', alg: -7 },
-          { type: 'public-key', alg: -257 },
-        ],
-        timeout: 60000,
-        attestation: 'none',
-      },
-    };
-    const credential = (await navigator.credentials.create(options)) as PublicKeyCredential | null;
-    if (!credential) return { ok: false, error: 'Registration cancelled' };
-    const response = credential.response as AuthenticatorAttestationResponse;
-    const credId = base64urlEncode(credential.rawId);
-    const pubKey = base64urlEncode(response.getPublicKey()!);
-    storeCredential({
-      credentialId: credId,
-      userId,
-      userEmail,
-      publicKey: pubKey,
-      registeredAt: new Date().toISOString(),
-    });
-    return { ok: true };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Registration failed';
-    return { ok: false, error: msg };
-  }
-}
+/** Turn a WebAuthn / network failure into a message safe and friendly to show users. */
+export function describePasskeyError(err: unknown, flow: PasskeyFlow): string {
+  const name = (err as { name?: string })?.name ?? '';
+  const message = err instanceof Error ? err.message : '';
 
-/**
- * Authenticate with WebAuthn. Returns assertion for server verification.
- * Falls back to password if no credential or user cancels.
- */
-export async function authenticateWebAuthn(): Promise<{
-  ok: boolean;
-  credentialId?: string;
-  assertion?: AuthenticatorAssertionResponse;
-  clientDataJSON?: ArrayBuffer;
-  authenticatorData?: ArrayBuffer;
-  signature?: ArrayBuffer;
-  userHandle?: ArrayBuffer;
-}> {
-  if (!isWebAuthnSupported()) return { ok: false };
-  const stored = getAnyStoredCredential();
-  if (!stored) return { ok: false };
-  try {
-    const challenge = randomChallenge();
-    const options: CredentialRequestOptions = {
-      publicKey: {
-        challenge: challenge as BufferSource,
-        timeout: 60000,
-        rpId: RP_ID === 'localhost' ? 'localhost' : RP_ID,
-        allowCredentials: [
-          {
-            type: 'public-key',
-            id: base64urlDecode(stored.credentialId),
-            transports: ['internal'],
-          },
-        ],
-      },
-    };
-    const credential = (await navigator.credentials.get(options)) as PublicKeyCredential | null;
-    if (!credential) return { ok: false };
-    const response = credential.response as AuthenticatorAssertionResponse;
-    return {
-      ok: true,
-      credentialId: stored.credentialId,
-      assertion: response,
-      clientDataJSON: response.clientDataJSON,
-      authenticatorData: response.authenticatorData,
-      signature: response.signature,
-      userHandle: response.userHandle ?? undefined,
-    };
-  } catch (err) {
-    return { ok: false };
+  if (name === 'NotAllowedError' || name === 'AbortError' || /cancel|timed out|not allowed/i.test(message)) {
+    return flow === 'register'
+      ? 'Passkey setup was cancelled. You can try again whenever you are ready.'
+      : 'Passkey sign-in was cancelled or timed out. Try again, or use your password.';
   }
+  if (name === 'InvalidStateError') {
+    return 'This device already has a passkey saved for your account.';
+  }
+  if (name === 'NotSupportedError' || name === 'SecurityError') {
+    return 'This browser or device cannot use passkeys here. Please use your password instead.';
+  }
+  if (/network|fetch|failed to fetch/i.test(message)) {
+    return 'Network error. Please check your connection and try again.';
+  }
+  return flow === 'register'
+    ? 'We could not add your passkey. Please try again.'
+    : 'Passkey sign-in did not work. Try again, or use your password.';
 }

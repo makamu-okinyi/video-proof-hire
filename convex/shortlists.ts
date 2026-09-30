@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getActiveUserId as getAuthUserId } from "./lib/auth";
+import { assertWithinPlan } from "./lib/plans";
 
 export const getMyShortlist = query({
   args: {},
@@ -40,6 +41,11 @@ export const toggleShortlist = mutation({
       await ctx.db.delete(existing._id);
       return false;
     } else {
+      const current = await ctx.db
+        .query("shortlists")
+        .withIndex("by_recruiterId", (q) => q.eq("recruiterId", userId))
+        .collect();
+      await assertWithinPlan(ctx, userId, "shortlistSize", current.length);
       await ctx.db.insert("shortlists", { recruiterId: userId, talentId, videoId, notes });
       return true;
     }

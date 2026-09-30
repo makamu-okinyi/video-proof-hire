@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -32,8 +33,9 @@ type ConvexVideo = {
 type Tab = 'private' | 'public' | 'saved';
 
 export default function Profile() {
+  useDocumentTitle('My profile');
   const navigate = useNavigate();
-  const { user, profile, logout, isAuthenticated } = useAuth();
+  const { user, profile, logout, isAuthenticated, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('public');
 
   const myVideos = useQuery(api.videos.getMyVideos, isAuthenticated ? {} : 'skip');
@@ -43,10 +45,10 @@ export default function Profile() {
   const loadingSaved = savedVideos === undefined && activeTab === 'saved';
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/auth');
     }
-  }, [isAuthenticated, navigate]);
+  }, [authLoading, isAuthenticated, navigate]);
 
   const videos: ConvexVideo[] = (myVideos ?? []) as ConvexVideo[];
   const saved: ConvexVideo[] = (savedVideos ?? []) as ConvexVideo[];

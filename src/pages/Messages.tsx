@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery } from "convex/react";
@@ -31,6 +32,7 @@ interface Conversation {
 }
 
 export default function Messages() {
+  useDocumentTitle('Messages');
   const { user, profile } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
 

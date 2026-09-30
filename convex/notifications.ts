@@ -1,4 +1,4 @@
-import { query, mutation, action, internalMutation } from "./_generated/server";
+import { query, mutation, action, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal, api } from "./_generated/api";
@@ -57,6 +57,25 @@ export const markAllRead = mutation({
   },
 });
 
+export const isAdminUser = internalQuery({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }) => {
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+    return profile?.userType === "admin";
+  },
+});
+
+export const ownsJob = internalQuery({
+  args: { userId: v.string(), jobId: v.id("jobPostings") },
+  handler: async (ctx, { userId, jobId }) => {
+    const job = await ctx.db.get(jobId);
+    return !!job && job.employerId === userId;
+  },
+});
+
 export const create = internalMutation({
   args: {
     userId: v.string(),
@@ -91,6 +110,17 @@ export const notifyStatusChange = action({
     const senderId = await getAuthUserId(ctx);
     if (!senderId) throw new Error("Not authenticated");
     if (senderId === args.recipientId) throw new Error("Invalid request");
+
+    // Authorization: pitch status notices come from the admin review team only;
+    // job status notices only from the employer who owns the job.
+    if (args.type === "venture_status") {
+      const isAdmin = await ctx.runQuery(internal.notifications.isAdminUser, { userId: senderId });
+      if (!isAdmin) throw new Error("Not authorized");
+    } else {
+      if (!args.jobId) throw new Error("Not authorized");
+      const owns = await ctx.runQuery(internal.notifications.ownsJob, { userId: senderId, jobId: args.jobId });
+      if (!owns) throw new Error("Not authorized");
+    }
 
     const notifType =
       args.type === "job_status"

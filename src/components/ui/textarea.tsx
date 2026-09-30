@@ -1,21 +1,27 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { useFieldContext } from "@/components/ui/field";
 
 export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, ...props }, ref) => {
-  return (
-    <textarea
-      className={cn(
-        "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-        className,
-      )}
-      ref={ref}
-      {...props}
-    />
-  );
-});
+const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, id, required, "aria-invalid": ariaInvalid, "aria-describedby": describedByProp, ...props }, ref) => {
+    const field = useFieldContext();
+    return (
+      <textarea
+        id={id ?? field?.id}
+        required={required ?? field?.required}
+        aria-required={(required ?? field?.required) || undefined}
+        aria-invalid={ariaInvalid ?? (field?.invalid ? true : undefined)}
+        aria-describedby={describedByProp ?? field?.describedBy}
+        className={cn("field-control min-h-[6rem]", className)}
+        ref={ref}
+        {...props}
+      />
+    );
+  },
+);
 Textarea.displayName = "Textarea";
 
 export { Textarea };

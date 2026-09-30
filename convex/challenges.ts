@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getActiveUserId as getAuthUserId } from "./lib/auth";
+import { assertWithinPlan } from "./lib/plans";
 
 export const getActiveChallenges = query({
   args: { limit: v.optional(v.number()) },
@@ -9,6 +10,7 @@ export const getActiveChallenges = query({
       .query("challenges")
       .withIndex("by_isActive", (q) => q.eq("isActive", true))
       .order("desc")
+      .filter((q) => q.neq(q.field("adminHidden"), true))
       .take(limit);
   },
 });
@@ -47,6 +49,12 @@ export const createChallenge = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+    const activeChallenges = await ctx.db
+      .query("challenges")
+      .withIndex("by_employerId", (q) => q.eq("employerId", userId))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+    await assertWithinPlan(ctx, userId, "activeChallenges", activeChallenges.length);
     return await ctx.db.insert("challenges", {
       ...args,
       employerId: userId,
@@ -74,6 +82,15 @@ export const updateChallenge = mutation({
     if (!userId) throw new Error("Not authenticated");
     const challenge = await ctx.db.get(challengeId);
     if (!challenge || challenge.employerId !== userId) throw new Error("Not authorized");
+    if (updates.isActive === true && !challenge.isActive) {
+      if (challenge.adminHidden) throw new Error("This challenge was unpublished by a moderator");
+      const active = await ctx.db
+        .query("challenges")
+        .withIndex("by_employerId", (q) => q.eq("employerId", userId))
+        .filter((q) => q.eq(q.field("isActive"), true))
+        .collect();
+      await assertWithinPlan(ctx, userId, "activeChallenges", active.length);
+    }
     await ctx.db.patch(challengeId, Object.fromEntries(
       Object.entries(updates).filter(([, v]) => v !== undefined)
     ));

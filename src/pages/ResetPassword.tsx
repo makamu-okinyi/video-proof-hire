@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, Eye, EyeOff, ArrowRight, CheckCircle, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Field } from '@/components/ui/field';
+import { PasswordInput } from '@/components/ui/input';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Input } from '@/components/ui/input';
 import { useAuthActions } from '@convex-dev/auth/react';
 import { toast } from 'sonner';
@@ -15,6 +18,7 @@ const passwordSchema = z.string()
   .regex(/[0-9]/, { message: "Password must contain at least one number" });
 
 export default function ResetPassword() {
+  useDocumentTitle('Reset your password');
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState(searchParams.get('email') || '');
   const [code, setCode] = useState('');
@@ -110,68 +114,22 @@ export default function ResetPassword() {
         </div>
 
         <div className="space-y-4">
-          {/* Email */}
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="email"
-              placeholder="Your email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="pl-12 h-14 text-base"
-            />
-          </div>
+          <Field label="Email address" required>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+          </Field>
 
-          {/* Reset Code */}
-          <Input
-            type="text"
-            placeholder="Reset code (from email)"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            className="h-14 text-base tracking-widest text-center"
-            maxLength={8}
-          />
+          <Field label="Reset code" required hint="The code we emailed you.">
+            <Input type="text" value={code} onChange={(e) => setCode(e.target.value)} maxLength={8} inputMode="numeric" autoComplete="one-time-code" className="text-center tracking-widest" />
+          </Field>
 
-          {/* New Password */}
-          <div className="space-y-2">
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="New password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-12 pr-12 h-14 text-base"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
-            </div>
-            <PasswordStrengthIndicator password={password} />
-          </div>
+          <Field label="New password" required>
+            <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
+          </Field>
+          <PasswordStrengthIndicator password={password} />
 
-          {/* Confirm Password */}
-          <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type={showConfirmPassword ? 'text' : 'password'}
-              placeholder="Confirm new password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="pl-12 pr-12 h-14 text-base"
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-            </button>
-          </div>
+          <Field label="Confirm new password" required>
+            <PasswordInput value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" enterKeyHint="go" />
+          </Field>
 
           {confirmPassword && (
             <p className={`text-xs ${password === confirmPassword ? 'text-green-500' : 'text-destructive'}`}>

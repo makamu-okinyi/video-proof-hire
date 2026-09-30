@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ChevronLeft, Eye, Play, BadgeCheck, Globe, User
@@ -8,6 +9,7 @@ import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 
 export default function UserProfile() {
+  useDocumentTitle('Profile');
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
 

@@ -31,18 +31,60 @@ export default defineSchema({
     notifyNewApplicants: v.optional(v.string()),
     notifyMarketing: v.optional(v.boolean()),
     twoFactorEnabled: v.optional(v.boolean()),
+    passkeyNudgeDismissedAt: v.optional(v.number()),
+    // Location (optional, encouraged). county is one of the 47 Kenyan counties, or unset
+    // with country != "Kenya" for people outside Kenya.
+    county: v.optional(v.string()),
+    country: v.optional(v.string()),
+    // Account state managed by admins. Missing = active.
+    status: v.optional(v.union(v.literal("active"), v.literal("suspended"))),
+    suspendedAt: v.optional(v.number()),
+    suspendedReason: v.optional(v.string()),
+    lastSeenAt: v.optional(v.number()),
+    // Consent record (see convex/lib/legal.ts for the current version)
+    termsAcceptedAt: v.optional(v.number()),
+    termsVersion: v.optional(v.string()),
   })
     .index("by_userId", ["userId"])
     .index("by_slug", ["slug"]),
 
-  webauthnCredentials: defineTable({
-    userId: v.string(),
+  // WebAuthn passkeys (one row per registered credential). `publicKey` is the
+  // base64url-encoded COSE public key; `counter` is the authenticator signature counter.
+  passkeys: defineTable({
+    userId: v.id("users"),
     credentialId: v.string(),
     publicKey: v.string(),
     counter: v.number(),
+    transports: v.optional(v.array(v.string())),
+    deviceLabel: v.string(),
+    deviceType: v.optional(v.string()), // singleDevice | multiDevice
+    backedUp: v.optional(v.boolean()),
+    createdAt: v.number(),
+    lastUsedAt: v.optional(v.number()),
   })
     .index("by_userId", ["userId"])
     .index("by_credentialId", ["credentialId"]),
+
+  // Short-lived, single-use WebAuthn challenges (deleted when consumed or expired).
+  webauthnChallenges: defineTable({
+    challenge: v.string(), // base64url
+    type: v.union(v.literal("registration"), v.literal("authentication")),
+    userId: v.optional(v.id("users")), // set for registration only
+    expiresAt: v.number(),
+  })
+    .index("by_challenge", ["challenge"])
+    .index("by_expiresAt", ["expiresAt"]),
+
+  // Append-only audit trail of privileged (admin) actions.
+  adminAuditLog: defineTable({
+    userId: v.string(),
+    action: v.string(), // sign_in | sign_in_denied | idle_signout | venture_status_update | ...
+    at: v.number(),
+    userAgent: v.optional(v.string()),
+    detail: v.optional(v.string()),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_at", ["at"]),
 
   videos: defineTable({
     userId: v.string(),
@@ -106,6 +148,8 @@ export default defineSchema({
     applicationDeadline: v.optional(v.string()),
     isActive: v.boolean(),
     videoPrompt: v.optional(v.string()),
+    isFeatured: v.optional(v.boolean()), // admin-controlled
+    adminHidden: v.optional(v.boolean()), // unpublished by a moderator; employers cannot undo
   })
     .index("by_employerId", ["employerId"])
     .index("by_isActive", ["isActive"]),
@@ -115,6 +159,10 @@ export default defineSchema({
     applicantId: v.string(),
     status: v.string(), // pending | reviewed | shortlisted | rejected
     coverMessage: v.optional(v.string()),
+    updatedAt: v.optional(v.number()),
+    statusHistory: v.optional(
+      v.array(v.object({ status: v.string(), at: v.number(), by: v.optional(v.string()) }))
+    ),
   })
     .index("by_jobId", ["jobId"])
     .index("by_applicantId", ["applicantId"])
@@ -131,6 +179,7 @@ export default defineSchema({
     isActive: v.boolean(),
     skillsTags: v.optional(v.array(v.string())),
     videoPrompt: v.optional(v.string()),
+    adminHidden: v.optional(v.boolean()), // unpublished by a moderator
   })
     .index("by_employerId", ["employerId"])
     .index("by_isActive", ["isActive"]),
@@ -172,6 +221,24 @@ export default defineSchema({
     fundingRaised: v.optional(v.number()),
     hackathonName: v.optional(v.string()),
     hackathonCohort: v.optional(v.string()),
+    county: v.optional(v.string()),
+    country: v.optional(v.string()),
+    // Review bookkeeping (written only by admins via convex/adminReview.ts)
+    reviewedAt: v.optional(v.number()),
+    reviewedBy: v.optional(v.string()),
+    reviewReason: v.optional(v.string()),
+    reviewNotes: v.optional(v.string()),
+    reviewScore: v.optional(v.number()),
+    statusHistory: v.optional(
+      v.array(
+        v.object({
+          status: v.string(),
+          at: v.number(),
+          by: v.optional(v.string()),
+          reason: v.optional(v.string()),
+        })
+      )
+    ),
   })
     .index("by_isActive", ["isActive"])
     .index("by_reviewStatus", ["reviewStatus"]),
@@ -270,5 +337,52 @@ export default defineSchema({
     companySize: v.optional(v.string()),
     industry: v.optional(v.string()),
     companyLogoUrl: v.optional(v.string()),
+    planSlug: v.optional(v.string()), // admin-controlled; missing = "free"
   }).index("by_userId", ["userId"]),
+
+  // Subscription tiers for employers, editable by admins. If no plan document exists for
+  // an employer's slug, no limits are enforced.
+  plans: defineTable({
+    slug: v.string(),
+    name: v.string(),
+    priceDisplay: v.string(), // free-text, e.g. "KES 4,900 / month"
+    description: v.optional(v.string()),
+    limits: v.object({
+      activeJobs: v.optional(v.number()),
+      activeChallenges: v.optional(v.number()),
+      shortlistSize: v.optional(v.number()),
+      seats: v.optional(v.number()),
+    }),
+    features: v.array(v.string()),
+    isActive: v.boolean(),
+    order: v.number(),
+  }).index("by_slug", ["slug"]),
+
+  // Small key/value store for admin-tunable settings.
+  appSettings: defineTable({
+    key: v.string(),
+    value: v.number(),
+  }).index("by_key", ["key"]),
+
+  // First-party, privacy-friendly analytics. No IPs, no PII, no user ids.
+  analyticsEvents: defineTable({
+    type: v.union(v.literal("pageview"), v.literal("event")),
+    name: v.optional(v.string()),
+    visitorId: v.string(),
+    sessionId: v.string(),
+    isNewVisitor: v.boolean(),
+    path: v.string(),
+    referrerHost: v.optional(v.string()),
+    utmSource: v.optional(v.string()),
+    utmMedium: v.optional(v.string()),
+    utmCampaign: v.optional(v.string()),
+    device: v.string(), // mobile | tablet | desktop
+    browser: v.string(),
+    os: v.string(),
+    timezone: v.optional(v.string()),
+    language: v.optional(v.string()),
+    at: v.number(),
+  })
+    .index("by_at", ["at"])
+    .index("by_visitor_at", ["visitorId", "at"]),
 });

@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -10,6 +11,7 @@ import { Rocket, Briefcase, Trophy, FileText } from 'lucide-react';
 
 
 export default function Feed() {
+  useDocumentTitle('Talent feed');
   const navigate = useNavigate();
   const { profile, isLoading, isAuthenticated, user } = useAuth();
   useRoleBasedRedirect();

@@ -4,6 +4,10 @@ import { ChevronLeft, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Field } from '@/components/ui/field';
+import { Select } from '@/components/ui/select';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { errorMessage } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useMutation } from 'convex/react';
@@ -11,13 +15,6 @@ import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 // Input validation schema
 const jobSchema = z.object({
@@ -49,6 +46,7 @@ export default function CreateJob() {
   const { jobId } = useParams<{ jobId: string }>();
   const { user, profile } = useAuth();
   const isEdit = !!jobId;
+  useDocumentTitle(isEdit ? 'Edit job' : 'Post a job');
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -200,7 +198,7 @@ export default function CreateJob() {
       navigate('/employer', { replace: true });
     } catch (error) {
       console.error('Error creating job:', error);
-      toast.error('Failed to create job posting', { icon: null });
+      toast.error(errorMessage(error, 'Failed to save the job posting'), { icon: null });
     } finally {
       setLoading(false);
     }
@@ -230,202 +228,109 @@ export default function CreateJob() {
       </div>
 
       {/* Form */}
-      <div className="p-4 space-y-6 pb-12">
+      <div className="p-4 sm:p-6 space-y-6 pb-12 max-w-3xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold">{isEdit ? 'Edit Job Posting' : 'Create Job Posting'}</h1>
           <p className="text-muted-foreground text-sm">{isEdit ? 'Update your job listing' : 'Find your next hire through video portfolios'}</p>
         </div>
 
         {/* Basic Info */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Job Title * <span className="text-muted-foreground text-xs">(max 200 chars)</span></label>
-            <Input
-              placeholder="e.g. Senior Frontend Developer"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={200}
-              className={errors.title ? 'border-destructive' : ''}
-            />
-            {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
+        <section className="space-y-5" aria-labelledby="job-basics">
+          <h2 id="job-basics" className="font-semibold">Role details</h2>
+          <Field label="Job title" required error={errors.title} counter={{ length: title.length, max: 200 }}>
+            <Input placeholder="e.g. Senior Frontend Developer" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} autoComplete="off" />
+          </Field>
+
+          <Field label="Description" required hint="Describe the role, responsibilities and what you are looking for." error={errors.description} counter={{ length: description.length, max: 10000 }}>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={6} maxLength={10000} />
+          </Field>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Job type">
+              <Select value={jobType} onValueChange={setJobType} options={jobTypes} />
+            </Field>
+            <Field label="Experience level">
+              <Select value={experienceLevel} onValueChange={setExperienceLevel} options={experienceLevels} />
+            </Field>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Description * <span className="text-muted-foreground text-xs">(max 10,000 chars)</span></label>
-            <Textarea
-              placeholder="Describe the role, responsibilities, and what you're looking for..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={5}
-              maxLength={10000}
-              className={errors.description ? 'border-destructive' : ''}
-            />
-            <div className="flex justify-between">
-              {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
-              <p className="text-xs text-muted-foreground ml-auto">{description.length}/10,000</p>
-            </div>
-          </div>
+          <Field label="Location" optional counter={{ length: location.length, max: 200 }} error={errors.location}>
+            <Input placeholder="e.g. Nairobi, Kenya or Remote" value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} autoComplete="off" />
+          </Field>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Job Type</label>
-              <Select value={jobType} onValueChange={setJobType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {jobTypes.map(type => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Experience Level</label>
-              <Select value={experienceLevel} onValueChange={setExperienceLevel}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {experienceLevels.map(level => (
-                    <SelectItem key={level.value} value={level.value}>
-                      {level.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Salary minimum (USD)" optional>
+              <Input type="number" min={0} step={100} placeholder="50000" value={salaryMin} onChange={(e) => setSalaryMin(e.target.value)} />
+            </Field>
+            <Field label="Salary maximum (USD)" optional>
+              <Input type="number" min={0} step={100} placeholder="80000" value={salaryMax} onChange={(e) => setSalaryMax(e.target.value)} />
+            </Field>
           </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Location <span className="text-muted-foreground text-xs">(max 200 chars)</span></label>
-            <Input
-              placeholder="e.g. Remote, New York, NY"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              maxLength={200}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Salary Min ($)</label>
-              <Input
-                type="number"
-                placeholder="50000"
-                value={salaryMin}
-                onChange={(e) => setSalaryMin(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Salary Max ($)</label>
-              <Input
-                type="number"
-                placeholder="80000"
-                value={salaryMax}
-                onChange={(e) => setSalaryMax(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
+        </section>
 
         {/* Company Info */}
-        <div className="space-y-4">
-          <h2 className="font-semibold">Company Info</h2>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Company Name <span className="text-muted-foreground text-xs">(max 200 chars)</span></label>
-            <Input
-              placeholder="Your company name"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              maxLength={200}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Company Logo URL <span className="text-muted-foreground text-xs">(max 500 chars)</span></label>
-            <Input
-              placeholder="https://example.com/logo.png"
-              value={companyLogo}
-              onChange={(e) => setCompanyLogo(e.target.value)}
-              maxLength={500}
-            />
-          </div>
-        </div>
+        <section className="space-y-5" aria-labelledby="job-company">
+          <h2 id="job-company" className="font-semibold">Company</h2>
+          <Field label="Company name" optional counter={{ length: companyName.length, max: 200 }} error={errors.company_name}>
+            <Input placeholder="Your company name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} maxLength={200} autoComplete="organization" />
+          </Field>
+          <Field label="Company logo URL" optional hint="A direct link to your logo image." error={errors.company_logo}>
+            <Input type="url" placeholder="https://example.com/logo.png" value={companyLogo} onChange={(e) => setCompanyLogo(e.target.value)} maxLength={500} />
+          </Field>
+        </section>
 
         {/* Skills */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium">Required Skills <span className="text-muted-foreground text-xs">(max 20 skills, 50 chars each)</span></label>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Add a skill"
-              value={skillInput}
-              onChange={(e) => setSkillInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
-              maxLength={50}
-            />
-            <Button variant="outline" size="icon" onClick={addSkill} disabled={skills.length >= 20}>
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          {skills.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {skills.map(skill => (
-                <Badge key={skill} variant="secondary" className="gap-1">
-                  {skill}
-                  <button onClick={() => removeSkill(skill)}>
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
+        <section className="space-y-3" aria-labelledby="job-skills">
+          <Field label="Required skills" optional id="job-skills" hint="Press Enter to add. Up to 20 skills.">
+            <div className="flex gap-2">
+              <Input placeholder="Add a skill" value={skillInput} onChange={(e) => setSkillInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())} maxLength={50} enterKeyHint="done" />
+              <Button type="button" variant="outline" size="icon" aria-label="Add skill" onClick={addSkill} disabled={skills.length >= 20} className="h-11 w-11 shrink-0">
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
+          </Field>
+          {skills.length > 0 && (
+            <ul className="flex flex-wrap gap-2" aria-label="Added skills">
+              {skills.map((skill) => (
+                <li key={skill}>
+                  <Badge variant="secondary" className="gap-1">
+                    {skill}
+                    <button type="button" onClick={() => removeSkill(skill)} aria-label={`Remove ${skill}`}><X className="h-3 w-3" /></button>
+                  </Badge>
+                </li>
+              ))}
+            </ul>
           )}
-          <p className="text-xs text-muted-foreground">{skills.length}/20 skills</p>
-        </div>
+        </section>
 
         {/* Benefits */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium">Benefits <span className="text-muted-foreground text-xs">(max 20 benefits, 100 chars each)</span></label>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Add a benefit"
-              value={benefitInput}
-              onChange={(e) => setBenefitInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addBenefit())}
-              maxLength={100}
-            />
-            <Button variant="outline" size="icon" onClick={addBenefit} disabled={benefits.length >= 20}>
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          {benefits.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {benefits.map(benefit => (
-                <Badge key={benefit} variant="outline" className="gap-1">
-                  {benefit}
-                  <button onClick={() => removeBenefit(benefit)}>
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
+        <section className="space-y-3" aria-labelledby="job-benefits">
+          <Field label="Benefits" optional id="job-benefits" hint="Press Enter to add. Up to 20 benefits.">
+            <div className="flex gap-2">
+              <Input placeholder="Add a benefit" value={benefitInput} onChange={(e) => setBenefitInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addBenefit())} maxLength={100} enterKeyHint="done" />
+              <Button type="button" variant="outline" size="icon" aria-label="Add benefit" onClick={addBenefit} disabled={benefits.length >= 20} className="h-11 w-11 shrink-0">
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
+          </Field>
+          {benefits.length > 0 && (
+            <ul className="flex flex-wrap gap-2" aria-label="Added benefits">
+              {benefits.map((benefit) => (
+                <li key={benefit}>
+                  <Badge variant="outline" className="gap-1">
+                    {benefit}
+                    <button type="button" onClick={() => removeBenefit(benefit)} aria-label={`Remove ${benefit}`}><X className="h-3 w-3" /></button>
+                  </Badge>
+                </li>
+              ))}
+            </ul>
           )}
-          <p className="text-xs text-muted-foreground">{benefits.length}/20 benefits</p>
-        </div>
+        </section>
 
         {/* Deadline */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Application Deadline</label>
-          <Input
-            type="date"
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-          />
-        </div>
+        <Field label="Application deadline" optional>
+          <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+        </Field>
 
         {/* Video Prompt — hidden until DB migration is deployed
         <div className="space-y-2">

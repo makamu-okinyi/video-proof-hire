@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Building2, User, Shield, ChevronRight,
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 
 export default function EmployerSettings() {
+  useDocumentTitle('Employer settings');
   const navigate = useNavigate();
   const { profile, logout } = useAuth();
 

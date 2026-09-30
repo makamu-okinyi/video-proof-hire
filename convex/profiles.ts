@@ -1,6 +1,9 @@
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { getActiveUserId } from "./lib/auth";
+import { KENYA_COUNTIES } from "./lib/kenya";
+import { CURRENT_TERMS_VERSION } from "./lib/legal";
 
 export const getMyProfile = query({
   args: {},
@@ -61,10 +64,16 @@ export const upsertProfile = mutation({
     notifyNewApplicants: v.optional(v.string()),
     notifyMarketing: v.optional(v.boolean()),
     twoFactorEnabled: v.optional(v.boolean()),
+    county: v.optional(v.string()),
+    country: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getActiveUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+    if (args.county !== undefined && args.county !== "" && !KENYA_COUNTIES.includes(args.county)) {
+      throw new Error("Unknown county");
+    }
+    if (args.country !== undefined && args.country.length > 80) throw new Error("Country is too long");
     const existing = await ctx.db
       .query("profiles")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
@@ -78,6 +87,20 @@ export const upsertProfile = mutation({
     } else {
       return await ctx.db.insert("profiles", { userId, ...data });
     }
+  },
+});
+
+/** Record that the signed-in user accepted the current Terms of Use and Privacy Policy. */
+export const acceptTerms = mutation({
+  args: { version: v.string() },
+  handler: async (ctx, { version }) => {
+    const userId = await getActiveUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    if (version !== CURRENT_TERMS_VERSION) throw new Error("These terms have been updated. Please reload and review them.");
+    const existing = await ctx.db.query("profiles").withIndex("by_userId", (q) => q.eq("userId", userId)).first();
+    const data = { termsAcceptedAt: Date.now(), termsVersion: version };
+    if (existing) await ctx.db.patch(existing._id, data);
+    else await ctx.db.insert("profiles", { userId, ...data });
   },
 });
 
@@ -110,7 +133,7 @@ export const bootstrapProfile = internalMutation({
 });
 
 // Self-service roles only. "admin" and "judge" are privileged and must be
-// granted out-of-band (see grantAdminByEmail), never by the user themselves.
+// granted out-of-band (see internal admin:grantAdminByEmail), never by the user themselves.
 const SELF_SERVICE_USER_TYPES = ["talent", "employer", "founder", "investor"];
 
 export const setUserType = mutation({
@@ -119,40 +142,17 @@ export const setUserType = mutation({
     if (!SELF_SERVICE_USER_TYPES.includes(userType)) {
       throw new Error(`Cannot self-assign userType "${userType}"`);
     }
-    const userId = await getAuthUserId(ctx);
+    const userId = await getActiveUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
     const existing = await ctx.db
       .query("profiles")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .first();
+    if (existing?.userType === "admin") throw new Error("Cannot change an admin role here");
     if (existing) {
       await ctx.db.patch(existing._id, { userType });
     } else {
       await ctx.db.insert("profiles", { userId, userType });
     }
-  },
-});
-
-// Protected admin bootstrap — only reachable via `npx convex run` with a
-// deploy key (i.e. from the CLI, never from client code), since it is not
-// exported to the public mutation surface the frontend calls.
-export const grantAdminByEmail = internalMutation({
-  args: { email: v.string() },
-  handler: async (ctx, { email }) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) => q.eq("email", email))
-      .first();
-    if (!user) throw new Error(`No user found with email ${email}`);
-    const existing = await ctx.db
-      .query("profiles")
-      .withIndex("by_userId", (q) => q.eq("userId", user._id))
-      .first();
-    if (existing) {
-      await ctx.db.patch(existing._id, { userType: "admin" });
-    } else {
-      await ctx.db.insert("profiles", { userId: user._id, userType: "admin" });
-    }
-    return { userId: user._id };
   },
 });

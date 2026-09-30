@@ -1,22 +1,29 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, X, Check, Loader2, User } from 'lucide-react';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { ArrowLeft, Edit2, X, Check, Loader2, User, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
-import { skillsList } from '@/data/mockData';
+import { skillsList } from '@/lib/skills';
 import { toast } from '@/hooks/use-toast';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
+import { Field } from '@/components/ui/field';
+import { LocationFields, fromLocationValue, toLocationValue, type LocationValue } from '@/components/profile/LocationFields';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { DataRightsPanel } from '@/components/settings/DataRightsPanel';
+import { LegalLinks } from '@/components/legal/LegalLinks';
+import { PasskeysManager } from '@/components/settings/PasskeysManager';
 import { api } from '../../convex/_generated/api';
 
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_AVATAR_SIZE_MB = 5;
 
 export default function EditProfile() {
+  useDocumentTitle('Edit profile');
   const navigate = useNavigate();
-  const { user, profile, updateProfile, refreshProfile } = useAuth();
+  const { user, profile, updateProfile, refreshProfile, isLoading: authLoading } = useAuth();
   const generateAvatarUploadUrl = useMutation(api.employer.generateAvatarUploadUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -25,6 +32,12 @@ export default function EditProfile() {
   const [editSkills, setEditSkills] = useState<string[]>(profile?.skills || []);
   const [editAvatar, setEditAvatar] = useState<string | null>(profile?.avatar || null);
   const [isSaving, setIsSaving] = useState(false);
+  const myProfile = useQuery(api.profiles.getMyProfile, {});
+  const upsertLocation = useMutation(api.profiles.upsertProfile);
+  const [geo, setGeo] = useState<LocationValue>({ county: '', country: '' });
+  useEffect(() => {
+    if (myProfile) setGeo(toLocationValue(myProfile.county, myProfile.country));
+  }, [myProfile]);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
@@ -88,6 +101,7 @@ export default function EditProfile() {
         bio: editBio,
         skills: editSkills,
       });
+      await upsertLocation(fromLocationValue(geo));
       toast({
         title: "Profile updated!",
         description: "Your changes have been saved",
@@ -105,8 +119,7 @@ export default function EditProfile() {
   };
 
   if (!user) {
-    navigate('/');
-    return null;
+    return authLoading ? null : <Navigate to="/auth" replace />;
   }
 
   // Wait for profile to load so we don't show empty form on refresh
@@ -168,30 +181,15 @@ export default function EditProfile() {
           </div>
         </div>
 
-        {/* Username */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Username</label>
-          <Input
-            placeholder="Your username"
-            value={editUsername}
-            onChange={(e) => setEditUsername(e.target.value)}
-          />
-        </div>
-        
-        {/* Bio */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Bio</label>
-          <Textarea
-            placeholder="Tell employers about yourself..."
-            value={editBio}
-            onChange={(e) => setEditBio(e.target.value)}
-            className="min-h-[120px] resize-none"
-            maxLength={200}
-          />
-          <p className="text-xs text-muted-foreground text-right">
-            {editBio.length}/200
-          </p>
-        </div>
+        <Field label="Username">
+          <Input placeholder="Your username" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} autoComplete="nickname" maxLength={50} />
+        </Field>
+
+        <Field label="Bio" optional counter={{ length: editBio.length, max: 200 }}>
+          <Textarea placeholder="Tell employers about yourself..." value={editBio} onChange={(e) => setEditBio(e.target.value)} rows={4} maxLength={200} />
+        </Field>
+
+        <LocationFields value={geo} onChange={setGeo} />
 
         {/* Skills */}
         <div className="space-y-3">
@@ -228,6 +226,21 @@ export default function EditProfile() {
             ))}
           </div>
         </div>
+
+        {/* Security: passkeys */}
+        <section className="space-y-3 border-t border-border/50 pt-6" aria-labelledby="passkeys-heading">
+          <h2 id="passkeys-heading" className="flex items-center gap-2 text-sm font-medium">
+            <Fingerprint className="h-4 w-4" /> Passkeys
+          </h2>
+          <PasskeysManager />
+        </section>
+
+        <section className="space-y-3 border-t border-border/50 pt-6" aria-labelledby="data-heading">
+          <h2 id="data-heading" className="text-sm font-medium">Your data</h2>
+          <DataRightsPanel />
+        </section>
+
+        <LegalLinks className="pt-2" />
 
       </main>
     </div>
