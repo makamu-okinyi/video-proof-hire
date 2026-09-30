@@ -420,7 +420,7 @@ export const termsOfUse: LegalDoc = {
       title: "The Service and user roles",
       blocks: [
         { type: "p", text: "Donjo lets Applicants record and share short proof clips and portfolios, lets Founders submit venture applications, lets Employers post jobs and challenges and review applicants, and lets Admins review applications, shortlist or reject them and export applicant summaries." },
-        { type: "p", text: "Features described as \"in development\" or \"on the roadmap\" are not yet available and may change or never launch. Your account role determines what you can see and do." },
+        { type: "p", text: "Your account role determines what you can see and do." },
       ],
     },
     {
