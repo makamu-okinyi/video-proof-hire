@@ -136,7 +136,8 @@ export const restrictAdminsTo = internalMutation({
     const profiles = await ctx.db.query("profiles").collect();
     for (const p of profiles) {
       if (p.userType !== "admin") continue;
-      const user = await ctx.db.get(p.userId);
+      const userDocId = ctx.db.normalizeId("users", p.userId);
+      const user = userDocId ? await ctx.db.get(userDocId) : null;
       const email = user?.email?.trim().toLowerCase() ?? "";
       if (keep.has(email)) {
         admins.push(email);

@@ -4,6 +4,7 @@ import { ArrowLeft, User, Bell, Shield, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PasskeysManager } from '@/components/settings/PasskeysManager';
+import { ChangePasswordPanel } from '@/components/settings/ChangePasswordPanel';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { DataRightsPanel } from '@/components/settings/DataRightsPanel';
@@ -74,9 +75,7 @@ export default function AccountSettings() {
             <CardDescription>Manage security settings</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/reset-password')}>
-              Change Password
-            </Button>
+            <ChangePasswordPanel />
             <div className="flex items-center justify-between">
               <Label htmlFor="2fa">Two-factor authentication</Label>
               <Switch id="2fa" />

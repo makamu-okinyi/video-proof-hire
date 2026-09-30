@@ -86,6 +86,20 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_at", ["at"]),
 
+  // First-login password setup: an armed email may set its password once, without the old one.
+  passwordSetups: defineTable({
+    email: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  }).index("by_email", ["email"]),
+
+  // Fixed-window rate limiting for unauthenticated endpoints.
+  rateLimits: defineTable({
+    key: v.string(),
+    windowStart: v.number(),
+    count: v.number(),
+  }).index("by_key", ["key"]),
+
   videos: defineTable({
     userId: v.string(),
     title: v.optional(v.string()),

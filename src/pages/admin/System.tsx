@@ -5,6 +5,7 @@ import { Fingerprint, HardDrive, ShieldCheck } from 'lucide-react';
 import { api } from '../../../convex/_generated/api';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Button } from '@/components/ui/button';
+import { ChangePasswordPanel } from '@/components/settings/ChangePasswordPanel';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -121,6 +122,10 @@ export default function System() {
             </table>
           </div>
         )}
+      </Panel>
+
+      <Panel title="Change password" description="Other devices are signed out when you change it." className="mt-6">
+        <div className="max-w-md"><ChangePasswordPanel /></div>
       </Panel>
 
       <div className="mt-6"><AuditLog /></div>

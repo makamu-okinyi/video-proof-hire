@@ -15,6 +15,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { DataRightsPanel } from '@/components/settings/DataRightsPanel';
 import { LegalLinks } from '@/components/legal/LegalLinks';
 import { PasskeysManager } from '@/components/settings/PasskeysManager';
+import { ChangePasswordPanel } from '@/components/settings/ChangePasswordPanel';
 import { api } from '../../convex/_generated/api';
 
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -226,6 +227,11 @@ export default function EditProfile() {
             ))}
           </div>
         </div>
+
+        <section className="space-y-3 border-t border-border/50 pt-6" aria-labelledby="password-heading">
+          <h2 id="password-heading" className="text-sm font-medium">Change password</h2>
+          <ChangePasswordPanel />
+        </section>
 
         {/* Security: passkeys */}
         <section className="space-y-3 border-t border-border/50 pt-6" aria-labelledby="passkeys-heading">
