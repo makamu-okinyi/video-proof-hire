@@ -1,6 +1,7 @@
 import type { MutationCtx } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
 import { logAdminAction } from "./admin";
+import { pushNotification } from "./notify";
 
 export const REVIEW_STATUSES = ["submitted", "shortlisted", "rejected"] as const;
 
@@ -41,4 +42,21 @@ export async function applyVentureReview(
   await logAdminAction(ctx, adminId, "venture_review", {
     detail: `${venture.name} (${ventureId}): ${venture.reviewStatus} -> ${status}${reason ? ` - ${reason}` : ""}`,
   });
+  if (changed && (status === "shortlisted" || status === "rejected")) {
+    const founders = await ctx.db
+      .query("ventureFounders")
+      .withIndex("by_ventureId", (q) => q.eq("ventureId", ventureId))
+      .collect();
+    for (const f of founders) {
+      if (f.userId === adminId) continue;
+      await pushNotification(ctx, {
+        userId: f.userId,
+        type: status === "shortlisted" ? "pitch_shortlisted" : "pitch_rejected",
+        title: `Pitch ${status}`,
+        message: `${venture.name} has been ${status} by the review team.`,
+        actionUrl: "/founder",
+        relatedUserId: adminId,
+      });
+    }
+  }
 }

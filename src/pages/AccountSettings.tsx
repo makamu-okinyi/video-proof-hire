@@ -18,7 +18,11 @@ export default function AccountSettings() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary rounded-full">
+          <button
+            onClick={() => ((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0 ? navigate(-1) : navigate('/')}
+            aria-label="Back"
+            className="p-2 -ml-2 hover:bg-secondary rounded-full"
+          >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <h1 className="font-semibold text-lg">Account Settings</h1>

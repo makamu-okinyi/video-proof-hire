@@ -1,14 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Play, Send, X, Video } from 'lucide-react';
+import { Send, X, Video } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
@@ -36,7 +34,6 @@ interface ApplyJobModalProps {
 
 export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
   const { user, profile } = useAuth();
-  const [selectedVideoIds, setSelectedVideoIds] = useState<string[]>([]);
   const [coverMessage, setCoverMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -55,12 +52,6 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  const toggleVideoSelection = (videoId: string) => {
-    setSelectedVideoIds((prev) =>
-      prev.includes(videoId) ? prev.filter((id) => id !== videoId) : [...prev, videoId]
-    );
-  };
-
   const handleSubmit = async () => {
     if (!user) {
       toast.error('Please log in to apply');
@@ -77,7 +68,6 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
       toast.success('Application submitted successfully!');
       onClose();
       setCoverMessage('');
-      setSelectedVideoIds([]);
     } catch (error: unknown) {
       console.error('Error applying to job:', error);
       if (error instanceof Error && error.message.includes('Already applied')) {
@@ -156,7 +146,7 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
                 <div className="space-y-2 pointer-events-auto z-50 relative">
                   <Label className="flex items-center gap-2 text-foreground">
                     <Video className="h-4 w-4" />
-                    Your Video Portfolio
+                    Your videos
                   </Label>
 
                   {isLoading ? (
@@ -172,44 +162,8 @@ export function ApplyJobModal({ isOpen, onClose, job }: ApplyJobModalProps) {
                       </Link>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-3 gap-2 pr-4">
-                      {videos.map((video) => (
-                        <Card
-                          key={video._id}
-                          className={cn(
-                            'relative aspect-[9/16] overflow-hidden cursor-pointer transition-all neo-extruded-sm border-0',
-                            selectedVideoIds.includes(video._id)
-                              ? 'ring-2 ring-brand'
-                              : 'hover:ring-1 hover:ring-border'
-                          )}
-                          onClick={() => toggleVideoSelection(video._id)}
-                        >
-                          {video.thumbnailUrl ? (
-                            <img
-                              src={video.thumbnailUrl}
-                              alt={video.title || 'Video'}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Play className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                          )}
-                          {selectedVideoIds.includes(video._id) && (
-                            <div className="absolute inset-0 bg-brand/20 flex items-center justify-center">
-                              <div className="bg-primary text-primary-foreground rounded-full p-1">
-                                <Play className="h-4 w-4" />
-                              </div>
-                            </div>
-                          )}
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-
-                  {videos.length > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      {selectedVideoIds.length} video(s) selected • Your profile acts as your application
+                      Employers see your most recent public videos on your profile, up to six. Private videos are not shown.
                     </p>
                   )}
                 </div>

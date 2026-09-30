@@ -1,7 +1,7 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Play, Eye, CheckCircle, XCircle, Clock, User, Download, Loader2 } from 'lucide-react';
+import { ChevronLeft, Play, CheckCircle, XCircle, Clock, User, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
@@ -276,7 +276,7 @@ export default function JobApplicants() {
                       <div
                         key={video._id}
                         className="aspect-[9/16] relative bg-muted rounded-lg overflow-hidden cursor-pointer group"
-                        onClick={() => navigate(`/feed?video=${video._id}`)}
+                        onClick={() => navigate(`/watch/${video._id}`)}
                       >
                         {video.thumbnailUrl ? (
                           <img
@@ -294,9 +294,6 @@ export default function JobApplicants() {
                         )}
                         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <Play className="h-8 w-8 text-white" fill="white" />
-                        </div>
-                        <div className="absolute bottom-1 left-1 flex items-center gap-1 text-white text-xs">
-                          <Eye className="h-3 w-3" /> {video.views}
                         </div>
                       </div>
                     ))}

@@ -22,8 +22,6 @@ function useEmployers() { return useQuery(api.plans.employerUsage, {}); }
 const LIMIT_FIELDS = [
   { key: 'activeJobs', label: 'Active job posts' },
   { key: 'activeChallenges', label: 'Active challenges' },
-  { key: 'shortlistSize', label: 'Shortlist size' },
-  { key: 'seats', label: 'Team seats' },
 ] as const;
 
 interface FormState {
@@ -31,7 +29,7 @@ interface FormState {
   limits: Record<(typeof LIMIT_FIELDS)[number]['key'], string>;
   features: string; isActive: boolean; order: string;
 }
-const blank: FormState = { slug: '', name: '', priceDisplay: '', description: '', limits: { activeJobs: '', activeChallenges: '', shortlistSize: '', seats: '' }, features: '', isActive: true, order: '0' };
+const blank: FormState = { slug: '', name: '', priceDisplay: '', description: '', limits: { activeJobs: '', activeChallenges: '' }, features: '', isActive: true, order: '0' };
 
 function PlanDrawer({ plan, open, onClose }: { plan: Plan | null; open: boolean; onClose: () => void }) {
   const upsert = useMutation(api.plans.upsert);
@@ -46,7 +44,6 @@ function PlanDrawer({ plan, open, onClose }: { plan: Plan | null; open: boolean;
       slug: plan.slug, name: plan.name, priceDisplay: plan.priceDisplay, description: plan.description ?? '',
       limits: {
         activeJobs: plan.limits.activeJobs?.toString() ?? '', activeChallenges: plan.limits.activeChallenges?.toString() ?? '',
-        shortlistSize: plan.limits.shortlistSize?.toString() ?? '', seats: plan.limits.seats?.toString() ?? '',
       },
       features: plan.features.join('\n'), isActive: plan.isActive, order: String(plan.order),
     } : blank);
@@ -87,7 +84,7 @@ function PlanDrawer({ plan, open, onClose }: { plan: Plan | null; open: boolean;
       open={open}
       onOpenChange={(o) => !o && onClose()}
       title={plan ? `Edit ${plan.name}` : 'New plan'}
-      description="Limits are enforced when employers create jobs, challenges and shortlists. Leave a limit blank for unlimited."
+      description="Limits are enforced when employers create jobs and challenges. Leave a limit blank for unlimited."
       footer={<div className="flex justify-end gap-2"><Button variant="outline" onClick={onClose} className="pointer-events-auto">Cancel</Button><Button onClick={save} disabled={busy} className="pointer-events-auto">{plan ? 'Save changes' : 'Create plan'}</Button></div>}
     >
       <div className="space-y-4">
@@ -157,13 +154,11 @@ export default function Plans() {
         <div className="min-w-[13rem] space-y-2">
           <Gauge label="Active jobs" used={r.usage.activeJobs} limit={r.limits?.activeJobs} />
           <Gauge label="Challenges" used={r.usage.activeChallenges} limit={r.limits?.activeChallenges} />
-          <Gauge label="Shortlist" used={r.usage.shortlistSize} limit={r.limits?.shortlistSize} />
         </div>
       ),
     },
     { key: 'jobs', header: 'Active jobs', cell: () => null, csv: (r) => r.usage.activeJobs, csvOnly: true },
     { key: 'challenges', header: 'Active challenges', cell: () => null, csv: (r) => r.usage.activeChallenges, csvOnly: true },
-    { key: 'shortlist', header: 'Shortlist size', cell: () => null, csv: (r) => r.usage.shortlistSize, csvOnly: true },
     { key: 'change', header: 'Change plan', isActions: true, cell: (r) => (plans ? <ChangePlan employer={r} plans={plans} /> : null) },
   ];
 

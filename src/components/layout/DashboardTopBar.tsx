@@ -23,7 +23,7 @@ const routeLabels: Record<string, string> = {
   '/employer/settings': 'Settings',
   '/employer/settings/company': 'Company Profile',
   '/employer/settings/account': 'Account',
-  '/employer/shortlist': 'My Shortlist',
+  '/settings/account': 'Account',
   '/invest': 'Deal Flow',
 };
 

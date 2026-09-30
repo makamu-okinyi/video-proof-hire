@@ -1,6 +1,6 @@
 import { useState, useEffect, type ElementType } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, Mail, Lock, User, Briefcase, ChevronLeft, Rocket, ShieldCheck, Code2, Palette, BarChart3, Package } from 'lucide-react';
+import { ArrowRight, User, Briefcase, ChevronLeft, Rocket, ShieldCheck, Code2, Palette, BarChart3, Package } from 'lucide-react';
 import { RocketLoader } from '@/components/ui/RocketLoader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,6 @@ import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { useAuthActions } from '@convex-dev/auth/react';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { z } from 'zod';
@@ -33,7 +32,7 @@ const passwordSchema = z.string()
 const usernameSchema = z.string().trim().max(50, { message: "Username must be less than 50 characters" }).optional();
 const bioSchema = z.string().trim().max(500, { message: "Bio must be less than 500 characters" }).optional();
 
-type Step = 'welcome' | 'login' | 'signup' | 'userType' | 'onboarding' | 'forgotPassword' | 'confirmation';
+type Step = 'welcome' | 'login' | 'signup' | 'userType' | 'onboarding';
 type UserType = 'talent' | 'employer';
 type SkillCategory = 'tech' | 'design' | 'business' | 'other';
 
@@ -68,10 +67,7 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
   }, []);
   const [geo, setGeo] = useState<LocationValue>({ county: '', country: '' });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetEmailSent, setResetEmailSent] = useState(false);
   const { user, login, signup, signInWithWebAuthn, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
-  const { signIn } = useAuthActions();
   const setUserTypeMutation = useMutation(api.profiles.setUserType);
   const acceptTermsMutation = useMutation(api.profiles.acceptTerms);
   const upsertLocation = useMutation(api.profiles.upsertProfile);
@@ -186,8 +182,6 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
           const errorMsg = error.message?.toLowerCase() || '';
           if (errorMsg.includes('invalid login credentials') || errorMsg.includes('invalid_credentials')) {
             toast.error('Invalid email or password');
-          } else if (errorMsg.includes('email not confirmed')) {
-            toast.error('Please check your email to confirm your account');
           } else if (errorMsg.includes('too many requests') || errorMsg.includes('rate limit')) {
             toast.error('Too many attempts. Please wait a moment and try again.');
           } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
@@ -254,32 +248,6 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
     } finally {
       setPasskeyLoading(false);
     }
-  };
-
-  const handleForgotPassword = async () => {
-    // Validate email
-    const emailResult = emailSchema.safeParse(resetEmail);
-    if (!emailResult.success) {
-      toast.error(emailResult.error.errors[0].message);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await signIn("password", { email: resetEmail, flow: "reset" });
-      setResetEmailSent(true);
-      toast.success('Password reset code sent to your email!');
-    } catch (err) {
-      const msg = err instanceof Error ? err.message.toLowerCase() : '';
-      if (msg.includes('not found') || msg.includes('no user')) {
-        // Don't reveal if email exists — show success anyway
-        setResetEmailSent(true);
-        toast.success('If that email exists, you\'ll receive a reset code.');
-      } else {
-        toast.error('Failed to send reset email. Please try again.');
-      }
-    }
-    setLoading(false);
   };
 
   const handleUserTypeSelect = (type: UserType) => {
@@ -427,7 +395,7 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             {heading}</h1>
           <p className="text-muted-foreground text-sm">
-            Prove your skills, get hired
+            Show your skills on video
           </p>
         </div>
 
@@ -456,7 +424,7 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
               Apply as Applicant
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Submit your video portfolio and get discovered by employers.
+              Apply to jobs with a short video.
             </p>
             <p className="mt-4 text-xs font-semibold text-foreground flex items-center justify-center gap-1">
               Select <ArrowRight className="h-3.5 w-3.5" />
@@ -477,7 +445,7 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
               Hire Talent
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Post jobs, review video applications, and hire verified talent.
+              Post jobs and review video applications.
             </p>
             <p className="mt-4 text-xs font-semibold text-muted-foreground flex items-center justify-center gap-1">
               Select <ArrowRight className="h-3.5 w-3.5" />
@@ -593,18 +561,15 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
             {/* Forgot password */}
             {isLogin && (
               <p className="text-center text-sm text-muted-foreground mt-2">
-                Forgot your login details?{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setResetEmail(email);
-                    setResetEmailSent(false);
-                    setStep('forgotPassword');
-                  }}
+                Forgot your password?{' '}
+                <a
+                  href="https://donjoafrica.com/contact"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="font-medium text-foreground hover:underline pointer-events-auto"
                 >
-                  Get help signing in.
-                </button>
+                  Contact us at https://donjoafrica.com/contact
+                </a>
               </p>
             )}
 
@@ -639,96 +604,6 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
       </div>
     );
 
-  const renderForgotPassword = () => (
-    <div className="flex flex-col min-h-screen px-6 py-8 animate-fade-in">
-      {/* Back Button */}
-      <button 
-        onClick={() => {
-          setStep('login');
-          setResetEmailSent(false);
-        }}
-        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 pointer-events-auto"
-      >
-        <ChevronLeft className="h-5 w-5" />
-        <span>Back to login</span>
-      </button>
-
-      <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
-        <div className="neo-extruded p-6 sm:p-8 space-y-6">
-          {resetEmailSent ? (
-            // Success state
-            <div className="space-y-6 text-center animate-fade-in">
-            <div className="flex justify-center">
-              <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
-                <Mail className="h-8 w-8 text-green-500" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold">Check your email</h2>
-              <p className="text-muted-foreground">
-                We've sent a password reset link to{' '}
-                <span className="font-medium text-foreground">{resetEmail}</span>
-              </p>
-            </div>
-            <div className="space-y-3 pt-4">
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full"
-                onClick={() => {
-                  setResetEmailSent(false);
-                  setResetEmail('');
-                }}
-              >
-                Try a different email
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                Didn't receive the email?{' '}
-                <button
-                  onClick={handleForgotPassword}
-                  disabled={loading}
-                  className="text-foreground hover:underline font-medium"
-                >
-                  {loading ? 'Sending...' : 'Resend'}
-                </button>
-              </p>
-            </div>
-            </div>
-          ) : (
-            // Form state
-            <>
-            <div className="space-y-2 mb-8">
-              <h2 className="text-3xl font-bold">Forgot password?</h2>
-              <p className="text-muted-foreground">
-                Enter your email address and we'll send you a link to reset your password.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {/* Email */}
-              <Field label="Email address" required>
-                <Input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} autoComplete="email" />
-              </Field>
-
-              {/* Submit */}
-              <Button
-                variant="default"
-                size="xl"
-                className="w-full mt-2 rounded-full"
-                onClick={handleForgotPassword}
-                disabled={loading || !resetEmail}
-              >
-                {loading ? 'Sending...' : 'Send Reset Link'}
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-            </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
   const renderUserType = () => (
     <div className="flex flex-col min-h-screen px-6 py-8 animate-fade-in">
       <button
@@ -762,7 +637,7 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
               <div>
                 <h3 className="text-lg font-semibold">Student / Talent</h3>
                 <p className="text-muted-foreground text-sm mt-1">
-                  Showcase your skills and get discovered by employers
+                  Apply to jobs with a short video
                 </p>
               </div>
             </div>
@@ -784,7 +659,7 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
               <div>
                 <h3 className="text-lg font-semibold">Employer</h3>
                 <p className="text-muted-foreground text-sm mt-1">
-                  Discover and hire verified talent faster
+                  Discover and review talent
                 </p>
               </div>
             </div>
@@ -810,7 +685,7 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
           <p className="text-muted-foreground">
             {userType === 'employer' 
               ? 'Tell candidates about your company'
-              : 'Help employers discover you'}
+              : 'Tell employers about yourself'}
           </p>
         </div>
 
@@ -875,45 +750,13 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
     </div>
   );
 
-  const renderConfirmation = () => (
-    <div className="flex flex-col min-h-screen items-center justify-center px-6 py-8 animate-fade-in">
-      <div className="neo-extruded w-full max-w-md p-8 text-center space-y-6">
-        <div className="flex justify-center">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <Mail className="h-8 w-8 text-primary" />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-foreground">Check your email</h2>
-          <p className="text-muted-foreground text-sm">
-            We sent a verification link to <strong>{email}</strong>. Click the link to activate your account, then sign in below.
-          </p>
-        </div>
-        <Button
-          variant="default"
-          size="xl"
-          className="w-full rounded-full"
-          onClick={() => { setIsLogin(true); setStep('login'); setPassword(''); }}
-        >
-          Proceed to Sign In
-          <ArrowRight className="h-5 w-5 ml-2" />
-        </Button>
-        <p className="text-xs text-muted-foreground">
-          Didn&apos;t receive it? Check your spam folder.
-        </p>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen relative">
       <AuthBackground />
       {step === 'welcome' && renderWelcome()}
       {step === 'login' && renderLoginSignup()}
-      {step === 'forgotPassword' && renderForgotPassword()}
       {step === 'userType' && renderUserType()}
       {step === 'onboarding' && renderOnboarding()}
-      {step === 'confirmation' && renderConfirmation()}
     </div>
   );
 }

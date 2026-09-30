@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { ArrowLeft, Edit2, X, Check, Loader2, User, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -228,7 +228,11 @@ export default function EditProfile() {
           </div>
         </div>
 
-        <section className="space-y-3 border-t border-border/50 pt-6" aria-labelledby="password-heading">
+        <p className="border-t border-border/50 pt-6 text-sm text-muted-foreground">
+          Password, passkeys and data export are also in <Link to="/settings/account" className="font-medium text-foreground underline underline-offset-4">Account settings</Link>.
+        </p>
+
+        <section className="space-y-3 pt-0" aria-labelledby="password-heading">
           <h2 id="password-heading" className="text-sm font-medium">Change password</h2>
           <ChangePasswordPanel />
         </section>

@@ -100,7 +100,7 @@ export function ChallengeCard({ challenge, onSubmit, hasSubmitted }: ChallengeCa
           className="w-full mt-2"
           size="sm"
           onClick={onSubmit}
-          disabled={isExpired}
+          disabled={isExpired || hasSubmitted}
         >
           {isExpired 
             ? 'Challenge Ended' 

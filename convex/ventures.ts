@@ -72,7 +72,11 @@ export const getMyVentures = query({
         ctx.db.query("pitchDecks").withIndex("by_ventureId_isCurrent", (q) => q.eq("ventureId", v!._id).eq("isCurrentVersion", true)).first()
       )
     );
-    return ventures.filter(Boolean).map((v, i) => ({ ...v!, pitchDeck: pitchDecks[i] }));
+    // Internal reviewer notes and score stay private to the review team.
+    return ventures.filter(Boolean).map((v, i) => {
+      const { reviewNotes: _notes, reviewScore: _score, ...rest } = v!;
+      return { ...rest, pitchDeck: pitchDecks[i] };
+    });
   },
 });
 

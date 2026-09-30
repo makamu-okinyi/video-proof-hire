@@ -26,7 +26,6 @@ import Challenges from "./pages/Challenges";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
 import UserProfile from "./pages/UserProfile";
 import Ventures from "./pages/Ventures";
 import VentureDetail from "./pages/VentureDetail";
@@ -38,7 +37,7 @@ const EmployerDashboard = lazy(() => import("./pages/EmployerDashboard"));
 const EmployerSettings = lazy(() => import("./pages/EmployerSettings"));
 const CompanyProfileSettings = lazy(() => import("./pages/CompanyProfileSettings"));
 const AccountSettings = lazy(() => import("./pages/AccountSettings"));
-const MyShortlist = lazy(() => import("./pages/MyShortlist"));
+const Watch = lazy(() => import("./pages/Watch"));
 const CreateJob = lazy(() => import("./pages/CreateJob"));
 const CreateChallenge = lazy(() => import("./pages/CreateChallenge"));
 const JobApplicants = lazy(() => import("./pages/JobApplicants"));
@@ -90,7 +89,6 @@ const App = () => (
             <Route path="/privacy" element={<LegalPage doc={legalDocs.privacy} />} />
             <Route path="/terms" element={<LegalPage doc={legalDocs.terms} />} />
             <Route path="/cookies" element={<LegalPage doc={legalDocs.cookies} />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/ventures" element={<ReviewerRoute><Ventures /></ReviewerRoute>} />
             <Route path="/ventures/:id" element={<ReviewerRoute><VentureDetail /></ReviewerRoute>} />
             <Route path="/apply" element={<FounderRoute><FounderWizard /></FounderRoute>} />
@@ -117,6 +115,8 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/edit" element={<EditProfile />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/settings/account" element={<AccountSettings />} />
+            <Route path="/watch/:videoId" element={<Watch />} />
             <Route path="/user/:userId" element={<UserProfile />} />
             {/* Employer Routes (protected by EmployerRoute) */}
             <Route path="/employer" element={<EmployerRoute />}>
@@ -124,7 +124,6 @@ const App = () => (
               <Route path="settings" element={<EmployerSettings />} />
               <Route path="settings/company" element={<CompanyProfileSettings />} />
               <Route path="settings/account" element={<AccountSettings />} />
-              <Route path="shortlist" element={<MyShortlist />} />
               <Route path="jobs/create" element={<CreateJob />} />
               <Route path="jobs/:jobId/edit" element={<CreateJob />} />
               <Route path="jobs/:jobId/applicants" element={<JobApplicants />} />

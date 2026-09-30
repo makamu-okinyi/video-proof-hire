@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { LEGAL_VERSION } from '@/data/legal';
 
-const EXEMPT = ['/auth', '/admin', '/terms', '/privacy', '/cookies', '/reset-password'];
+const EXEMPT = ['/auth', '/admin', '/terms', '/privacy', '/cookies'];
 
 /**
  * Asks signed-in users to (re)accept the Terms of Use and Privacy Policy when they have never

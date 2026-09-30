@@ -30,6 +30,7 @@ import type * as lib_admin from "../lib/admin.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_kenya from "../lib/kenya.js";
 import type * as lib_legal from "../lib/legal.js";
+import type * as lib_notify from "../lib/notify.js";
 import type * as lib_plans from "../lib/plans.js";
 import type * as lib_review from "../lib/review.js";
 import type * as lib_tz from "../lib/tz.js";
@@ -72,6 +73,7 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/kenya": typeof lib_kenya;
   "lib/legal": typeof lib_legal;
+  "lib/notify": typeof lib_notify;
   "lib/plans": typeof lib_plans;
   "lib/review": typeof lib_review;
   "lib/tz": typeof lib_tz;

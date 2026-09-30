@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getActiveUserId as getAuthUserId } from "./lib/auth";
+import { pushNotification } from "./lib/notify";
 
 export const getMyConversations = query({
   args: {},
@@ -65,12 +66,29 @@ export const sendMessage = mutation({
     if (!userId) throw new Error("Not authenticated");
     const conv = await ctx.db.get(conversationId);
     if (!conv || (conv.employerId !== userId && conv.candidateId !== userId)) throw new Error("Not authorized");
-    return await ctx.db.insert("messages", {
+    const messageId = await ctx.db.insert("messages", {
       conversationId,
       senderId: userId,
       content,
       isRead: false,
     });
+    const recipientId = conv.employerId === userId ? conv.candidateId : conv.employerId;
+    if (recipientId !== userId) {
+      const senderProfile = await ctx.db
+        .query("profiles")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .first();
+      const name = senderProfile?.fullName || senderProfile?.username || "Someone";
+      await pushNotification(ctx, {
+        userId: recipientId,
+        type: "message",
+        title: "New message",
+        message: `${name} sent you a message.`,
+        actionUrl: "/messages",
+        relatedUserId: userId,
+      });
+    }
+    return messageId;
   },
 });
 

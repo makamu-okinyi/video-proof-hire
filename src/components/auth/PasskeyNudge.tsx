@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { defaultDeviceLabel, isPasskeySupported } from '@/lib/webauthn';
 
-const HIDDEN_PREFIXES = ['/auth', '/admin', '/reset-password'];
+const HIDDEN_PREFIXES = ['/auth', '/admin'];
 
 /**
  * One-time, dismissible prompt to add a passkey. Shown after login to signed-in users who

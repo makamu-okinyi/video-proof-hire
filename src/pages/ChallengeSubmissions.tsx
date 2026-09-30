@@ -1,6 +1,6 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Play, Eye, Trophy, CheckCircle, User as UserIcon } from 'lucide-react';
+import { ChevronLeft, Play, Trophy, CheckCircle, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useQuery, useMutation } from 'convex/react';
@@ -85,7 +85,7 @@ export default function ChallengeSubmissions() {
                 {/* Video Thumbnail */}
                 <div
                   className="aspect-[9/16] relative bg-muted cursor-pointer group"
-                  onClick={() => navigate(`/feed?video=${submission.video?._id}`)}
+                  onClick={() => navigate(`/watch/${submission.video?._id}`)}
                 >
                   {submission.video?.thumbnailUrl ? (
                     <img
@@ -113,13 +113,6 @@ export default function ChallengeSubmissions() {
                       </Badge>
                     </div>
                   )}
-
-                  {/* Stats */}
-                  <div className="absolute bottom-2 left-2 flex items-center gap-2 text-white text-xs">
-                    <span className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" /> {submission.video?.views ?? 0}
-                    </span>
-                  </div>
                 </div>
 
                 {/* Submission Info */}

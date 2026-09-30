@@ -1,4 +1,4 @@
-import { Home, Briefcase, Bell, User, Plus, Trophy, Rocket } from 'lucide-react';
+import { Home, Briefcase, Bell, User, Plus, Rocket } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ const applicantNavItems = [
 
 const employerNavItems = [
   { icon: Briefcase, label: 'Jobs', path: '/employer' },
-  { icon: Trophy, label: 'Challenges', path: '/employer', tab: 'challenges' },
   { icon: null, label: 'Create', path: '/employer/jobs/create' },
   { icon: User, label: 'Profile', path: '/profile' },
 ];

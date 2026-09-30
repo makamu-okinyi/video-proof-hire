@@ -5,7 +5,7 @@
   Permissions-Policy: camera=(self), microphone=(self), geolocation=(), payment=(), interest-cohort=()
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   Cross-Origin-Opener-Policy: same-origin-allow-popups
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-CBbRHxGAd+B94ChI4g5/oF6vMOK2X7xdqfSS50tv0wo=' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https://*.convex.cloud https://*.convex.site; connect-src 'self' https://cloudflareinsights.com https://*.convex.cloud https://*.convex.site wss://*.convex.cloud; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-CBbRHxGAd+B94ChI4g5/oF6vMOK2X7xdqfSS50tv0wo=' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' blob: https://*.convex.cloud https://*.convex.site; connect-src 'self' https://cloudflareinsights.com https://*.convex.cloud https://*.convex.site wss://*.convex.cloud; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable

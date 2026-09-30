@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Fingerprint, HardDrive, ShieldCheck } from 'lucide-react';
 import { api } from '../../../convex/_generated/api';
@@ -97,7 +98,7 @@ export default function System() {
           loading={!security}
           icon={<Fingerprint className="h-5 w-5" />}
           value={security && `${security.withPasskey} / ${security.total}`}
-          sub={security && (security.withPasskey < security.total ? 'Encourage the rest to add one in Account settings' : 'Full coverage')}
+          sub={security && (security.withPasskey < security.total ? <>Admins can add one in <Link to="/settings/account" className="underline underline-offset-4">Account settings</Link></> : 'Full coverage')}
           tone={security && security.withPasskey < security.total ? 'attention' : 'default'}
         />
         <KpiTile label="File storage" loading={!health} icon={<HardDrive className="h-5 w-5" />} value={health && formatBytes(health.storage.bytes)} sub={health && `${formatNumber(health.storage.files, health.storage.capped)} files`} />
@@ -126,6 +127,9 @@ export default function System() {
 
       <Panel title="Change password" description="Other devices are signed out when you change it." className="mt-6">
         <div className="max-w-md"><ChangePasswordPanel /></div>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Passkeys, data export and account deletion are in <Link to="/settings/account" className="underline underline-offset-4">Account settings</Link>.
+        </p>
       </Panel>
 
       <div className="mt-6"><AuditLog /></div>

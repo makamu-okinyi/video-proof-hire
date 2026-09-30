@@ -173,7 +173,7 @@ export function ApplicantDossier({ applicationId, onClose }: { applicationId: Id
                 <h3 id="dossier-videos" className="text-sm font-semibold">Video portfolio ({data.videos.length})</h3>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   {data.videos.map((vd) => (
-                    <a key={vd.id} href={`/feed?video=${vd.id}`} target="_blank" rel="noopener noreferrer" className="relative aspect-[9/16] overflow-hidden rounded-lg bg-muted">
+                    <a key={vd.id} href={`/watch/${vd.id}`} target="_blank" rel="noopener noreferrer" className="relative aspect-[9/16] overflow-hidden rounded-lg bg-muted">
                       {vd.thumbnailUrl ? <img src={vd.thumbnailUrl} alt={vd.title ?? 'Video'} className="h-full w-full object-cover" /> : <span className="flex h-full items-center justify-center p-1 text-center text-xs text-muted-foreground">{vd.title ?? 'Video'}</span>}
                       <span className="sr-only"> (opens in a new tab)</span>
                     </a>

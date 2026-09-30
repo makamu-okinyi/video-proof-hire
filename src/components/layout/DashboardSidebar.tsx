@@ -15,7 +15,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Bookmark,
   Building,
   Compass,
   MessageSquare,
@@ -53,7 +52,6 @@ const employerItems: NavGroup = {
   items: [
     { icon: Plus, label: 'Post a Job', path: '/employer/jobs/create' },
     { icon: Trophy, label: 'Challenges', path: '/employer/challenges/create' },
-    { icon: Bookmark, label: 'Shortlist', path: '/employer/shortlist' },
     { icon: MessageSquare, label: 'Messages', path: '/messages' },
   ],
 };
@@ -66,7 +64,6 @@ const adminItems: NavGroup = {
     { icon: Building, label: 'Employer Hub', path: '/employer' },
     { icon: Plus, label: 'Post a Job', path: '/employer/jobs/create' },
     { icon: Trophy, label: 'Challenges', path: '/challenges' },
-    { icon: Bookmark, label: 'Shortlist', path: '/employer/shortlist' },
     { icon: MessageSquare, label: 'Messages', path: '/messages' },
   ],
 };
@@ -107,7 +104,7 @@ export function DashboardSidebar({ isCollapsed, onCollapsedChange }: DashboardSi
   const isFounder = profile?.user_type === 'founder' || profile?.user_type === 'talent';
 
   const dashboardPath = isAdmin ? '/admin' : isEmployer ? '/employer' : isFounder ? '/founder' : '/feed';
-  const settingsPath = isEmployer ? '/employer/settings' : '/profile/edit';
+  const settingsPath = isEmployer ? '/employer/settings' : '/settings/account';
 
   const mainMenuItems: NavGroup = {
     title: 'Main Menu',

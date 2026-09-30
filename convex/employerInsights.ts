@@ -122,7 +122,7 @@ export const dossier = query({
   handler: async (ctx, { applicationId }) => {
     const { userId, app, job } = await ownedApplication(ctx, applicationId);
     const profile = await ctx.db.query("profiles").withIndex("by_userId", (q) => q.eq("userId", app.applicantId)).first();
-    const videos = await ctx.db.query("videos").withIndex("by_userId", (q) => q.eq("userId", app.applicantId)).take(6);
+    const videos = await ctx.db.query("videos").withIndex("by_userId_private", (q) => q.eq("userId", app.applicantId).eq("isPrivate", false)).take(6);
     const assessments = await ctx.db.query("applicationAssessments").withIndex("by_applicationId", (q) => q.eq("applicationId", applicationId)).collect();
     const mine = assessments.find((a) => a.reviewerId === userId) ?? null;
 

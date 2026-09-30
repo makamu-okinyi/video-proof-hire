@@ -2,6 +2,7 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getActiveUserId as getAuthUserId } from "./lib/auth";
 import { assertWithinPlan } from "./lib/plans";
+import { pushNotification } from "./lib/notify";
 
 export const getActiveJobs = query({
   args: { limit: v.optional(v.number()) },
@@ -117,7 +118,7 @@ export const applyToJob = mutation({
     if (existing) throw new Error("Already applied");
     const target = await ctx.db.get(jobId);
     if (!target || !target.isActive || target.adminHidden) throw new Error("This job is no longer accepting applications");
-    return await ctx.db.insert("jobApplications", {
+    const applicationId = await ctx.db.insert("jobApplications", {
       jobId,
       applicantId: userId,
       status: "pending",
@@ -125,6 +126,32 @@ export const applyToJob = mutation({
       updatedAt: Date.now(),
       statusHistory: [{ status: "pending", at: Date.now(), by: userId }],
     });
+    // Tell the employer, unless they have turned new-applicant alerts off.
+    if (target.employerId !== userId) {
+      const employerProfile = await ctx.db
+        .query("profiles")
+        .withIndex("by_userId", (q) => q.eq("userId", target.employerId))
+        .first();
+      const pref = (employerProfile?.notifyNewApplicants ?? "").toLowerCase();
+      const off = ["off", "none", "never", "false", "no"].includes(pref);
+      if (!off) {
+        const applicantProfile = await ctx.db
+          .query("profiles")
+          .withIndex("by_userId", (q) => q.eq("userId", userId))
+          .first();
+        const name = applicantProfile?.fullName || applicantProfile?.username || "Someone";
+        await pushNotification(ctx, {
+          userId: target.employerId,
+          type: "application",
+          title: "New applicant",
+          message: `${name} applied for ${target.title}.`,
+          actionUrl: `/employer/jobs/${jobId}/applicants`,
+          relatedUserId: userId,
+          relatedJobId: jobId,
+        });
+      }
+    }
+    return applicationId;
   },
 });
 
@@ -254,7 +281,7 @@ export const getEmployerAnalytics = query({
       )
     );
     return {
-      jobs: jobs.length,
+      jobs: jobs.filter((j) => j.isActive && !j.adminHidden).length,
       applications: allApps.flat().length,
       challenges: challenges.length,
     };
