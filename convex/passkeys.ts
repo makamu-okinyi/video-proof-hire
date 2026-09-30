@@ -1,6 +1,7 @@
 import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { getActiveUserId as getAuthUserId } from "./lib/auth";
+import { CURRENT_TERMS_VERSION } from "./lib/legal";
 
 /** Challenges live for 5 minutes and can be consumed exactly once. */
 export const CHALLENGE_TTL_MS = 5 * 60 * 1000;
@@ -71,6 +72,7 @@ export const nudgeState = query({
       isAdmin: profile?.userType === "admin",
       hasPasskey: !!anyPasskey,
       dismissed: !!profile?.passkeyNudgeDismissedAt,
+      termsCurrent: profile?.termsVersion === CURRENT_TERMS_VERSION,
     };
   },
 });

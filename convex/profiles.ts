@@ -104,6 +104,27 @@ export const acceptTerms = mutation({
   },
 });
 
+/**
+ * Called by the client the moment it sees its own account is suspended: revokes every session
+ * (so a fresh password login cannot be kept alive or refreshed) and returns whether it did.
+ */
+export const revokeIfSuspended = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return false;
+    const profile = await ctx.db.query("profiles").withIndex("by_userId", (q) => q.eq("userId", userId)).first();
+    if (profile?.status !== "suspended") return false;
+    const sessions = await ctx.db.query("authSessions").withIndex("userId", (q) => q.eq("userId", userId)).collect();
+    for (const s of sessions) {
+      const tokens = await ctx.db.query("authRefreshTokens").withIndex("sessionId", (q) => q.eq("sessionId", s._id)).collect();
+      await Promise.all(tokens.map((t) => ctx.db.delete(t._id)));
+      await ctx.db.delete(s._id);
+    }
+    return true;
+  },
+});
+
 export const getMyUserId = query({
   args: {},
   handler: async (ctx) => {

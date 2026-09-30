@@ -89,9 +89,9 @@ Passkeys are bound to the RP id: changing it later invalidates every registered 
   expiry), origin, RP id, signature, signature counter and user verification before a session is
   issued. Users manage passkeys (add, rename, remove) under Profile > Edit profile and Employer
   settings > Account, and get a one-time dismissible "Add a passkey" nudge after login.
-- **Google and Apple** buttons are visible but disabled ("Coming soon"). To enable them, follow
-  the `TODO(social sign-in)` comment in `convex/auth.ts` (set `AUTH_GOOGLE_ID/SECRET` and
-  `AUTH_APPLE_ID/SECRET`, re-add the providers, wire `SocialAuthButtons`).
+- **Google** sign-in is enabled via Convex Auth. Set `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` on the
+  deployment (`npx convex env set`). The OAuth client must list the redirect URI
+  `https://<deployment>.convex.site/api/auth/callback/google`. Apple sign-in is not offered.
 - **Consent**: signup requires agreeing to the Terms of Use and Privacy Policy; the version and
   time are stored on the profile (`termsVersion`, `termsAcceptedAt`). Bump
   `CURRENT_TERMS_VERSION` in `convex/lib/legal.ts` and `LEGAL_VERSION` in `src/data/legal.ts`
@@ -168,6 +168,23 @@ error, required/optional, counter), `Input`, `PasswordInput`, `SearchInput`, `Te
 accessible `Select` / `MultiSelect` combobox (keyboard, type-ahead, searchable above 8 options,
 bottom sheet on phones). Styling comes from the `.field-control` class and scrollbar rules in
 `src/index.css`. Every page sets a unique title with `useDocumentTitle`.
+
+## Deploy checklist
+
+1. `npx convex deploy` (production deployment; needs a deploy key).
+2. Set production env vars:
+   ```bash
+   npx convex env set --prod JWT_PRIVATE_KEY "$(cat private.pem)"   # generate with npx @convex-dev/auth
+   npx convex env set --prod JWKS '<jwks json>'
+   npx convex env set --prod SITE_URL https://hr.donjoafrica.com
+   npx convex env set --prod WEBAUTHN_RP_ID hr.donjoafrica.com
+   npx convex env set --prod WEBAUTHN_RP_NAME Donjo
+   npx convex env set --prod WEBAUTHN_ORIGINS https://hr.donjoafrica.com
+   ```
+3. Build the frontend with `VITE_CONVEX_URL` / `VITE_CONVEX_SITE_URL` pointing at production, and publish `dist/`.
+4. Bootstrap the first admin (sign up at `/auth` first): `npx convex run --prod admin:grantAdminByEmail '{"email":"you@example.com"}'`, then sign in at `/admin/login` and add a passkey.
+5. In Admin > Plans, define the `free` plan (and others) if you want employer limits enforced.
+6. Have the legal text in `src/data/legal.ts` reviewed and fill the `TODO(owner)` placeholders.
 
 ## Deployment
 

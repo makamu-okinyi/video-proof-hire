@@ -1,10 +1,7 @@
-import { cn } from '@/lib/utils';
-
-/**
- * Google / Apple sign-in placeholders. They are intentionally inert ("Coming soon"):
- * no click handler reaches the backend and nothing can throw. To enable them, follow
- * the TODO in convex/auth.ts, then replace `aria-disabled` with a real onClick.
- */
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 function GoogleMark({ className }: { className?: string }) {
   return (
@@ -17,43 +14,20 @@ function GoogleMark({ className }: { className?: string }) {
   );
 }
 
-function AppleMark({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor">
-      <path d="M17.05 12.04c-.03-2.75 2.25-4.07 2.35-4.13-1.28-1.87-3.27-2.13-3.98-2.16-1.69-.17-3.3 1-4.16 1-.86 0-2.18-.98-3.58-.95-1.84.03-3.54 1.07-4.49 2.72-1.92 3.32-.49 8.24 1.37 10.94.91 1.32 2 2.8 3.42 2.75 1.37-.05 1.89-.89 3.55-.89 1.66 0 2.13.89 3.58.86 1.48-.03 2.41-1.34 3.31-2.67 1.04-1.53 1.47-3.01 1.5-3.09-.03-.01-2.87-1.1-2.9-4.38zM14.32 3.94c.76-.92 1.27-2.2 1.13-3.47-1.09.04-2.41.73-3.19 1.64-.7.81-1.32 2.11-1.15 3.36 1.21.09 2.45-.62 3.21-1.53z" />
-    </svg>
-  );
-}
-
-interface PlaceholderProps {
-  label: string;
-  className?: string;
-  children: React.ReactNode;
-}
-
-function Placeholder({ label, className, children }: PlaceholderProps) {
-  return (
-    <button
-      type="button"
-      aria-disabled="true"
-      title="Coming soon"
-      aria-label={`${label} (coming soon)`}
-      onClick={(e) => e.preventDefault()}
-      className={cn(
-        'relative flex h-12 w-full cursor-not-allowed select-none items-center justify-center gap-3 rounded-full px-5 text-sm font-semibold opacity-60',
-        className,
-      )}
-    >
-      {children}
-      <span>{label}</span>
-      <span className="absolute right-3 rounded-full bg-foreground/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
-        Soon
-      </span>
-    </button>
-  );
-}
-
 export function SocialAuthButtons() {
+  const { signInWithOAuth } = useAuth();
+  const [loading, setLoading] = useState(false);
+
+  const handleGoogle = async () => {
+    setLoading(true);
+    const { error } = await signInWithOAuth('google', `${window.location.origin}/auth`);
+    if (error) {
+      toast.error('Google sign-in failed. Please try again or use email and password.');
+      setLoading(false);
+    }
+    // On success the browser is redirected to Google.
+  };
+
   return (
     <div className="w-full space-y-3">
       <div className="relative py-1">
@@ -64,13 +38,15 @@ export function SocialAuthButtons() {
           <span className="bg-background px-2 text-muted-foreground">or continue with</span>
         </span>
       </div>
-      <Placeholder label="Continue with Google" className="border border-border bg-white text-slate-800">
-        <GoogleMark className="h-5 w-5" />
-      </Placeholder>
-      <Placeholder label="Continue with Apple" className="bg-black text-white">
-        <AppleMark className="h-5 w-5" />
-      </Placeholder>
-      <p className="text-center text-xs text-muted-foreground">Google and Apple sign-in are coming soon.</p>
+      <button
+        type="button"
+        onClick={handleGoogle}
+        disabled={loading}
+        className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-border bg-white px-5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-70"
+      >
+        {loading ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <GoogleMark className="h-5 w-5" />}
+        <span>Continue with Google</span>
+      </button>
     </div>
   );
 }

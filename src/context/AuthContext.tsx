@@ -60,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const upsertProfile = useMutation(api.profiles.upsertProfile);
+  const revokeSessions = useMutation(api.profiles.revokeIfSuspended);
   const getRegistrationOptions = useAction(api.passkeysNode.registrationOptions);
   const verifyRegistration = useAction(api.passkeysNode.verifyRegistration);
   const getAuthenticationOptions = useAction(api.passkeysNode.authenticationOptions);
@@ -72,9 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         /* storage unavailable */
       }
-      void signOut();
+      void revokeSessions({}).catch(() => undefined).finally(() => void signOut());
     }
-  }, [isAuthenticated, convexProfile?.status, signOut]);
+  }, [isAuthenticated, convexProfile?.status, signOut, revokeSessions]);
 
   const isLoading =
     authLoading ||
@@ -138,13 +139,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Google / Apple sign-in are placeholders ("Coming soon") until credentials are supplied.
-  // See the TODO in convex/auth.ts. This never throws and never calls the backend.
-  const signInWithOAuth = async (_provider: string, _redirectTo?: string) => {
-    return {
-      error: new Error("Social sign-in is coming soon. Please use email and password or a passkey."),
-      url: null,
-    };
+  const signInWithOAuth = async (provider: string, redirectTo?: string) => {
+    try {
+      await signIn(provider, { redirectTo: redirectTo || `${window.location.origin}/auth` });
+      return { error: null, url: null };
+    } catch (err) {
+      return { error: err instanceof Error ? err : new Error(String(err)), url: null };
+    }
   };
 
   const signInWithWebAuthn = async (opts?: { email?: string }) => {

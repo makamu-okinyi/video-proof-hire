@@ -8,7 +8,6 @@ import { Field } from '@/components/ui/field';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { errorMessage } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
@@ -41,7 +40,6 @@ export default function CreateChallenge() {
   const [prizeDescription, setPrizeDescription] = useState('');
   const [prizeAmount, setPrizeAmount] = useState('');
   const [deadline, setDeadline] = useState('');
-  const [isFeatured, setIsFeatured] = useState(false);
   const [skillInput, setSkillInput] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [videoPrompt, setVideoPrompt] = useState('');
@@ -63,7 +61,6 @@ export default function CreateChallenge() {
     setPrizeDescription(existingChallenge.prizeDescription || '');
     setPrizeAmount(existingChallenge.prizeAmount != null ? String(existingChallenge.prizeAmount) : '');
     setDeadline(formatDeadlineForInput(existingChallenge.deadline ?? null));
-    setIsFeatured(existingChallenge.isFeatured ?? false);
     setSkills(Array.isArray(existingChallenge.skillsTags) ? existingChallenge.skillsTags : []);
     setVideoPrompt(existingChallenge.videoPrompt || '');
   }, [existingChallenge]);
@@ -120,7 +117,6 @@ export default function CreateChallenge() {
           prizeDescription: validation.data.prize_description || undefined,
           prizeAmount: prizeAmount ? parseInt(prizeAmount) : undefined,
           deadline: deadline || undefined,
-          isFeatured,
           skillsTags: validation.data.skills_tags,
           videoPrompt: videoPrompt || undefined,
         });
@@ -132,7 +128,6 @@ export default function CreateChallenge() {
           prizeDescription: validation.data.prize_description || undefined,
           prizeAmount: prizeAmount ? parseInt(prizeAmount) : undefined,
           deadline: deadline || undefined,
-          isFeatured,
           skillsTags: validation.data.skills_tags,
           videoPrompt: videoPrompt || undefined,
         });
@@ -233,14 +228,6 @@ export default function CreateChallenge() {
           <Textarea placeholder="e.g. Demonstrate your approach, a working demo, and explain your technical decisions." value={videoPrompt} onChange={(e) => setVideoPrompt(e.target.value)} rows={4} maxLength={1000} />
         </Field>
 
-        {/* Featured Toggle */}
-        <div className="flex items-center justify-between py-4 border-t border-border">
-          <div>
-            <p className="font-medium">Featured Challenge</p>
-            <p className="text-sm text-muted-foreground">Show this challenge at the top of the feed</p>
-          </div>
-          <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
-        </div>
       </div>
     </div>
   );

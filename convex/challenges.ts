@@ -42,7 +42,6 @@ export const createChallenge = mutation({
     prizeDescription: v.optional(v.string()),
     prizeAmount: v.optional(v.number()),
     deadline: v.optional(v.string()),
-    isFeatured: v.optional(v.boolean()),
     skillsTags: v.optional(v.array(v.string())),
     videoPrompt: v.optional(v.string()),
   },
@@ -58,7 +57,7 @@ export const createChallenge = mutation({
     return await ctx.db.insert("challenges", {
       ...args,
       employerId: userId,
-      isFeatured: args.isFeatured ?? false,
+      isFeatured: false, // featuring is admin-only (see adminModeration.setChallengeFeatured)
       isActive: true,
     });
   },
@@ -72,7 +71,6 @@ export const updateChallenge = mutation({
     prizeDescription: v.optional(v.string()),
     prizeAmount: v.optional(v.number()),
     deadline: v.optional(v.string()),
-    isFeatured: v.optional(v.boolean()),
     isActive: v.optional(v.boolean()),
     skillsTags: v.optional(v.array(v.string())),
     videoPrompt: v.optional(v.string()),

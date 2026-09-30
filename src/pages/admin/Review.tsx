@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from 'convex/react';
 import { toast } from 'sonner';
-import { CheckCircle2, ExternalLink, FileText, RotateCcw, XCircle } from 'lucide-react';
+import { CheckCircle2, ExternalLink, FileDown, Loader2, FileText, RotateCcw, XCircle } from 'lucide-react';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -106,7 +106,7 @@ function VentureDrawer({ ventureId, onClose }: { ventureId: Id<'ventures'> | nul
               <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={4000} rows={4} />
             </Field>
             <div className="flex items-end gap-3">
-              <div className="w-32">
+              <div className="w-44">
                 <Field label="Score (0-10)" optional error={scoreError}>
                   <Input type="number" inputMode="decimal" min={0} max={10} step={0.5} value={score} onChange={(e) => setScore(e.target.value)} />
                 </Field>
@@ -193,6 +193,31 @@ export default function Review() {
   const openId = params.get('open') as Id<'ventures'> | null;
   const [bulkConfirm, setBulkConfirm] = useState<null | { ids: Id<'ventures'>[]; status: 'shortlisted' | 'rejected' | 'submitted'; clear: () => void }>(null);
   const [now] = useState(() => Date.now());
+  const [pdfBusy, setPdfBusy] = useState(false);
+
+  const downloadDossier = async () => {
+    if (!rows?.length) return;
+    setPdfBusy(true);
+    try {
+      const reactPdf = await import('@react-pdf/renderer');
+      const { ApplicantDossierPDF } = await import('@/components/admin/ApplicantDossierPDF');
+      const applicants = rows.map((r) => ({ applicantName: r.founderName || 'Unknown', jobRole: r.name, videoPortfolioUrl: r.pitchVideoUrl }));
+      const blob = await reactPdf.pdf(<ApplicantDossierPDF applicants={applicants} title="Applicant Dossier" />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `applicant-dossier-${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      requestAnimationFrame(() => { document.body.removeChild(a); URL.revokeObjectURL(url); });
+      toast.success('Dossier downloaded');
+    } catch {
+      toast.error('Could not build the PDF. Use Export CSV instead.');
+    } finally {
+      setPdfBusy(false);
+    }
+  };
 
   const columns: Column<Row>[] = [
     { key: 'name', header: 'Venture', sortValue: (r) => r.name.toLowerCase(), cell: (r) => (<div className="min-w-0"><p className="truncate font-medium">{r.name}</p><p className="truncate text-xs text-muted-foreground">{r.tagline}</p></div>), csv: (r) => r.name },
@@ -218,6 +243,7 @@ export default function Review() {
         filters={[{ key: 'status', label: 'Any status', options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })), match: (r, v) => r.status === v }]}
         pageSize={25}
         exportName="donjo-ventures"
+        toolbar={<Button variant="outline" size="sm" onClick={downloadDossier} disabled={pdfBusy || !rows?.length} className="pointer-events-auto">{pdfBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" aria-hidden="true" />}Dossier (PDF)</Button>}
         selectable
         bulkActions={(selected, clear) => (
           <div className="flex flex-wrap gap-2">

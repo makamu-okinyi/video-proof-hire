@@ -223,7 +223,7 @@ export const privacyPolicy: LegalDoc = {
             ["Convex", "Application hosting, database and file storage (videos, images, documents)", "Account, proof content, application data, messages, form submissions"],
             ["Cloudflare", "Website hosting, content delivery and security filtering", "Technical data such as IP address for request routing and abuse protection"],
             ["Email provider (when enabled)", "Sending service and account emails", "Name, email address, message content"],
-            ["Google or Apple sign-in (when enabled)", "Optional sign-in", "Identifier and email address provided by the provider"],
+            ["Google sign-in (when enabled)", "Optional sign-in", "Identifier and email address provided by the provider"],
             ["WhatsApp (if you choose to message us)", "Messaging you initiate with us", "Your number and message"],
           ],
         },

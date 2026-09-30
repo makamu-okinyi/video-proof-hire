@@ -28,6 +28,7 @@ export const list = query({
           country: x.country ?? null,
           founderName: leadProfile?.fullName || leadProfile?.username || null,
           hasVideo: !!x.pitchVideoUrl,
+          pitchVideoUrl: x.pitchVideoUrl ?? null,
           submittedAt,
           reviewedAt: x.reviewedAt ?? null,
           score: x.reviewScore ?? null,

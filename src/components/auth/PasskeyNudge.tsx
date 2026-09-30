@@ -29,6 +29,7 @@ export function PasskeyNudge() {
     !hiddenHere &&
     !!state &&
     state.hasProfile &&
+    state.termsCurrent &&
     !state.hasPasskey &&
     !state.dismissed &&
     !state.isAdmin &&

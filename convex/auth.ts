@@ -1,5 +1,6 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
+import Google from "@auth/core/providers/google";
 import { ConvexCredentials } from "@convex-dev/auth/providers/ConvexCredentials";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
@@ -22,14 +23,8 @@ const Passkey = ConvexCredentials({
   },
 });
 
-// TODO(social sign-in): Google and Apple are shown as "Coming soon" placeholders in the UI.
-// Once the client supplies credentials, set AUTH_GOOGLE_ID / AUTH_GOOGLE_SECRET (Google) and
-// AUTH_APPLE_ID / AUTH_APPLE_SECRET (Apple) with `npx convex env set`, then re-add the
-// providers here:
-//   import Google from "@auth/core/providers/google";
-//   import Apple from "@auth/core/providers/apple";
-//   providers: [Password, Passkey, Google, Apple]
-// and enable the buttons in src/components/auth/SocialAuthButtons.tsx.
+// Google sign-in. Requires AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET on the Convex deployment
+// (see README). Apple sign-in is intentionally not offered.
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [Password, Passkey],
+  providers: [Password, Passkey, Google],
 });
