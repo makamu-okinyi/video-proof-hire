@@ -1,4 +1,6 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, action, internalQuery, internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { modifyAccountCredentials, invalidateSessions } from "@convex-dev/auth/server";
 import type { MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
@@ -173,5 +175,127 @@ export const revokeAdmin = mutation({
     if (profile?.userType !== "admin") throw new Error("That user is not an admin");
     await ctx.db.patch(profile._id, { userType: "talent" });
     await logAdminAction(ctx, adminId, "admin_revoked", { detail: userId });
+  },
+});
+
+/* ------------------------------------------------------------------ manage accounts */
+
+const USERNAME_OK = /^[a-z0-9][a-z0-9_.-]{2,29}$/;
+
+async function revokeSessions(ctx: MutationCtx, userId: Id<"users">) {
+  const sessions = await ctx.db.query("authSessions").withIndex("userId", (q) => q.eq("userId", userId)).collect();
+  for (const s of sessions) {
+    const tokens = await ctx.db.query("authRefreshTokens").withIndex("sessionId", (q) => q.eq("sessionId", s._id)).collect();
+    await Promise.all(tokens.map((t) => ctx.db.delete(t._id)));
+    await ctx.db.delete(s._id);
+  }
+}
+
+/** Edit a user's name, username, company or sign-in email. Admin accounts cannot be edited here. */
+export const updateUser = mutation({
+  args: {
+    userId: v.id("users"),
+    fullName: v.optional(v.string()),
+    username: v.optional(v.string()),
+    companyName: v.optional(v.string()),
+    email: v.optional(v.string()),
+  },
+  handler: async (ctx, { userId, fullName, username, companyName, email }) => {
+    const adminId = await requireAdmin(ctx);
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error("That user no longer exists");
+    const profile = await profileFor(ctx, userId);
+    if (profile?.userType === "admin") throw new Error("Admin accounts cannot be edited here");
+
+    const patch: Record<string, string | undefined> = {};
+    if (fullName !== undefined) patch.fullName = fullName.trim().slice(0, 100);
+    if (companyName !== undefined) patch.companyName = companyName.trim().slice(0, 100);
+    if (username !== undefined) {
+      const raw = username.trim();
+      if (profile?.userType === "employer") {
+        patch.username = raw.slice(0, 50);
+      } else if (raw) {
+        const name = raw.replace(/^@+/, "").toLowerCase();
+        if (!USERNAME_OK.test(name)) throw new Error("Usernames use 3-30 letters, numbers, dots, dashes or underscores");
+        const taken = await ctx.db.query("profiles").withIndex("by_username", (q) => q.eq("username", name)).first();
+        if (taken && taken.userId !== userId) throw new Error("That username is already taken");
+        patch.username = name;
+      }
+    }
+    if (Object.keys(patch).length) {
+      if (profile) await ctx.db.patch(profile._id, patch);
+      else await ctx.db.insert("profiles", { userId, ...patch });
+    }
+
+    if (email !== undefined) {
+      const next = email.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(next)) throw new Error("Enter a valid email address");
+      if (next !== (user.email ?? "").toLowerCase()) {
+        const clash = await userByEmail(ctx, next);
+        if (clash && clash._id !== userId) throw new Error("Another account already uses that email");
+        const accounts = await ctx.db.query("authAccounts").withIndex("userIdAndProvider", (q) => q.eq("userId", userId)).collect();
+        for (const a of accounts) {
+          if (a.provider === "password") await ctx.db.patch(a._id, { providerAccountId: next });
+        }
+        await ctx.db.patch(userId, { email: next });
+      }
+    }
+    await logAdminAction(ctx, adminId, "user_edited", { detail: userId });
+  },
+});
+
+/** Delete a user and all their data (runs the same erasure as self-service deletion). */
+export const deleteUser = mutation({
+  args: { userId: v.id("users"), confirm: v.literal("DELETE") },
+  handler: async (ctx, { userId }) => {
+    const adminId = await requireAdmin(ctx);
+    if (userId === adminId) throw new Error("You cannot delete your own account here");
+    const profile = await profileFor(ctx, userId);
+    if (profile?.userType === "admin") throw new Error("Revoke admin access before deleting this account");
+    if (profile) {
+      await ctx.db.patch(profile._id, { status: "suspended", suspendedAt: Date.now(), suspendedReason: "Account deleted by an administrator" });
+    }
+    await revokeSessions(ctx, userId);
+    await logAdminAction(ctx, adminId, "user_deleted", { detail: userId });
+    await ctx.scheduler.runAfter(0, internal.account.eraseUserData, { userId });
+  },
+});
+
+export const assertAdmin = internalQuery({
+  args: {},
+  handler: async (ctx) => requireAdmin(ctx),
+});
+
+export const targetInfo = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    const user = await ctx.db.get(userId);
+    const profile = await ctx.db.query("profiles").withIndex("by_userId", (q) => q.eq("userId", userId)).first();
+    return user ? { email: user.email ?? null, role: profile?.userType ?? null } : null;
+  },
+});
+
+export const auditReset = internalMutation({
+  args: { adminId: v.string(), userId: v.string() },
+  handler: async (ctx, { adminId, userId }) => {
+    await logAdminAction(ctx, adminId, "user_password_reset", { detail: userId });
+  },
+});
+
+/**
+ * Set a new password for a user (for people who forgot theirs). The admin tells the user the
+ * password out of band; all of the user's sessions are ended.
+ */
+export const resetPassword = action({
+  args: { userId: v.id("users"), newPassword: v.string() },
+  handler: async (ctx, { userId, newPassword }): Promise<void> => {
+    const adminId: string = await ctx.runQuery(internal.adminUsers.assertAdmin, {});
+    if (newPassword.length < 8 || newPassword.length > 200) throw new Error("Use at least 8 characters");
+    const target = await ctx.runQuery(internal.adminUsers.targetInfo, { userId });
+    if (!target?.email) throw new Error("That user has no email sign-in to reset");
+    if (target.role === "admin") throw new Error("Admin passwords are reset from the admin sign-in screen");
+    await modifyAccountCredentials(ctx, { provider: "password", account: { id: target.email, secret: newPassword } });
+    await invalidateSessions(ctx, { userId });
+    await ctx.runMutation(internal.adminUsers.auditReset, { adminId, userId });
   },
 });

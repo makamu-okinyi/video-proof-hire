@@ -1,5 +1,5 @@
-import { useState, useEffect, type ElementType } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, type ElementType, useRef } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowRight, User, Briefcase, ChevronLeft, Rocket, ShieldCheck, Code2, Palette, BarChart3, Package } from 'lucide-react';
 import { RocketLoader } from '@/components/ui/RocketLoader';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,9 @@ import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { describeSignInError } from '@/lib/errors';
+import { FieldPicker, type FieldValue } from '@/components/profile/FieldPicker';
+import { validateUsername, normaliseUsername, applicantDashboardPath } from '@/lib/username';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { z } from 'zod';
@@ -20,6 +23,7 @@ import { PasswordInput } from '@/components/ui/input';
 import { LocationFields, fromLocationValue, type LocationValue } from '@/components/profile/LocationFields';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { LEGAL_VERSION } from '@/data/legal';
+import { PathChooser } from '@/components/auth/PathChooser';
 import { LegalLinks } from '@/components/legal/LegalLinks';
 
 // Validation schemas
@@ -29,6 +33,10 @@ const passwordSchema = z.string()
   .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
   .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
   .regex(/[0-9]/, { message: "Password must contain at least one number" });
+const validateName = (type: string, value: string) =>
+  type === 'employer'
+    ? (value.trim().length < 2 ? 'Enter your company or display name.' : null)
+    : validateUsername(value);
 const usernameSchema = z.string().trim().max(50, { message: "Username must be less than 50 characters" }).optional();
 const bioSchema = z.string().trim().max(500, { message: "Bio must be less than 500 characters" }).optional();
 
@@ -52,6 +60,12 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
   const [userType, setUserType] = useState<UserType>('talent');
   const [username, setUsername] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<SkillCategory | null>(null);
+  const [selectedField, setSelectedField] = useState<string | null>(null);
+  const pickField = (v: FieldValue | null) => {
+    setSelectedField(v ? v.field : null);
+    setSelectedCategory(v ? v.category : null);
+  };
+  const fieldValue: FieldValue | null = selectedField && selectedCategory ? { field: selectedField, category: selectedCategory } : null;
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
@@ -67,7 +81,7 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
   }, []);
   const [geo, setGeo] = useState<LocationValue>({ county: '', country: '' });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const { user, login, signup, signInWithWebAuthn, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile } = useAuth();
+  const { user, login, signup, signInWithWebAuthn, logout, updateProfile, refreshProfile, isAuthenticated, isLoading, profile, profileMissing } = useAuth();
   const setUserTypeMutation = useMutation(api.profiles.setUserType);
   const acceptTermsMutation = useMutation(api.profiles.acceptTerms);
   const upsertLocation = useMutation(api.profiles.upsertProfile);
@@ -75,7 +89,7 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
   const location = useLocation();
 
   // Check if profile needs completion (for Google OAuth users)
-  const profileNeedsCompletion = profile && !profile.username && !profile.user_type;
+  const profileNeedsCompletion = profileMissing || (profile && !profile.username && !profile.user_type);
 
   // Track if user just logged in (to trigger redirect)
   const [justLoggedIn, setJustLoggedIn] = useState(false);
@@ -96,28 +110,34 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
     userType: UserType;
     username: string | null;
     skillCategory: string;
+    field: string | null;
     location: LocationValue;
   } | null>(null);
 
+  const signupInFlight = useRef(false);
   useEffect(() => {
     if (!pendingSignup || isLoading || !isAuthenticated || profile) return;
     const pending = pendingSignup;
     setPendingSignup(null);
+    signupInFlight.current = true;
     (async () => {
       try {
         await setUserTypeMutation({ userType: pending.userType });
         await updateProfile({
           username: pending.username,
           skill_category: pending.skillCategory,
+          field: pending.field,
           user_type: pending.userType,
         });
         await acceptTermsMutation({ version: LEGAL_VERSION });
         const loc = fromLocationValue(pending.location);
         if (loc.county || loc.country) await upsertLocation(loc);
-        navigate(pending.userType === 'employer' ? '/employer' : '/feed', { replace: true });
+        navigate(pending.userType === 'employer' ? '/employer' : applicantDashboardPath(pending.username), { replace: true });
       } catch {
         toast.error('Your account was created but profile setup failed. Please finish setup.');
         setStep('userType');
+      } finally {
+        signupInFlight.current = false;
       }
     })();
   }, [pendingSignup, isLoading, isAuthenticated, profile, setUserTypeMutation, updateProfile, navigate]);
@@ -126,7 +146,7 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       // If user has incomplete profile (new Google OAuth user), show onboarding
-      if (profile && profileNeedsCompletion) {
+      if (profileNeedsCompletion && !pendingSignup && !signupInFlight.current) {
         setStep('userType');
         return;
       }
@@ -136,7 +156,7 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
       if (shouldRedirect && profile) {
         const destination = profile.user_type === 'admin' ? '/admin' :
                           profile.user_type === 'employer' ? '/employer' :
-                          profile.user_type === 'founder' ? '/founder' : '/feed';
+                          (profile.user_type === 'founder' || profile.user_type === 'talent') ? applicantDashboardPath(profile.username) : '/feed';
         navigate(destination, { replace: true });
         setJustLoggedIn(false);
         return;
@@ -166,6 +186,11 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
         toast.error('Please agree to the Terms of Use and Privacy Policy to continue.');
         return;
       }
+      const nameError = validateName(userType, username);
+      if (nameError) {
+        toast.error(nameError);
+        return;
+      }
       const passwordResult = passwordSchema.safeParse(password);
       if (!passwordResult.success) {
         toast.error(passwordResult.error.errors[0].message);
@@ -178,17 +203,10 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
       if (isLogin) {
         const { error } = await login(email, password);
         if (error) {
-          // User-friendly error messages based on error type
-          const errorMsg = error.message?.toLowerCase() || '';
-          if (errorMsg.includes('invalid login credentials') || errorMsg.includes('invalid_credentials')) {
-            toast.error('Invalid email or password');
-          } else if (errorMsg.includes('too many requests') || errorMsg.includes('rate limit')) {
-            toast.error('Too many attempts. Please wait a moment and try again.');
-          } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
-            toast.error('Network error. Please check your connection.');
-          } else {
-            toast.error(error.message || 'Login failed. Please try again.');
-          }
+          const noAccount = /InvalidAccountId/i.test(error.message || '');
+          toast.error(describeSignInError(error, 'signIn'), noAccount
+            ? { action: { label: 'Sign up', onClick: () => setIsLogin(false) } }
+            : undefined);
         } else {
           // Successfully logged in - trigger redirect via useEffect
           setJustLoggedIn(true);
@@ -196,34 +214,30 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
         }
       } else {
         const metadata = {
-          username: username.trim() || null,
+          username: userType === 'employer' ? username.trim() : normaliseUsername(username),
           skill_category: selectedCategory || 'other',
+          field: selectedField,
           user_type: userType,
           industry: selectedCategory || null,
         };
         const { error } = await signup(email, password, metadata);
         if (error) {
           const errorMsg = error.message?.toLowerCase() || '';
-          if (errorMsg.includes('already registered') || errorMsg.includes('already exists')) {
-            toast.error('An account with this email already exists. Try logging in instead.');
-          } else if (errorMsg.includes('password') && errorMsg.includes('weak')) {
+          if (errorMsg.includes('password') && errorMsg.includes('weak')) {
             toast.error('Password is too weak. Use at least 8 characters with uppercase, lowercase, and numbers.');
-          } else if (errorMsg.includes('invalid email') || errorMsg.includes('email')) {
+          } else if (errorMsg.includes('invalid email')) {
             toast.error('Please enter a valid email address.');
-          } else if (errorMsg.includes('rate limit') || errorMsg.includes('too many')) {
-            toast.error('Too many signup attempts. Please wait and try again.');
-          } else if (errorMsg.includes('422') || errorMsg.includes('unprocessable')) {
-            toast.error('Unable to create account. Please check your email and password format.');
           } else {
-            toast.error(error.message || 'Signup failed. Please try again.');
+            toast.error(describeSignInError(error, 'signUp'));
           }
         } else {
           // Convex auth signs the user in immediately. The profile is created by the
           // effect below once the session is live, using the choices made on this form.
           setPendingSignup({
             userType,
-            username: username.trim() || null,
+            username: userType === 'employer' ? username.trim() : normaliseUsername(username),
             skillCategory: selectedCategory || 'other',
+            field: selectedField,
             location: geo,
           });
         }
@@ -257,12 +271,10 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
 
   const handleOnboardingComplete = async () => {
     // Validate inputs
-    if (username) {
-      const usernameResult = usernameSchema.safeParse(username);
-      if (!usernameResult.success) {
-        toast.error(usernameResult.error.errors[0].message);
-        return;
-      }
+    const nameError = validateName(userType, username);
+    if (nameError) {
+      toast.error(nameError);
+      return;
     }
 
     if (bio) {
@@ -280,8 +292,9 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
 
       // Update profile info
       await updateProfile({
-        username: username || null,
+        username: userType === 'employer' ? username.trim() : normaliseUsername(username),
         skill_category: selectedCategory || 'other',
+        field: selectedField,
         bio: bio || null,
         user_type: userType,
       });
@@ -316,20 +329,20 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
 
   // Allow users to open /auth even if they're already signed in (so they can sign out / switch accounts)
   if (location.pathname === '/auth' && isAuthenticated && !justLoggedIn) {
-    if (!profile) {
+    if (!profile && !profileMissing) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-background">
-          <RocketLoader indeterminate label="Loading your account..." />
+          <RocketLoader indeterminate label="Loading your account" />
         </div>
       );
     }
 
     // If profile needs completion (new Google OAuth user), show onboarding flow
     // Let the step rendering handle it - don't show "already signed in" screen
-    if (!profileNeedsCompletion && step === 'welcome') {
+    if (profile && !profileNeedsCompletion && step === 'welcome') {
       const destination = profile.user_type === 'admin' ? '/admin' :
                           profile.user_type === 'employer' ? '/employer' :
-                          profile.user_type === 'founder' ? '/founder' : '/feed';
+                          (profile.user_type === 'founder' || profile.user_type === 'talent') ? applicantDashboardPath(profile.username) : '/feed';
 
       return (
         <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
@@ -386,9 +399,9 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
   }
 
   const renderWelcome = () => (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 animate-fade-in">
+    <div className="flex min-h-screen flex-col items-center justify-center px-6 py-10 animate-fade-in">
       {/* Glass container */}
-      <div className="neo-extruded w-full max-w-md space-y-8 p-6 sm:p-8">
+      <div className="neo-extruded w-full max-w-md space-y-8 p-6 sm:p-8 lg:max-w-5xl lg:space-y-10 lg:p-14">
         {/* Logo & headline */}
         <div className="text-center space-y-2">
           <Logo size="xl" className="justify-center" />
@@ -407,51 +420,7 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
           Choose your path
         </p>
 
-        {/* Selection cards */}
-        <div className="space-y-3">
-
-          {/* Applicant card */}
-          <button
-            onClick={() => { setUserType('talent'); setIsLogin(false); setStep('login'); }}
-            className="neo-extruded-sm group w-full text-center p-6 transition-transform duration-200 hover:-translate-y-0.5 pointer-events-auto"
-          >
-            <div className="flex justify-center mb-4">
-              <div className="squircle-icon h-16 w-16">
-                <Rocket className="h-8 w-8 text-brand-strong" strokeWidth={1.5} />
-              </div>
-            </div>
-            <h3 className="text-base font-semibold text-foreground mb-1.5 tracking-tight">
-              Apply as Applicant
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Apply to jobs with a short video.
-            </p>
-            <p className="mt-4 text-xs font-semibold text-foreground flex items-center justify-center gap-1">
-              Select <ArrowRight className="h-3.5 w-3.5" />
-            </p>
-          </button>
-
-          {/* Program Manager card */}
-          <button
-            onClick={() => { setUserType('employer'); setIsLogin(false); setStep('login'); }}
-            className="neo-extruded-sm group w-full text-center p-6 transition-transform duration-200 hover:-translate-y-0.5 pointer-events-auto"
-          >
-            <div className="flex justify-center mb-4">
-              <div className="squircle-icon h-16 w-16">
-                <ShieldCheck className="h-8 w-8 text-foreground" strokeWidth={1.5} />
-              </div>
-            </div>
-            <h3 className="text-base font-semibold text-foreground mb-1.5 tracking-tight">
-              Hire Talent
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Post jobs and review video applications.
-            </p>
-            <p className="mt-4 text-xs font-semibold text-muted-foreground flex items-center justify-center gap-1">
-              Select <ArrowRight className="h-3.5 w-3.5" />
-            </p>
-          </button>
-        </div>
+        <PathChooser onChoose={(path) => { setUserType(path); setIsLogin(false); setStep('login'); }} />
 
         {/* Existing user — subtle, non-competing */}
         <div className="text-center pt-2">
@@ -463,6 +432,11 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
           </button>
         </div>
       </div>
+
+      <footer className="mt-8 space-y-2 text-center">
+        <LegalLinks />
+        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Donjo. All rights reserved.</p>
+      </footer>
     </div>
   );
 
@@ -507,30 +481,11 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
             {/* Signup-only: Username + Niche + Location + consent */}
             {!isLogin && (
               <>
-                <Field label={userType === 'employer' ? 'Company / display name' : 'Username'} optional counter={{ length: username.length, max: 50 }}>
+                <Field label={userType === 'employer' ? 'Company / display name' : 'Username'} hint={userType === 'employer' ? undefined : 'Becomes your page link: hr.donjoafrica.com/username'} counter={{ length: username.length, max: 50 }}>
                   <Input type="text" placeholder={userType === 'employer' ? 'Acme Inc.' : '@username'} value={username} onChange={(e) => setUsername(e.target.value)} maxLength={50} autoComplete="nickname" />
                 </Field>
 
-                <fieldset className="space-y-2">
-                  <legend className="text-sm font-medium">{userType === 'employer' ? 'Industry / sector' : 'Your field'}</legend>
-                  <div className="grid grid-cols-2 gap-2">
-                    {skillCategories.map((cat) => (
-                      <button
-                        key={cat.value}
-                        type="button"
-                        aria-pressed={selectedCategory === cat.value}
-                        onClick={() => setSelectedCategory(cat.value as SkillCategory)}
-                        className={cn(
-                          "p-3 rounded-xl border text-left transition-all duration-200 flex items-center gap-2 min-h-11",
-                          selectedCategory === cat.value ? "border-brand-strong bg-brand/10" : "border-[hsl(var(--field-border))] hover:border-brand-strong/60"
-                        )}
-                      >
-                        <cat.Icon className="h-4 w-4 text-brand-strong shrink-0" />
-                        <span className="text-sm font-medium">{cat.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
+                <FieldPicker value={fieldValue} onChange={pickField} label={userType === 'employer' ? 'Industry / sector' : 'Your field'} />
 
                 <LocationFields value={geo} onChange={setGeo} />
 
@@ -561,15 +516,12 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
             {/* Forgot password */}
             {isLogin && (
               <p className="text-center text-sm text-muted-foreground mt-2">
-                Forgot your password?{' '}
-                <a
-                  href="https://donjoafrica.com/contact"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to="/forgot-password"
                   className="font-medium text-foreground hover:underline pointer-events-auto"
                 >
-                  Contact us at https://donjoafrica.com/contact
-                </a>
+                  Forgot your password?
+                </Link>
               </p>
             )}
 
@@ -691,31 +643,14 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
 
         <div className="space-y-6 flex-1">
           {/* Username / Company Name */}
-          <Field label={userType === 'employer' ? 'Company name' : 'Username'} optional>
+          <Field label={userType === 'employer' ? 'Company name' : 'Username'} hint={userType === 'employer' ? undefined : 'Becomes your page link: hr.donjoafrica.com/username'}>
             <Input placeholder={userType === 'employer' ? 'Acme Inc.' : '@username'} value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="nickname" />
           </Field>
 
           {/* Skill Category - Only for talent */}
           {userType === 'talent' && (
             <div className="space-y-3">
-              <label className="text-sm font-medium">What's your field?</label>
-              <div className="grid grid-cols-2 gap-3">
-                {skillCategories.map((cat) => (
-                  <button
-                    key={cat.value}
-                    onClick={() => setSelectedCategory(cat.value)}
-                    className={cn(
-                      "p-4 rounded-xl border-2 text-left transition-all duration-200",
-                      selectedCategory === cat.value
-                        ? "border-brand bg-brand/5"
-                        : "border-border hover:border-brand/50"
-                    )}
-                  >
-                    <cat.Icon className="h-6 w-6 text-brand-strong" />
-                    <p className="text-sm font-medium mt-2">{cat.label}</p>
-                  </button>
-                ))}
-              </div>
+              <FieldPicker value={fieldValue} onChange={pickField} label="What's your field?" />
             </div>
           )}
 

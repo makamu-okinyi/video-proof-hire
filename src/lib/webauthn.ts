@@ -47,8 +47,12 @@ export type PasskeyFlow = 'register' | 'signin';
 /** Turn a WebAuthn / network failure into a message safe and friendly to show users. */
 export function describePasskeyError(err: unknown, flow: PasskeyFlow): string {
   const name = (err as { name?: string })?.name ?? '';
-  const message = err instanceof Error ? err.message : '';
+  const data = (err as { data?: unknown })?.data;
+  const message = (err instanceof Error ? err.message : '') + (typeof data === 'string' ? ` ${data}` : '');
 
+  if (/PASSKEYS_NOT_CONFIGURED/.test(message)) {
+    return 'Passkeys are temporarily unavailable. Please use your password instead.';
+  }
   if (name === 'NotAllowedError' || name === 'AbortError' || /cancel|timed out|not allowed/i.test(message)) {
     return flow === 'register'
       ? 'Passkey setup was cancelled. You can try again whenever you are ready.'

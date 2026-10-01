@@ -14,7 +14,7 @@ import { logAdminAction } from "./lib/admin";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const SETUP_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const MIN_PASSWORD = 12;
+const MIN_PASSWORD = 8;
 
 const norm = (email: string) => email.trim().toLowerCase().slice(0, 200);
 
@@ -146,7 +146,7 @@ export const completeFirstLogin = action({
     await ctx.runMutation(internal.firstLogin.rateLimit, { key: `firstLogin:${e}`, limit: 10, windowMs: 15 * 60 * 1000 });
     const setup = await ctx.runQuery(internal.firstLogin.getSetup, { email: e });
     if (!setup) throw new Error("Not allowed");
-    if (password.length < MIN_PASSWORD || password.length > 200) throw new Error("Use at least 12 characters");
+    if (password.length < MIN_PASSWORD || password.length > 200) throw new Error("Use at least 8 characters");
 
     const existing = await ctx.runQuery(internal.firstLogin.findUser, { email: e });
     let userId;
@@ -177,7 +177,7 @@ export const changePassword = action({
     const user = await ctx.runQuery(internal.firstLogin.userById, { userId });
     const email = user?.email;
     if (!email) throw new Error("Not authorized");
-    if (next.length < MIN_PASSWORD || next.length > 200) throw new Error("Use at least 12 characters");
+    if (next.length < MIN_PASSWORD || next.length > 200) throw new Error("Use at least 8 characters");
     if (next === current) throw new Error("Choose a different password");
     await ctx.runMutation(internal.firstLogin.rateLimit, { key: `pwchange:${userId}`, limit: 5, windowMs: 15 * 60 * 1000 });
     try {

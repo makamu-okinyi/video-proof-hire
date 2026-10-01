@@ -67,6 +67,26 @@ function useIsMobile() {
   return mobile;
 }
 
+/** Height the on-screen keyboard covers (0 on desktop / when closed), so sheets can sit above it. */
+function useKeyboardInset(active: boolean) {
+  const [inset, setInset] = React.useState({ bottom: 0, height: 0 });
+  React.useEffect(() => {
+    if (!active) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () =>
+      setInset({ bottom: Math.max(0, window.innerHeight - vv.height - vv.offsetTop), height: vv.height });
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, [active]);
+  return inset;
+}
+
 function ListboxField(props: ListboxProps) {
   const { options, placeholder = "Select...", disabled, invalid, className, searchPlaceholder = "Search...", emptyText = "No matches" } = props;
   const field = useFieldContext();
@@ -83,6 +103,15 @@ function ListboxField(props: ListboxProps) {
   const selectedValues: string[] = multiple ? mp.values : sp.value ? [sp.value] : [];
 
   const [open, setOpen] = React.useState(false);
+  const kb = useKeyboardInset(open && mobile);
+  React.useEffect(() => {
+    if (!open || !mobile) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open, mobile]);
   const [query, setQuery] = React.useState("");
   const [active, setActive] = React.useState(0);
   const triggerRef = React.useRef<HTMLDivElement>(null);
@@ -290,19 +319,19 @@ function ListboxField(props: ListboxProps) {
 
   const popover = open && (
     <>
-      {mobile && <div className="fixed inset-0 z-[80] bg-black/40" aria-hidden="true" />}
+      {mobile && <div className="fixed inset-0 z-[80] bg-black/40" aria-hidden="true" onClick={() => close()} />}
       <div
         ref={popRef}
         onKeyDown={onKeyDown}
         style={
           mobile
-            ? undefined
+            ? { bottom: kb.bottom, maxHeight: kb.height ? Math.round(kb.height * 0.85) : undefined }
             : { position: "fixed", left: pos.left, width: pos.width, top: pos.top, bottom: pos.bottom, maxHeight: pos.maxHeight }
         }
         className={cn(
           "z-[90] flex flex-col overflow-hidden border border-[hsl(var(--field-border))] bg-[hsl(var(--popover))] text-popover-foreground shadow-lg",
           mobile
-            ? "fixed inset-x-0 bottom-0 max-h-[70dvh] rounded-t-2xl pb-[env(safe-area-inset-bottom)]"
+            ? "fixed inset-x-0 bottom-0 max-h-[70dvh] rounded-t-2xl pb-[env(safe-area-inset-bottom)] overscroll-contain"
             : "rounded-xl",
         )}
       >

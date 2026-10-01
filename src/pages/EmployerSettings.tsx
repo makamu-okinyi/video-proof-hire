@@ -2,7 +2,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Building2, User, Shield, ChevronRight,
-  LogOut
+  LogOut, CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -23,6 +23,14 @@ export default function EmployerSettings() {
           href: '/employer/settings/company',
           iconColor: 'text-coral',
           bgColor: 'bg-coral/10',
+        },
+        {
+          icon: CreditCard,
+          label: 'Plan',
+          description: 'Your tier, usage and upgrades',
+          href: '/employer/plan',
+          iconColor: 'text-blue-500',
+          bgColor: 'bg-blue-500/10',
         },
       ],
     },

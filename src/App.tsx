@@ -1,5 +1,7 @@
 import { lazy, Suspense } from "react";
 import { ThemeProvider } from "next-themes";
+import { FeedbackPrompt } from "@/components/feedback/FeedbackPrompt";
+import { ProfileGate } from "@/components/auth/ProfileGate";
 import { RocketLoader } from "@/components/ui/RocketLoader";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { OrganicBackground } from "@/components/layout/OrganicBackground";
@@ -30,6 +32,7 @@ import UserProfile from "./pages/UserProfile";
 import Ventures from "./pages/Ventures";
 import VentureDetail from "./pages/VentureDetail";
 import NotFound from "./pages/NotFound";
+import ApplicantHome, { FounderHomeRedirect } from "./pages/ApplicantHome";
 
 const Create = lazy(() => import("./pages/Create"));
 const EditProfile = lazy(() => import("./pages/EditProfile"));
@@ -55,6 +58,10 @@ const AdminModeration = lazy(() => import("./pages/admin/Moderation"));
 const AdminPlans = lazy(() => import("./pages/admin/Plans"));
 const AdminSystem = lazy(() => import("./pages/admin/System"));
 const LegalPage = lazy(() => import("./pages/LegalPage"));
+const AdminFeedback = lazy(() => import("./pages/admin/Feedback"));
+const EmployerPlan = lazy(() => import("./pages/EmployerPlan"));
+const Discover = lazy(() => import("./pages/Discover"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const Messages = lazy(() => import("./pages/Messages"));
 
@@ -71,6 +78,8 @@ const App = () => (
         <BrowserRouter>
           <ScrollToTop />
           <PasskeyNudge />
+          <ProfileGate />
+          <FeedbackPrompt />
           <AnalyticsTracker />
           <ConsentGate />
           <OrganicBackground />
@@ -85,14 +94,16 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/feed" element={<Feed />} />
+            <Route path="/discover" element={<FounderRoute><Discover /></FounderRoute>} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/privacy" element={<LegalPage doc={legalDocs.privacy} />} />
             <Route path="/terms" element={<LegalPage doc={legalDocs.terms} />} />
             <Route path="/cookies" element={<LegalPage doc={legalDocs.cookies} />} />
             <Route path="/ventures" element={<ReviewerRoute><Ventures /></ReviewerRoute>} />
             <Route path="/ventures/:id" element={<ReviewerRoute><VentureDetail /></ReviewerRoute>} />
             <Route path="/apply" element={<FounderRoute><FounderWizard /></FounderRoute>} />
-            <Route path="/founder" element={<FounderRoute><FounderDashboard /></FounderRoute>} />
+            <Route path="/founder" element={<FounderRoute><FounderHomeRedirect /></FounderRoute>} />
             <Route path="/founder/dashboard" element={<Navigate to="/founder" replace />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminRoute><ConsoleShell /></AdminRoute>}>
@@ -106,6 +117,7 @@ const App = () => (
               <Route path="plans" element={<AdminPlans />} />
               <Route path="system" element={<AdminSystem />} />
               {/* /admin/dashboard and anything else under /admin lands on the overview */}
+              <Route path="feedback" element={<AdminFeedback />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Route>
             <Route path="/jobs" element={<Jobs />} />
@@ -123,6 +135,7 @@ const App = () => (
               <Route index element={<EmployerDashboard />} />
               <Route path="settings" element={<EmployerSettings />} />
               <Route path="settings/company" element={<CompanyProfileSettings />} />
+              <Route path="plan" element={<EmployerPlan />} />
               <Route path="settings/account" element={<AccountSettings />} />
               <Route path="jobs/create" element={<CreateJob />} />
               <Route path="jobs/:jobId/edit" element={<CreateJob />} />
@@ -131,6 +144,7 @@ const App = () => (
               <Route path="challenges/:challengeId/edit" element={<CreateChallenge />} />
               <Route path="challenges/:challengeId/submissions" element={<ChallengeSubmissions />} />
             </Route>
+            <Route path="/:username" element={<ApplicantHome />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </Suspense>

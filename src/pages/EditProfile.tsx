@@ -17,15 +17,17 @@ import { LegalLinks } from '@/components/legal/LegalLinks';
 import { PasskeysManager } from '@/components/settings/PasskeysManager';
 import { ChangePasswordPanel } from '@/components/settings/ChangePasswordPanel';
 import { api } from '../../convex/_generated/api';
+import type { Id } from '../../convex/_generated/dataModel';
+import { describeError } from '@/lib/errors';
 
-const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const MAX_AVATAR_SIZE_MB = 5;
+import { IMAGE_TYPES as ALLOWED_AVATAR_TYPES, uploadImageToConvex } from '@/lib/uploadImage';
 
 export default function EditProfile() {
   useDocumentTitle('Edit profile');
   const navigate = useNavigate();
   const { user, profile, updateProfile, refreshProfile, isLoading: authLoading } = useAuth();
   const generateAvatarUploadUrl = useMutation(api.employer.generateAvatarUploadUrl);
+  const setAvatarFromUpload = useMutation(api.employer.setAvatarFromUpload);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [editUsername, setEditUsername] = useState(profile?.username || '');
@@ -53,33 +55,16 @@ export default function EditProfile() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
-      toast({ title: 'Invalid format', description: 'Use JPEG, PNG, WebP or GIF', variant: 'destructive' });
-      return;
-    }
-    if (file.size > MAX_AVATAR_SIZE_MB * 1024 * 1024) {
-      toast({ title: 'File too large', description: `Max ${MAX_AVATAR_SIZE_MB}MB`, variant: 'destructive' });
-      return;
-    }
     setIsUploadingAvatar(true);
     try {
-      const uploadUrl = await generateAvatarUploadUrl({});
-      const result = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
-      if (!result.ok) throw new Error('Upload failed');
-      const { storageId } = await result.json() as { storageId: string };
-      const convexUrl = import.meta.env.VITE_CONVEX_URL as string;
-      const publicUrl = `${convexUrl}/api/storage/${storageId}`;
-      await updateProfile({ avatar: publicUrl });
+      const storageId = await uploadImageToConvex(file, () => generateAvatarUploadUrl({}));
+      const publicUrl = await setAvatarFromUpload({ storageId: storageId as Id<'_storage'> });
       setEditAvatar(publicUrl);
       toast({ title: 'Photo updated', description: 'Your profile photo has been updated' });
       refreshProfile();
     } catch (err) {
       console.error('Avatar upload error:', err);
-      toast({ title: 'Upload failed', description: (err as Error).message, variant: 'destructive' });
+      toast({ title: 'Upload failed', description: describeError(err, (err as Error).message), variant: 'destructive' });
     } finally {
       setIsUploadingAvatar(false);
       e.target.value = '';

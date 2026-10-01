@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { applicantDashboardPath } from '@/lib/username';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -40,7 +41,7 @@ const founderItems: NavGroup = {
   title: 'Applicant Hub',
   items: [
     { icon: Plus, label: 'Apply to Program', path: '/apply' },
-    { icon: Compass, label: 'Discover', path: '/feed' },
+    { icon: Compass, label: 'Discover', path: '/discover' },
     { icon: Briefcase, label: 'Jobs', path: '/jobs' },
     { icon: Trophy, label: 'Challenges', path: '/challenges' },
     { icon: MessageSquare, label: 'Messages', path: '/messages' },
@@ -103,7 +104,7 @@ export function DashboardSidebar({ isCollapsed, onCollapsedChange }: DashboardSi
   const isEmployer = profile?.user_type === 'employer';
   const isFounder = profile?.user_type === 'founder' || profile?.user_type === 'talent';
 
-  const dashboardPath = isAdmin ? '/admin' : isEmployer ? '/employer' : isFounder ? '/founder' : '/feed';
+  const dashboardPath = isAdmin ? '/admin' : isEmployer ? '/employer' : isFounder ? applicantDashboardPath(profile?.username) : '/feed';
   const settingsPath = isEmployer ? '/employer/settings' : '/settings/account';
 
   const mainMenuItems: NavGroup = {
@@ -230,7 +231,7 @@ export function DashboardSidebar({ isCollapsed, onCollapsedChange }: DashboardSi
               || profile?.company_name
               || profile?.full_name
               || user?.email?.split('@')[0]
-              || 'User';
+              || 'Account';
             return (
               <div className={cn("flex items-center gap-3 mb-3", isCollapsed && "flex-col mb-2")}>
                 <div className={cn("rounded-full overflow-hidden flex-shrink-0 neo-pressed flex items-center justify-center", isCollapsed ? "h-8 w-8" : "h-10 w-10")}>

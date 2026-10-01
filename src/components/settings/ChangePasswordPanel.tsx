@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { PasswordInput } from '@/components/ui/input';
 
-const MIN = 12;
+const MIN = 8;
 
 /** Change the signed-in user's own password. Needs the current one; other devices are signed out. */
 export function ChangePasswordPanel() {

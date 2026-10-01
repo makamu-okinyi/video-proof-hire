@@ -124,8 +124,8 @@ export default function AdminLogin() {
       setError(GENERIC_FAILURE);
       return;
     }
-    if (mode === 'activate' && (password.length < 12 || password !== confirm)) {
-      setError('Use at least 12 characters, and make sure both passwords match.');
+    if (mode === 'activate' && (password.length < 8 || password !== confirm)) {
+      setError('Use at least 8 characters, and make sure both passwords match.');
       return;
     }
     setBusy('password');

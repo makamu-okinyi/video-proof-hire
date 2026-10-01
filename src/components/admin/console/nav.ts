@@ -1,5 +1,5 @@
 import {
-  BarChart3, ClipboardCheck, CreditCard, Gauge, LayoutDashboard, MapPin, ServerCog, ShieldAlert, Users,
+  BarChart3, ClipboardCheck, CreditCard, Gauge, MessageSquareHeart, LayoutDashboard, MapPin, ServerCog, ShieldAlert, Users,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -20,5 +20,6 @@ export const CONSOLE_NAV: ConsoleNavItem[] = [
   { to: '/admin/velocity', label: 'Velocity', title: 'Pipeline velocity', icon: Gauge },
   { to: '/admin/moderation', label: 'Moderation', title: 'Jobs & challenges', icon: ShieldAlert },
   { to: '/admin/plans', label: 'Plans', title: 'Plans & usage', icon: CreditCard },
+  { to: '/admin/feedback', label: 'Feedback', title: 'Member feedback', icon: MessageSquareHeart },
   { to: '/admin/system', label: 'System', title: 'System & security', icon: ServerCog },
 ];

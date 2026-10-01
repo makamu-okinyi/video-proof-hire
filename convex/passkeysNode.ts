@@ -10,7 +10,7 @@
  */
 import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { createHmac } from "node:crypto";
 import {
@@ -27,7 +27,10 @@ import type {
 
 function requiredEnv(name: string): string {
   const value = process.env[name]?.trim();
-  if (!value) throw new Error(`${name} is not configured`);
+  if (!value) {
+    console.error(`${name} is not set on this Convex deployment; passkeys are disabled.`);
+    throw new ConvexError("PASSKEYS_NOT_CONFIGURED");
+  }
   return value;
 }
 

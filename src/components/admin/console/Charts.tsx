@@ -45,7 +45,7 @@ export function KpiTile({
   tone?: 'default' | 'attention';
 }) {
   return (
-    <div className={cn('neo-subtle rounded-2xl p-5', tone === 'attention' && 'ring-2 ring-[hsl(var(--brand-strong))]/40')}>
+    <div className={cn('rounded-lg border border-border bg-card p-5', tone === 'attention' && 'ring-2 ring-[hsl(var(--brand-strong))]/40')}>
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
         {icon && <span className="text-muted-foreground" aria-hidden="true">{icon}</span>}

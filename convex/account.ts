@@ -59,7 +59,7 @@ export const exportMyData = query({
       exportedAt: new Date().toISOString(),
       note: "This file contains the personal data Donjo holds about your account. Passkey public keys and password hashes are intentionally excluded.",
       account: { id: userId, email: user?.email ?? null, createdAt: user ? iso(user._creationTime) : null },
-      profile,
+      profile: profile ? { ...profile, createdAt: iso(profile._creationTime) } : null,
       employerProfile: employer,
       videos: videos.map((x) => ({ id: x._id, title: x.title, description: x.description, videoUrl: x.videoUrl, skillCategory: x.skillCategory, isPrivate: x.isPrivate, views: x.views, likes: x.likes, createdAt: iso(x._creationTime) })),
       jobApplications: applications.map((a) => ({ id: a._id, jobId: a.jobId, status: a.status, coverMessage: a.coverMessage, appliedAt: iso(a._creationTime) })),
@@ -143,6 +143,7 @@ export const eraseUserData = internalMutation({
     more = (await deleteAll(ctx, await ctx.db.query("shortlists").withIndex("by_talentId", (q) => q.eq("talentId", id)).take(BATCH))) || more;
     more = (await deleteAll(ctx, await ctx.db.query("hiringLeads").withIndex("by_recruiterId", (q) => q.eq("recruiterId", id)).take(BATCH))) || more;
     more = (await deleteAll(ctx, await ctx.db.query("hiringLeads").withIndex("by_talentId", (q) => q.eq("talentId", id)).take(BATCH))) || more;
+    more = (await deleteAll(ctx, await ctx.db.query("feedback").withIndex("by_userId", (q) => q.eq("userId", id)).take(BATCH))) || more;
     more = (await deleteAll(ctx, await ctx.db.query("passkeys").withIndex("by_userId", (q) => q.eq("userId", userId)).take(BATCH))) || more;
     more = (await deleteAll(ctx, await ctx.db.query("employerProfiles").withIndex("by_userId", (q) => q.eq("userId", id)).take(BATCH))) || more;
 

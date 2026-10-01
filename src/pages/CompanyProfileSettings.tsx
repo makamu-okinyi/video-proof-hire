@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Building2, Loader2, Upload, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +13,9 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { toast } from 'sonner';
+import type { Id } from '../../convex/_generated/dataModel';
+import { IMAGE_TYPES, uploadImageToConvex } from '@/lib/uploadImage';
+import { describeError } from '@/lib/errors';
 
 const INDUSTRIES = [
   'Technology', 'Finance', 'Healthcare', 'Education', 'Retail',
@@ -39,6 +42,37 @@ export default function CompanyProfileSettings() {
   );
   const upsertEmployerProfile = useMutation(api.employer.upsertEmployerProfile);
   const upsertProfile = useMutation(api.profiles.upsertProfile);
+  const generateUploadUrl = useMutation(api.employer.generateAvatarUploadUrl);
+  const setLogoFromUpload = useMutation(api.employer.setCompanyLogoFromUpload);
+  const removeLogo = useMutation(api.employer.removeCompanyLogo);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+
+  const handleLogoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setIsUploadingLogo(true);
+    try {
+      const storageId = await uploadImageToConvex(file, () => generateUploadUrl({}));
+      const url = await setLogoFromUpload({ storageId: storageId as Id<'_storage'> });
+      setForm((p) => ({ ...p, company_logo_url: url }));
+      toast.success('Logo updated');
+    } catch (err) {
+      toast.error(describeError(err, (err as Error).message || 'Logo upload failed. Please try again.'));
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    try {
+      await removeLogo({});
+      setForm((p) => ({ ...p, company_logo_url: '' }));
+    } catch (err) {
+      toast.error(describeError(err));
+    }
+  };
   const myProfile = useQuery(api.profiles.getMyProfile, isAuthenticated ? {} : 'skip');
   const [location, setLocation] = useState<LocationValue>({ county: '', country: '' });
   useEffect(() => {
@@ -70,7 +104,6 @@ export default function CompanyProfileSettings() {
         companyWebsite: form.company_website || undefined,
         companySize: form.company_size || undefined,
         industry: form.industry || undefined,
-        companyLogoUrl: form.company_logo_url || undefined,
       });
       await upsertProfile(fromLocationValue(location));
       toast.success('Company profile saved');
@@ -126,12 +159,22 @@ export default function CompanyProfileSettings() {
               <Input value={form.company_website} onChange={set('company_website')} placeholder="https://yourcompany.com" type="url" maxLength={255} />
             </Field>
 
-            <Field label="Logo URL" optional hint="A direct link to your logo image.">
-              <Input value={form.company_logo_url} onChange={set('company_logo_url')} placeholder="https://yourcompany.com/logo.png" type="url" maxLength={500} />
+            <Field label="Company logo" optional hint="JPEG, PNG, WebP or GIF, up to 5MB.">
+              <div className="flex items-center gap-4">
+                {form.company_logo_url ? (
+                  <img src={form.company_logo_url} alt="Company logo" className="h-16 w-16 rounded-xl object-contain neo-extruded-sm p-1" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                ) : (
+                  <div className="h-16 w-16 rounded-xl neo-extruded-sm flex items-center justify-center"><Building2 className="h-6 w-6 text-muted-foreground" /></div>
+                )}
+                <input ref={logoInputRef} type="file" accept={IMAGE_TYPES.join(',')} className="hidden" onChange={handleLogoFile} />
+                <Button type="button" variant="secondary" onClick={() => logoInputRef.current?.click()} disabled={isUploadingLogo}>
+                  {isUploadingLogo ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</> : <><Upload className="h-4 w-4 mr-2" />{form.company_logo_url ? 'Replace logo' : 'Upload logo'}</>}
+                </Button>
+                {form.company_logo_url && !isUploadingLogo && (
+                  <Button type="button" variant="ghost" size="icon" onClick={handleRemoveLogo} aria-label="Remove logo"><Trash2 className="h-4 w-4" /></Button>
+                )}
+              </div>
             </Field>
-            {form.company_logo_url && (
-              <img src={form.company_logo_url} alt="Logo preview" className="h-12 w-12 rounded-xl object-contain neo-extruded-sm p-1" onError={(e) => (e.currentTarget.style.display = 'none')} />
-            )}
 
             <Button className="w-full" onClick={handleSave} disabled={isSaving}>
               {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</> : 'Save Company Profile'}

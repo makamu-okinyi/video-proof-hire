@@ -10,6 +10,7 @@ const routeLabels: Record<string, string> = {
   '/ventures': 'Ventures',
   '/jobs': 'Jobs',
   '/challenges': 'Challenges',
+  '/discover': 'Discover',
   '/messages': 'Messages',
   '/notifications': 'Notifications',
   '/profile': 'Profile',

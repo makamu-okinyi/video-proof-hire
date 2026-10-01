@@ -23,6 +23,7 @@ import type * as challenges from "../challenges.js";
 import type * as crons from "../crons.js";
 import type * as employer from "../employer.js";
 import type * as employerInsights from "../employerInsights.js";
+import type * as feedback from "../feedback.js";
 import type * as firstLogin from "../firstLogin.js";
 import type * as http from "../http.js";
 import type * as jobs from "../jobs.js";
@@ -66,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   employer: typeof employer;
   employerInsights: typeof employerInsights;
+  feedback: typeof feedback;
   firstLogin: typeof firstLogin;
   http: typeof http;
   jobs: typeof jobs;

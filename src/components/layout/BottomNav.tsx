@@ -1,4 +1,5 @@
 import { Home, Briefcase, Bell, User, Plus, Rocket } from 'lucide-react';
+import { applicantDashboardPath } from '@/lib/username';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,7 @@ export function BottomNav() {
       return location.pathname === '/employer' || location.pathname.startsWith('/employer/');
     }
     if (path === '/founder') {
-      return location.pathname === '/founder';
+      return location.pathname === '/founder' || location.pathname === applicantDashboardPath(profile?.username);
     }
     return location.pathname === path;
   };

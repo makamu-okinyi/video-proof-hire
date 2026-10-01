@@ -370,3 +370,8 @@ html { scrollbar-gutter: stable; }
   body { background: #fff !important; }
   a { color: inherit; text-decoration: none; }
 }
+
+@keyframes loader-slide {
+  0% { left: -35%; }
+  100% { left: 100%; }
+}
