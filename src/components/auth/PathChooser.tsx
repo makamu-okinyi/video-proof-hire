@@ -57,7 +57,7 @@ export function PathChooser({ onChoose }: PathChooserProps) {
             transition={{ duration: 0.6, ease, delay: chosen ? 0 : index * 0.1 }}
             whileHover={chosen ? undefined : { y: -6, scale: 1.02 }}
             whileTap={chosen ? undefined : { scale: 0.98 }}
-            className="neo-extruded-sm group pointer-events-auto relative overflow-hidden p-6 text-center lg:flex lg:min-h-[22rem] lg:flex-col lg:items-center lg:justify-center lg:p-10"
+            className="neo-extruded-sm group pointer-events-auto relative overflow-hidden p-6 text-center lg:flex lg:flex-col lg:items-center lg:justify-center lg:p-5"
           >
             {/* Colour wash that floods the card on selection */}
             {isChosen && (
@@ -83,7 +83,7 @@ export function PathChooser({ onChoose }: PathChooserProps) {
                 />
               ))}
 
-            <div className="relative mb-4 flex justify-center lg:mb-6">
+            <div className="relative mb-4 flex justify-center lg:mb-3">
               {/* Applicant: exhaust trail */}
               {isChosen && id === 'talent' && (
                 <motion.span
@@ -95,7 +95,7 @@ export function PathChooser({ onChoose }: PathChooserProps) {
                 />
               )}
               <motion.div
-                className="squircle-icon h-16 w-16 lg:h-24 lg:w-24"
+                className="squircle-icon h-16 w-16 lg:h-16 lg:w-16"
                 animate={
                   isChosen
                     ? id === 'talent'
@@ -106,13 +106,13 @@ export function PathChooser({ onChoose }: PathChooserProps) {
                 transition={{ duration: id === 'talent' ? 0.7 : 0.6, ease }}
                 whileHover={chosen ? undefined : { rotate: id === 'talent' ? -8 : 0, scale: 1.08 }}
               >
-                <Icon className={cn('h-8 w-8 lg:h-12 lg:w-12', accent)} strokeWidth={1.5} />
+                <Icon className={cn('h-8 w-8', accent)} strokeWidth={1.5} />
               </motion.div>
             </div>
 
-            <h3 className="relative mb-1.5 text-base font-semibold tracking-tight text-foreground lg:text-xl">{title}</h3>
-            <p className="relative text-sm leading-relaxed text-muted-foreground lg:text-base">{blurb}</p>
-            <p className={cn('relative mt-4 flex items-center justify-center gap-1 text-xs font-semibold lg:mt-6 lg:text-sm', id === 'talent' ? 'text-foreground' : 'text-muted-foreground')}>
+            <h3 className="relative mb-1.5 text-base font-semibold tracking-tight text-foreground lg:text-lg">{title}</h3>
+            <p className="relative text-sm leading-relaxed text-muted-foreground">{blurb}</p>
+            <p className={cn('relative mt-4 flex items-center justify-center gap-1 text-xs font-semibold lg:mt-3', id === 'talent' ? 'text-foreground' : 'text-muted-foreground')}>
               Select{' '}
               <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
             </p>

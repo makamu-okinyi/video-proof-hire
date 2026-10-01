@@ -399,9 +399,9 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
   }
 
   const renderWelcome = () => (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6 py-10 animate-fade-in">
+    <div className="flex min-h-screen flex-col items-center justify-center px-6 py-10 animate-fade-in lg:h-dvh lg:min-h-0 lg:overflow-y-auto lg:py-4">
       {/* Glass container */}
-      <div className="neo-extruded w-full max-w-md space-y-8 p-6 sm:p-8 lg:max-w-5xl lg:space-y-10 lg:p-14">
+      <div className="neo-extruded w-full max-w-md space-y-8 p-6 sm:p-8 lg:max-w-5xl lg:space-y-4 lg:p-6">
         {/* Logo & headline */}
         <div className="text-center space-y-2">
           <Logo size="xl" className="justify-center" />
@@ -413,10 +413,10 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-border" />
+        <div className="h-px bg-border [@media(max-height:720px)]:lg:hidden" />
 
         {/* Role selection eyebrow */}
-        <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <p className="text-center text-xs [@media(max-height:720px)]:lg:hidden font-semibold uppercase tracking-widest text-muted-foreground">
           Choose your path
         </p>
 
@@ -433,7 +433,7 @@ export default function Auth({ pageTitle = 'Sign in or create an account', headi
         </div>
       </div>
 
-      <footer className="mt-8 space-y-2 text-center">
+      <footer className="mt-8 space-y-1 text-center lg:mt-4">
         <LegalLinks />
         <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Donjo. All rights reserved.</p>
       </footer>
