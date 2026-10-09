@@ -54,14 +54,16 @@ export function BottomNav() {
       <div className="flex items-center justify-between h-14 max-w-md mx-auto px-1">
         {navItems.map((item, index) => {
           const isActive = isActiveRoute(item.path);
-          const isCreate = item.label === 'Create';
+          // Items without an icon are the centre action button (Create / Apply).
+          const Icon = item.icon;
 
-          if (isCreate) {
+          if (!Icon) {
             return (
               <Button
                 key={item.label}
                 variant="default"
                 size="icon"
+                aria-label={item.label}
                 className="h-10 w-10 rounded-full shadow-lg -mt-4"
                 onClick={() => navigate(item.path)}
               >
@@ -70,7 +72,6 @@ export function BottomNav() {
             );
           }
 
-          const Icon = item.icon!;
           const showNotifBadge = item.label === 'Alerts' && unreadCount > 0;
           
           return (
