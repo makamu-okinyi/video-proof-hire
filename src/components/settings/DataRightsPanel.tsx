@@ -7,6 +7,7 @@ import { api } from '../../../convex/_generated/api';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/admin/console/Overlays';
 import { useAuth } from '@/context/AuthContext';
+import { buildExportZip } from '@/lib/dataExport';
 
 /** Data-subject rights: download a copy of my data, and delete my account. */
 export function DataRightsPanel() {
@@ -22,11 +23,11 @@ export function DataRightsPanel() {
     setBusy(true);
     try {
       const data = await convex.query(api.account.exportMyData, {});
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const blob = await buildExportZip(data as Record<string, unknown>);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `donjo-my-data-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `donjo-my-data-${new Date().toISOString().slice(0, 10)}.zip`;
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
@@ -45,7 +46,7 @@ export function DataRightsPanel() {
   return (
     <div className="space-y-5" data-testid="data-rights">
       <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">Get a copy of the personal data we hold about you: your profile, videos, applications, and the messages you wrote.</p>
+        <p className="text-sm text-muted-foreground">Get a copy of the personal data we hold about you: your profile, videos, applications, and the messages you wrote. You get a ZIP with a JSON file, CSV spreadsheets and your uploaded photos and videos.</p>
         <Button variant="outline" onClick={download} disabled={busy} className="pointer-events-auto">
           {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" aria-hidden="true" />}
           Download my data

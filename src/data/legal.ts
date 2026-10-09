@@ -161,18 +161,16 @@ export const privacyPolicy: LegalDoc = {
           rows: [
             ["Create and run your account", "Account and profile, passkey credentials", "Contract", "While your account is active, then up to 30 days to complete deletion", "Processors (hosting, storage)"],
             ["Host and display your proof content", "Proof content, profile", "Contract; consent for public visibility", "Until you delete it or your account", "Employers, reviewers and the public, as you choose"],
-            ["Process applications, challenges and venture reviews", "Application and venture data, proof content", "Contract; legitimate interests", "For the life of the programme plus up to 24 months", "The employer or programme you applied to; Admins"],
+            ["Process applications, challenges and venture reviews", "Application and venture data, proof content", "Contract; legitimate interests", "Until you delete your account or ask us to delete it", "The employer or programme you applied to; Admins"],
             ["Enable messaging and notifications", "Messages, notifications", "Contract", "While your account is active", "The other participants in the conversation"],
             ["Generate applicant dossiers and reports", "Names, roles, portfolio links", "Legitimate interests; contract", "Generated on demand; not retained by us", "Authorised employers and Admins"],
-            ["Respond to enquiries and partnership requests", "Contact and partnership requests", "Legitimate interests; steps at your request", "Up to 24 months after the last contact", "Our team and hosting processors"],
-            ["Keep the Service secure and prevent abuse", "Device and technical, security logs", "Legitimate interests; legal obligation", "Up to 12 months", "Processors; authorities where required by law"],
-            ["Understand and improve the Service (first-party analytics)", "Usage and analytics (no IP address stored)", "Legitimate interests; consent where required", "Up to 13 months, then aggregated or deleted", "Not shared outside Donjo and its processors"],
-            ["Send service messages", "Name, email", "Contract", "While your account is active", "Email provider, when enabled"],
-            ["Marketing updates (only if you opt in)", "Name, email", "Consent", "Until you withdraw consent", "Email provider, when enabled"],
+            ["Respond to enquiries and partnership requests", "Contact and partnership requests", "Legitimate interests; steps at your request", "Until we delete it or you ask us to", "Our team and hosting processors"],
+            ["Keep the Service secure and prevent abuse", "Device and technical, security logs", "Legitimate interests; legal obligation", "Kept while needed for security and accountability", "Processors; authorities where required by law"],
+            ["Understand and improve the Service (first-party analytics)", "Usage and analytics (no IP address stored)", "Legitimate interests; consent where required", "A limited period set by administrators (90 days by default), then deleted", "Not shared outside Donjo and its processors"],
             ["Comply with the law and protect legal rights", "Any data needed", "Legal obligation; legitimate interests", "As long as the law requires", "Regulators, courts, advisers"],
           ],
         },
-        { type: "p", text: "Where we rely on consent (for example to make a video public, or for optional marketing), you can withdraw it at any time. Withdrawal does not affect processing that happened before you withdrew." },
+        { type: "p", text: "Where we rely on consent (for example to make a video public), you can withdraw it at any time. Withdrawal does not affect processing that happened before you withdrew." },
         { type: "p", text: "Where we rely on legitimate interests, we weigh them against your rights and freedoms. You can object to this processing (see Your rights)." },
       ],
     },
@@ -222,7 +220,6 @@ export const privacyPolicy: LegalDoc = {
           rows: [
             ["Convex", "Application hosting, database and file storage (videos, images, documents)", "Account, proof content, application data, messages, form submissions"],
             ["Cloudflare", "Website hosting, content delivery and security filtering", "Technical data such as IP address for request routing and abuse protection"],
-            ["Email provider (when enabled)", "Sending service and account emails", "Name, email address, message content"],
             ["Google sign-in (when enabled)", "Optional sign-in", "Identifier and email address provided by the provider"],
             ["WhatsApp (if you choose to message us)", "Messaging you initiate with us", "Your number and message"],
           ],
@@ -353,7 +350,7 @@ export const privacyPolicy: LegalDoc = {
       id: "changes",
       title: "Changes to this policy",
       blocks: [
-        { type: "p", text: "We may update this policy as the Service or the law changes. The \"Last updated\" date at the top shows the current version. If we make material changes, we will give reasonable notice, for example by email or a notice in the app, before they take effect." },
+        { type: "p", text: "We may update this policy as the Service or the law changes. The \"Last updated\" date at the top shows the current version. If we make material changes, we will give reasonable notice, by a notice in the app or on the website, before they take effect." },
       ],
     },
   ],
@@ -423,7 +420,7 @@ export const termsOfUse: LegalDoc = {
       title: "The Service and user roles",
       blocks: [
         { type: "p", text: "Donjo lets Applicants record and share short proof clips and portfolios, lets Founders submit venture applications, lets Employers post jobs and challenges and review applicants, and lets Admins review applications, shortlist or reject them and export applicant summaries." },
-        { type: "p", text: "Features described as \"in development\" or \"on the roadmap\" are not yet available and may change or never launch. Your account role determines what you can see and do." },
+        { type: "p", text: "Your account role determines what you can see and do." },
       ],
     },
     {
@@ -598,7 +595,7 @@ export const termsOfUse: LegalDoc = {
       id: "changes",
       title: "Changes to these Terms",
       blocks: [
-        { type: "p", text: "We may update these Terms from time to time. The \"Last updated\" date shows the current version. For material changes we will give reasonable notice, for example by email or in the app. If you continue to use the Service after the changes take effect, you accept them." },
+        { type: "p", text: "We may update these Terms from time to time. The \"Last updated\" date shows the current version. For material changes we will give reasonable notice, by a notice in the app or on the website. If you continue to use the Service after the changes take effect, you accept them." },
       ],
     },
     {
@@ -661,7 +658,7 @@ export const cookieNotice: LegalDoc = {
             ["Authentication session tokens", "App", "Keep you signed in and secure your session", "Until you sign out or the session expires", "Strictly necessary"],
             ["Passkey and sign-in state", "App", "Complete passkey (WebAuthn) and password sign-in", "Short-lived, during sign-in", "Strictly necessary"],
             ["Interface preferences", "App", "Remember choices such as layout or dismissed notices", "Until cleared", "Functional"],
-            ["Anonymous visitor identifier", "Website and app, only if analytics are enabled", "Count repeat visits without identifying you. Random value, no personal data", "Up to 13 months, or until cleared", "Analytics"],
+            ["Anonymous visitor identifier", "Website and app, only if analytics are enabled", "Count repeat visits without identifying you. Random value, no personal data", "Until you clear your browser storage", "Analytics"],
             ["Session identifier (analytics)", "Website and app, only if analytics are enabled", "Group page views into a visit. Random value, no personal data", "Until the tab closes", "Analytics"],
           ],
         },
@@ -672,7 +669,7 @@ export const cookieNotice: LegalDoc = {
       id: "third-party",
       title: "Third-party storage",
       blocks: [
-        { type: "p", text: "We do not embed advertising networks or social-media tracking pixels. Fonts and scripts on the website are served from our own domain. If you follow a link to a third-party service (for example WhatsApp), that service may set its own cookies under its own policy." },
+        { type: "p", text: "We do not embed advertising networks or social-media tracking pixels. Fonts and scripts on the website are served from our own domain. Our hosting provider, Cloudflare, may measure aggregate page visits with its own web analytics service. If you follow a link to a third-party service (for example WhatsApp), that service may set its own cookies under its own policy." },
       ],
     },
     {

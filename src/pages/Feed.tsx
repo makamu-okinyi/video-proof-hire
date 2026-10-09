@@ -60,7 +60,7 @@ export default function Feed() {
           <div className="flex justify-center py-8"><RocketLoader indeterminate label="Loading stats..." /></div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <StatCard title="TOTAL APPLICATIONS" value={String(totalApps)} />
+            <StatCard title="MY VIDEOS" value={String(totalApps)} />
             <StatCard title="ACTIVE VENTURES" value={`${activeVentures}`} />
           </div>
         )}
@@ -84,8 +84,8 @@ export default function Feed() {
             <div className="squircle-icon h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4">
               <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>
-            <h3 className="font-semibold text-charcoal mb-1 text-sm sm:text-base">Apply as Applicant</h3>
-            <p className="text-xs sm:text-sm text-cool-grey">Submit your video portfolio to find your next hire</p>
+            <h3 className="font-semibold text-charcoal mb-1 text-sm sm:text-base">Apply with your venture</h3>
+            <p className="text-xs sm:text-sm text-cool-grey">Apply to the programme with your venture</p>
           </button>
 
           <button
@@ -107,7 +107,7 @@ export default function Feed() {
               <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>
             <h3 className="font-semibold text-charcoal mb-1 text-sm sm:text-base">Challenges</h3>
-            <p className="text-xs sm:text-sm text-cool-grey">Win prizes & recognition</p>
+            <p className="text-xs sm:text-sm text-cool-grey">Prizes are offered and paid by the employer</p>
           </button>
         </div>
       </div>

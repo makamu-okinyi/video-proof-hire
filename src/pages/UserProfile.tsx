@@ -1,7 +1,7 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  ChevronLeft, Eye, Play, BadgeCheck, Globe, User
+  ChevronLeft, Play, BadgeCheck, Globe, User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,14 +31,12 @@ export default function UserProfile() {
   };
 
   const handleVideoClick = (videoId: string) => {
-    navigate(`/feed?video=${videoId}`);
+    navigate(`/watch/${videoId}`);
   };
 
   const videoList = videos ?? [];
 
   const stats = {
-    views: videoList.reduce((acc, v) => acc + (v.views || 0), 0),
-    likes: videoList.reduce((acc, v) => acc + (v.likes || 0), 0),
     videos: videoList.length,
   };
 
@@ -98,14 +96,6 @@ export default function UserProfile() {
               <p className="text-xl font-bold">{stats.videos}</p>
               <p className="text-xs text-muted-foreground">Videos</p>
             </div>
-            <div className="text-center">
-              <p className="text-xl font-bold">{formatNumber(stats.views)}</p>
-              <p className="text-xs text-muted-foreground">Views</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xl font-bold">{formatNumber(stats.likes)}</p>
-              <p className="text-xs text-muted-foreground">Likes</p>
-            </div>
           </div>
         </div>
 
@@ -162,10 +152,6 @@ export default function UserProfile() {
                   )}
                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Play className="h-8 w-8 text-background" fill="white" />
-                  </div>
-                  <div className="absolute bottom-2 left-2 flex items-center gap-1 text-background text-xs">
-                    <Eye className="h-3 w-3" />
-                    {formatNumber(video.views || 0)}
                   </div>
                 </div>
               ))}

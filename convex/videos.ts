@@ -53,6 +53,68 @@ export const getVideo = query({
   },
 });
 
+// Access-checked video lookup for the watch page. Public videos: any signed-in user.
+// Private videos: the owner, an admin, or an employer who owns a job the uploader applied to.
+export const getWatchable = query({
+  args: { videoId: v.id("videos") },
+  handler: async (ctx, { videoId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { status: "forbidden" as const };
+    const video = await ctx.db.get(videoId);
+    if (!video) return { status: "notfound" as const };
+
+    if (video.isPrivate && video.userId !== userId) {
+      const me = await ctx.db
+        .query("profiles")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .first();
+      let allowed = me?.userType === "admin";
+      if (!allowed) {
+        // A private video stays private, except to the employer whose challenge it was submitted to.
+        const submissions = await ctx.db
+          .query("challengeSubmissions")
+          .withIndex("by_userId", (q) => q.eq("userId", video.userId))
+          .take(200);
+        for (const submission of submissions) {
+          if (submission.videoId !== videoId) continue;
+          const challenge = await ctx.db.get(submission.challengeId);
+          if (challenge && challenge.employerId === userId) {
+            allowed = true;
+            break;
+          }
+        }
+      }
+      if (!allowed) return { status: "forbidden" as const };
+    }
+
+    const uploader = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", video.userId))
+      .first();
+    return {
+      status: "ok" as const,
+      video: {
+        _id: video._id,
+        userId: video.userId,
+        title: video.title,
+        description: video.description,
+        videoUrl: video.videoUrl,
+        thumbnailUrl: video.thumbnailUrl,
+        isPrivate: video.isPrivate ?? false,
+        views: video.views,
+        likes: video.likes,
+        _creationTime: video._creationTime,
+      },
+      uploader: {
+        userId: video.userId,
+        username: uploader?.username,
+        fullName: uploader?.fullName,
+        avatar: uploader?.avatar,
+      },
+    };
+  },
+});
+
 export const createVideo = mutation({
   args: {
     videoUrl: v.string(),

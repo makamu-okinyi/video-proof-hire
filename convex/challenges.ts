@@ -2,16 +2,26 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getActiveUserId as getAuthUserId } from "./lib/auth";
 import { assertWithinPlan } from "./lib/plans";
+import { pushNotification } from "./lib/notify";
 
 export const getActiveChallenges = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 50 }) => {
-    return await ctx.db
+    const challenges = await ctx.db
       .query("challenges")
       .withIndex("by_isActive", (q) => q.eq("isActive", true))
       .order("desc")
       .filter((q) => q.neq(q.field("adminHidden"), true))
       .take(limit);
+    return await Promise.all(
+      challenges.map(async (c) => {
+        const subs = await ctx.db
+          .query("challengeSubmissions")
+          .withIndex("by_challengeId", (q) => q.eq("challengeId", c._id))
+          .take(1000);
+        return { ...c, participantsCount: subs.length };
+      })
+    );
   },
 });
 
@@ -103,6 +113,16 @@ export const submitToChallenge = mutation({
   handler: async (ctx, { challengeId, videoId }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+    const challenge = await ctx.db.get(challengeId);
+    if (!challenge || !challenge.isActive || challenge.adminHidden) {
+      throw new Error("This challenge is not open for entries");
+    }
+    if (challenge.deadline) {
+      const end = new Date(challenge.deadline).getTime();
+      if (!Number.isNaN(end) && end < Date.now()) {
+        throw new Error("This challenge has ended");
+      }
+    }
     const existing = await ctx.db
       .query("challengeSubmissions")
       .withIndex("by_challengeId_userId", (q) =>
@@ -170,6 +190,18 @@ export const markSubmissionWinner = mutation({
     if (!sub) throw new Error("Submission not found");
     const challenge = await ctx.db.get(sub.challengeId);
     if (!challenge || challenge.employerId !== userId) throw new Error("Not authorized");
+    const alreadyWinner = sub.status === "winner";
     await ctx.db.patch(submissionId, { status: "winner" });
+    if (!alreadyWinner && sub.userId !== userId) {
+      await pushNotification(ctx, {
+        userId: sub.userId,
+        type: "challenge_winner",
+        title: "You won a challenge",
+        message: `Your submission to ${challenge.title} was chosen as a winner.`,
+        actionUrl: "/challenges",
+        relatedUserId: userId,
+        relatedVideoId: sub.videoId,
+      });
+    }
   },
 });

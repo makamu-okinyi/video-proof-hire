@@ -4,8 +4,7 @@ import { ArrowLeft, User, Bell, Shield, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PasskeysManager } from '@/components/settings/PasskeysManager';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { ChangePasswordPanel } from '@/components/settings/ChangePasswordPanel';
 import { DataRightsPanel } from '@/components/settings/DataRightsPanel';
 import { LegalLinks } from '@/components/legal/LegalLinks';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -19,7 +18,11 @@ export default function AccountSettings() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary rounded-full">
+          <button
+            onClick={() => ((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0 ? navigate(-1) : navigate('/')}
+            aria-label="Back"
+            className="p-2 -ml-2 hover:bg-secondary rounded-full"
+          >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <h1 className="font-semibold text-lg">Account Settings</h1>
@@ -50,17 +53,12 @@ export default function AccountSettings() {
               <Bell className="h-5 w-5" />
               Notifications
             </CardTitle>
-            <CardDescription>Configure notification preferences</CardDescription>
+            <CardDescription>Where you will see updates</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="email-notifs">Email notifications</Label>
-              <Switch id="email-notifs" defaultChecked />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="push-notifs">Push notifications</Label>
-              <Switch id="push-notifs" defaultChecked />
-            </div>
+          <CardContent>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              New applicants, application updates and messages appear in the notification bell at the top of the app, so nothing is sent to your email.
+            </p>
           </CardContent>
         </Card>
 
@@ -74,13 +72,7 @@ export default function AccountSettings() {
             <CardDescription>Manage security settings</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/reset-password')}>
-              Change Password
-            </Button>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="2fa">Two-factor authentication</Label>
-              <Switch id="2fa" />
-            </div>
+            <ChangePasswordPanel />
           </CardContent>
         </Card>
 

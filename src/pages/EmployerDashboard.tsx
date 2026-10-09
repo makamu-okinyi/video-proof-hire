@@ -1,16 +1,15 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Briefcase, Plus, Trophy, TrendingUp, Edit2, Users } from 'lucide-react';
+import { Settings, Briefcase, Plus, Trophy, Edit2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard, NeoCardHeader, NeoCardTitle, NeoCardContent } from '@/components/ui/neo-card';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { useAuth } from '@/context/AuthContext';
 import { useEmployerAnalytics } from '@/hooks/useEmployerAnalytics';
+import { HiringInsights } from '@/components/employer/HiringInsights';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-
-const chartData = [4, 7, 5, 9, 6, 8, 10, 7, 6, 9, 11, 8];
 
 export default function EmployerDashboard() {
   useDocumentTitle('Employer dashboard');
@@ -44,9 +43,11 @@ export default function EmployerDashboard() {
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard title="Active Jobs" value={String(analytics?.activeJobs ?? 0)} />
-          <StatCard title="Total Applicants" value={String(analytics?.totalApplicants ?? 0)} />
+          <StatCard title="Applications" value={String(analytics?.totalApplicants ?? 0)} />
           <StatCard title="Challenges" value={String(analytics?.challenges ?? 0)} />
         </div>
+
+        <HiringInsights />
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -158,24 +159,6 @@ export default function EmployerDashboard() {
                 ))}
               </div>
             )}
-          </NeoCardContent>
-        </NeoCard>
-
-        {/* Recent Activity */}
-        <NeoCard className="p-6">
-          <NeoCardHeader>
-            <NeoCardTitle>Recent Activity</NeoCardTitle>
-          </NeoCardHeader>
-          <NeoCardContent>
-            <div className="text-center py-12">
-              <div className="h-16 w-16 neo-pressed rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="h-8 w-8 text-cool-grey" />
-              </div>
-              <p className="text-cool-grey">No recent activity</p>
-              <p className="text-sm text-cool-grey mt-1">
-                Start by posting a job or creating a challenge
-              </p>
-            </div>
           </NeoCardContent>
         </NeoCard>
       </div>

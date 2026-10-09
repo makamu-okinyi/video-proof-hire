@@ -497,21 +497,6 @@ export default function VentureDetail() {
             </Card>
           </motion.section>
         )}
-
-        {/* CTA for Investors */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="pb-8"
-        >
-          <Button className="w-full h-14 text-lg" size="lg">
-            Request Intro
-          </Button>
-          <p className="text-center text-xs text-muted-foreground mt-2">
-            Double-opt-in introduction with the founding team
-          </p>
-        </motion.section>
       </main>
     </div>
   );

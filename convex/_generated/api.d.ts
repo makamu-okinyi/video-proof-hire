@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as ResendOTP from "../ResendOTP.js";
 import type * as account from "../account.js";
 import type * as admin from "../admin.js";
 import type * as adminGeo from "../adminGeo.js";
@@ -22,12 +23,16 @@ import type * as auth from "../auth.js";
 import type * as challenges from "../challenges.js";
 import type * as crons from "../crons.js";
 import type * as employer from "../employer.js";
+import type * as employerInsights from "../employerInsights.js";
+import type * as feedback from "../feedback.js";
+import type * as firstLogin from "../firstLogin.js";
 import type * as http from "../http.js";
 import type * as jobs from "../jobs.js";
 import type * as lib_admin from "../lib/admin.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_kenya from "../lib/kenya.js";
 import type * as lib_legal from "../lib/legal.js";
+import type * as lib_notify from "../lib/notify.js";
 import type * as lib_plans from "../lib/plans.js";
 import type * as lib_review from "../lib/review.js";
 import type * as lib_tz from "../lib/tz.js";
@@ -48,6 +53,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  ResendOTP: typeof ResendOTP;
   account: typeof account;
   admin: typeof admin;
   adminGeo: typeof adminGeo;
@@ -62,12 +68,16 @@ declare const fullApi: ApiFromModules<{
   challenges: typeof challenges;
   crons: typeof crons;
   employer: typeof employer;
+  employerInsights: typeof employerInsights;
+  feedback: typeof feedback;
+  firstLogin: typeof firstLogin;
   http: typeof http;
   jobs: typeof jobs;
   "lib/admin": typeof lib_admin;
   "lib/auth": typeof lib_auth;
   "lib/kenya": typeof lib_kenya;
   "lib/legal": typeof lib_legal;
+  "lib/notify": typeof lib_notify;
   "lib/plans": typeof lib_plans;
   "lib/review": typeof lib_review;
   "lib/tz": typeof lib_tz;

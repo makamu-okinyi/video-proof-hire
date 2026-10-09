@@ -4,14 +4,13 @@
  * WebAuthn (passkey) server logic, backed by @simplewebauthn/server.
  *
  * Relying-party config comes from Convex environment variables:
- *   WEBAUTHN_RP_ID     e.g. "hr.donjoafrica.com"   (default: "localhost")
- *   WEBAUTHN_RP_NAME   e.g. "Donjo"                (default: "Donjo")
- *   WEBAUTHN_ORIGINS   comma list of allowed origins, e.g. "https://hr.donjoafrica.com"
- *                                                  (default: "http://localhost:8081")
+ *   WEBAUTHN_RP_ID     required, e.g. "hr.donjoafrica.com"
+ *   WEBAUTHN_RP_NAME   optional, e.g. "Donjo"      (default: "Donjo")
+ *   WEBAUTHN_ORIGINS   required, comma list of allowed origins, e.g. "https://hr.donjoafrica.com"
  */
 import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { createHmac } from "node:crypto";
 import {
@@ -26,10 +25,19 @@ import type {
   RegistrationResponseJSON,
 } from "@simplewebauthn/server";
 
+function requiredEnv(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    console.error(`${name} is not set on this Convex deployment; passkeys are disabled.`);
+    throw new ConvexError("PASSKEYS_NOT_CONFIGURED");
+  }
+  return value;
+}
+
 function rpConfig() {
-  const rpID = (process.env.WEBAUTHN_RP_ID || "localhost").trim();
+  const rpID = requiredEnv("WEBAUTHN_RP_ID");
   const rpName = (process.env.WEBAUTHN_RP_NAME || "Donjo").trim();
-  const origins = (process.env.WEBAUTHN_ORIGINS || "http://localhost:8081")
+  const origins = requiredEnv("WEBAUTHN_ORIGINS")
     .split(",")
     .map((o) => o.trim().replace(/\/$/, ""))
     .filter(Boolean);

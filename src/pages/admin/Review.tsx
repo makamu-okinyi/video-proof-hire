@@ -67,7 +67,7 @@ function VentureDrawer({ ventureId, onClose }: { ventureId: Id<'ventures'> | nul
           </div>
 
           {d.pitchVideoUrl ? (
-            <video src={d.pitchVideoUrl} controls preload="metadata" className="aspect-video w-full rounded-2xl bg-black" aria-label={`Pitch video for ${d.name}`} />
+            <video src={d.pitchVideoUrl} controls preload="metadata" className="aspect-video w-full rounded-lg bg-black" aria-label={`Pitch video for ${d.name}`} />
           ) : (
             <p className="rounded-xl bg-[hsl(var(--muted))] px-4 py-3 text-sm text-muted-foreground">No pitch video was uploaded.</p>
           )}

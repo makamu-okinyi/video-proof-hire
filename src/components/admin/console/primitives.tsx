@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** Card surface used across the console (refined neomorphic). */
+/** Flat bordered surface used across the console. */
 export function Panel({
   title,
   description,
@@ -19,7 +19,7 @@ export function Panel({
   bodyClassName?: string;
 }) {
   return (
-    <section className={cn('neo-subtle rounded-2xl p-5 sm:p-6', className)}>
+    <section className={cn('rounded-lg border border-border bg-card p-5 sm:p-6', className)}>
       {(title || action) && (
         <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
@@ -36,9 +36,9 @@ export function Panel({
 
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
       <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{title}</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{title}</h1>
         {description && <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -64,7 +64,7 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={cn('flex flex-col items-center justify-center rounded-2xl px-6 py-10 text-center', className)}>
+    <div className={cn('flex flex-col items-center justify-center rounded-lg px-6 py-10 text-center', className)}>
       <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--muted))] text-muted-foreground">
         {icon ?? <Inbox className="h-6 w-6" aria-hidden="true" />}
       </div>

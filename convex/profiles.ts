@@ -1,5 +1,7 @@
 import { query, mutation, internalMutation } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
+
+const RESERVED_USERNAMES = ["admin","auth","feed","discover","jobs","challenges","ventures","venture","apply","founder","employer","profile","settings","messages","notifications","create","watch","user","users","privacy","terms","cookies","forgot-password","api","login","signup","support","help","about","contact","donjo","dashboard","account","assets","static"];
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { getActiveUserId } from "./lib/auth";
 import { KENYA_COUNTIES } from "./lib/kenya";
@@ -43,6 +45,7 @@ export const upsertProfile = mutation({
     // restricts values to the self-service allowlist.
     username: v.optional(v.string()),
     skillCategory: v.optional(v.string()),
+    field: v.optional(v.string()),
     bio: v.optional(v.string()),
     skills: v.optional(v.array(v.string())),
     avatar: v.optional(v.string()),
@@ -73,6 +76,7 @@ export const upsertProfile = mutation({
     if (args.county !== undefined && args.county !== "" && !KENYA_COUNTIES.includes(args.county)) {
       throw new Error("Unknown county");
     }
+    if (args.field !== undefined && args.field.length > 60) throw new ConvexError("Field is too long");
     if (args.country !== undefined && args.country.length > 80) throw new Error("Country is too long");
     const existing = await ctx.db
       .query("profiles")
@@ -81,6 +85,17 @@ export const upsertProfile = mutation({
     const data = Object.fromEntries(
       Object.entries(args).filter(([, v]) => v !== undefined)
     );
+    // Applicant usernames are public page links (/<username>): URL-safe, unique, not reserved.
+    if (typeof args.username === "string" && existing?.userType !== "employer" && existing?.userType !== "admin") {
+      const name = args.username.trim().replace(/^@+/, "").toLowerCase();
+      if (name) {
+        if (!/^[a-z0-9][a-z0-9_.-]{2,29}$/.test(name)) throw new ConvexError("Usernames use 3-30 letters, numbers, dots, dashes or underscores.");
+        if (RESERVED_USERNAMES.includes(name)) throw new ConvexError("That username is reserved. Please choose another.");
+        const taken = await ctx.db.query("profiles").withIndex("by_username", (q) => q.eq("username", name)).first();
+        if (taken && taken.userId !== userId) throw new ConvexError("That username is already taken. Please choose another.");
+        data.username = name;
+      }
+    }
     if (existing) {
       await ctx.db.patch(existing._id, data);
       return existing._id;

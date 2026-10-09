@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from 'convex/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Bell, ChevronsLeft, ChevronsRight, LogOut, Menu, ShieldCheck, X } from 'lucide-react';
+import { Bell, ChevronsLeft, ChevronsRight, LogOut, Menu, X } from 'lucide-react';
 import { api } from '../../../../convex/_generated/api';
 import { SearchInput } from '@/components/ui/input';
 import { useAuth } from '@/context/AuthContext';
@@ -24,13 +24,13 @@ function RailLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?:
           title={collapsed ? item.label : undefined}
           className={({ isActive }) =>
             cn(
-              'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-orange-400',
+              'group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400',
               collapsed && 'justify-center px-0',
-              isActive ? 'bg-orange-500/15 text-orange-300' : 'text-slate-300 hover:bg-slate-800 hover:text-white',
+              isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white',
             )
           }
         >
-          <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+          <item.icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
           <span className={cn(collapsed && 'sr-only')}>{item.label}</span>
         </NavLink>
       ))}
@@ -40,14 +40,9 @@ function RailLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?:
 
 function Brand({ collapsed }: { collapsed?: boolean }) {
   return (
-    <div className={cn('flex items-center gap-3 px-5 py-5', collapsed && 'justify-center px-0')}>
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-900">
-        <ShieldCheck className="h-5 w-5 text-amber-500" aria-hidden="true" />
-      </span>
-      <span className={cn('leading-tight', collapsed && 'sr-only')}>
-        <span className="block font-mono text-[10px] uppercase tracking-[0.25em] text-slate-500">Secure console</span>
-        <span className="block text-base font-semibold text-white">Donjo Admin</span>
-      </span>
+    <div className={cn('flex h-14 items-center gap-2 border-b border-white/10 px-5', collapsed && 'justify-center px-0')}>
+      <span className="text-base font-semibold tracking-tight text-white">{collapsed ? 'D' : 'Donjo'}</span>
+      {!collapsed && <span className="text-sm text-zinc-500">Admin</span>}
     </div>
   );
 }
@@ -146,7 +141,9 @@ function AttentionBell() {
   }, []);
   const pending = stats?.attention.pendingReviews ?? 0;
   const over7 = stats?.attention.pendingOver7d ?? 0;
-  const count = (pending > 0 ? 1 : 0) + (over7 > 0 ? 1 : 0);
+  const planReqs = stats?.attention.pendingPlanRequests ?? 0;
+  const feedbackWaiting = stats?.attention.pendingFeedback ?? 0;
+  const count = (pending > 0 ? 1 : 0) + (over7 > 0 ? 1 : 0) + (planReqs > 0 ? 1 : 0) + (feedbackWaiting > 0 ? 1 : 0);
 
   return (
     <div ref={ref} className="relative" onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}>
@@ -155,7 +152,7 @@ function AttentionBell() {
         onClick={() => setOpen((o) => !o)}
         aria-label={`Notifications${count ? `, ${count} need attention` : ''}`}
         aria-expanded={open}
-        className="relative flex h-11 w-11 items-center justify-center rounded-xl text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="relative flex h-10 w-10 items-center justify-center rounded-md text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Bell className="h-5 w-5" aria-hidden="true" />
         {count > 0 && <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-[hsl(var(--brand-strong))] ring-2 ring-background" />}
@@ -169,6 +166,12 @@ function AttentionBell() {
             <ul className="space-y-1 text-sm">
               {pending > 0 && (
                 <li><Link to="/admin/review" onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2 hover:bg-accent">{pending} venture{pending === 1 ? '' : 's'} awaiting review</Link></li>
+              )}
+              {planReqs > 0 && (
+                <li><Link to="/admin/plans" onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2 hover:bg-accent">{planReqs} plan request{planReqs === 1 ? '' : 's'} to handle</Link></li>
+              )}
+              {feedbackWaiting > 0 && (
+                <li><Link to="/admin/feedback" onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2 hover:bg-accent">{feedbackWaiting} feedback item{feedbackWaiting === 1 ? '' : 's'} to review</Link></li>
               )}
               {over7 > 0 && (
                 <li><Link to="/admin/review" onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2 hover:bg-accent">{over7} waiting over a week</Link></li>
@@ -227,18 +230,18 @@ export function ConsoleShell() {
       {/* Desktop rail */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-30 hidden flex-col bg-slate-950 text-slate-100 transition-[width] duration-200 lg:flex',
+          'fixed inset-y-0 left-0 z-30 hidden flex-col bg-zinc-900 text-zinc-100 transition-[width] duration-200 lg:flex',
           collapsed ? 'w-[4.5rem]' : 'w-64',
         )}
       >
         <Brand collapsed={collapsed} />
         <RailLinks collapsed={collapsed} />
-        <div className="border-t border-slate-800 p-3">
+        <div className="border-t border-white/10 p-3">
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
             aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-            className={cn('flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400', collapsed && 'justify-center px-0')}
+            className={cn('flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-zinc-400 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400', collapsed && 'justify-center px-0')}
           >
             {collapsed ? <ChevronsRight className="h-5 w-5" aria-hidden="true" /> : <ChevronsLeft className="h-5 w-5" aria-hidden="true" />}
             <span className={cn(collapsed && 'sr-only')}>Collapse</span>
@@ -250,12 +253,12 @@ export function ConsoleShell() {
       <Dialog.Root open={drawer} onOpenChange={setDrawer}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-[60] bg-black/50 lg:hidden" />
-          <Dialog.Content className="fixed inset-y-0 left-0 z-[70] flex w-72 max-w-[85vw] flex-col bg-slate-950 text-slate-100 shadow-2xl outline-none lg:hidden">
+          <Dialog.Content className="fixed inset-y-0 left-0 z-[70] flex w-72 max-w-[85vw] flex-col bg-zinc-900 text-zinc-100 shadow-2xl outline-none lg:hidden">
             <Dialog.Title className="sr-only">Admin navigation</Dialog.Title>
             <Dialog.Description className="sr-only">Sections of the admin console</Dialog.Description>
             <div className="flex items-center justify-between">
               <Brand />
-              <Dialog.Close aria-label="Close navigation" className="mr-3 rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white">
+              <Dialog.Close aria-label="Close navigation" className="mr-3 rounded-lg p-2 text-zinc-400 hover:bg-white/10 hover:text-white">
                 <X className="h-5 w-5" aria-hidden="true" />
               </Dialog.Close>
             </div>
@@ -271,7 +274,7 @@ export function ConsoleShell() {
               type="button"
               onClick={() => setDrawer(true)}
               aria-label="Open navigation"
-              className="flex h-11 w-11 items-center justify-center rounded-xl hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -288,7 +291,7 @@ export function ConsoleShell() {
                 onClick={() => void logout()}
                 aria-label="Sign out"
                 title="Sign out"
-                className="flex h-11 w-11 items-center justify-center rounded-xl text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex h-10 w-10 items-center justify-center rounded-md text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <LogOut className="h-5 w-5" aria-hidden="true" />
               </button>

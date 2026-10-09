@@ -46,7 +46,7 @@ export default function Challenges() {
     prize_description: c.prizeDescription ?? null,
     deadline: c.deadline ?? null,
     is_featured: c.isFeatured,
-    participants_count: 0, // not tracked in Convex schema
+    participants_count: c.participantsCount,
     skills_tags: c.skillsTags ?? null,
     video_prompt: c.videoPrompt ?? null,
   }));
@@ -76,7 +76,7 @@ export default function Challenges() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-charcoal">Challenges</h1>
-              <p className="text-cool-grey text-sm">Win prizes & showcase your skills</p>
+              <p className="text-cool-grey text-sm">Prizes are offered and paid by the employer</p>
             </div>
           </div>
         </div>

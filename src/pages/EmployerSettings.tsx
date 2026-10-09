@@ -2,7 +2,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Building2, User, Shield, ChevronRight,
-  Globe, Bell, Users, Palette, LogOut
+  LogOut, CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -25,20 +25,12 @@ export default function EmployerSettings() {
           bgColor: 'bg-coral/10',
         },
         {
-          icon: Globe,
-          label: 'Online Presence',
-          description: 'Website, social links, culture video',
-          href: '/employer/settings/company',
+          icon: CreditCard,
+          label: 'Plan',
+          description: 'Your tier, usage and upgrades',
+          href: '/employer/plan',
           iconColor: 'text-blue-500',
           bgColor: 'bg-blue-500/10',
-        },
-        {
-          icon: Palette,
-          label: 'Perks & Benefits',
-          description: 'What you offer employees',
-          href: '/employer/settings/company',
-          iconColor: 'text-purple-500',
-          bgColor: 'bg-purple-500/10',
         },
       ],
     },
@@ -54,28 +46,12 @@ export default function EmployerSettings() {
           bgColor: 'bg-green-500/10',
         },
         {
-          icon: Bell,
-          label: 'Notifications',
-          description: 'Alerts and email preferences',
-          href: '/employer/settings/account',
-          iconColor: 'text-amber-500',
-          bgColor: 'bg-amber-500/10',
-        },
-        {
           icon: Shield,
           label: 'Security',
-          description: 'Password, 2FA settings',
+          description: 'Password and sign-in',
           href: '/employer/settings/account',
           iconColor: 'text-red-500',
           bgColor: 'bg-red-500/10',
-        },
-        {
-          icon: Users,
-          label: 'Team Access',
-          description: 'Manage team members',
-          href: '/employer/settings/account',
-          iconColor: 'text-indigo-500',
-          bgColor: 'bg-indigo-500/10',
         },
       ],
     },

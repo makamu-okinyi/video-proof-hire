@@ -72,6 +72,8 @@ export const stats = query({
       messaging: { conversations: counted(conversations.length), messages: counted(messages.length) },
       unreadNotifications: counted(notifications.filter((n) => !n.isRead).length),
       attention: {
+        pendingFeedback: (await ctx.db.query("feedback").withIndex("by_status", (q) => q.eq("status", "pending")).take(100)).length,
+        pendingPlanRequests: (await ctx.db.query("planRequests").withIndex("by_status", (q) => q.eq("status", "pending")).take(100)).length,
         pendingReviews: pending.length,
         oldestPendingAt: oldest,
         pendingOver7d: pending.filter((x) => {

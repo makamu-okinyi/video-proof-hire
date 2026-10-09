@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useMutation, useQuery } from 'convex/react';
+import { useAction, useMutation, useQuery } from 'convex/react';
 import { toast } from 'sonner';
-import { ShieldPlus } from 'lucide-react';
+import { KeyRound, Pencil, ShieldPlus, Trash2 } from 'lucide-react';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -31,12 +31,31 @@ function UserDrawer({ userId, onClose }: { userId: Id<'users'> | null; onClose: 
   const setRole = useMutation(api.adminUsers.setRole);
   const setStatus = useMutation(api.adminUsers.setStatus);
   const revokeAdmin = useMutation(api.adminUsers.revokeAdmin);
+  const updateUser = useMutation(api.adminUsers.updateUser);
+  const deleteUser = useMutation(api.adminUsers.deleteUser);
+  const resetPassword = useAction(api.adminUsers.resetPassword);
+  const [form, setForm] = useState({ fullName: '', username: '', companyName: '', email: '' });
+  const [newPassword, setNewPassword] = useState('');
+  const [typed, setTyped] = useState('');
   const [role, setRoleState] = useState('');
-  const [confirm, setConfirm] = useState<null | 'suspend' | 'reactivate' | 'role' | 'revoke'>(null);
+  const [confirm, setConfirm] = useState<null | 'suspend' | 'reactivate' | 'role' | 'revoke' | 'edit' | 'password' | 'delete'>(null);
 
   useEffect(() => {
     if (detail?.profile) setRoleState(detail.profile.role);
   }, [detail?.profile?.role]);
+
+  useEffect(() => {
+    if (confirm === 'edit' && detail) {
+      setForm({
+        fullName: detail.profile?.fullName ?? '',
+        username: detail.profile?.username ?? '',
+        companyName: detail.profile?.companyName ?? '',
+        email: detail.email ?? '',
+      });
+    }
+    if (confirm === 'password') setNewPassword('');
+    if (confirm === 'delete') setTyped('');
+  }, [confirm, detail]);
 
   const isAdminUser = detail?.profile?.role === 'admin';
   const suspended = detail?.profile?.status === 'suspended';
@@ -117,6 +136,91 @@ function UserDrawer({ userId, onClose }: { userId: Id<'users'> | null; onClose: 
               Suspending signs the user out everywhere and blocks them from using the platform until reactivated.
             </p>
           </div>
+
+          {!isAdminUser && (
+            <div className="space-y-3 border-t border-border pt-5">
+              <h3 className="text-sm font-semibold">Manage account</h3>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={() => setConfirm('edit')} className="pointer-events-auto"><Pencil className="mr-2 h-4 w-4" aria-hidden="true" />Edit details</Button>
+                <Button variant="outline" onClick={() => setConfirm('password')} className="pointer-events-auto"><KeyRound className="mr-2 h-4 w-4" aria-hidden="true" />Reset password</Button>
+                <Button variant="destructive" onClick={() => setConfirm('delete')} className="pointer-events-auto"><Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />Delete user</Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Deleting permanently removes the account and all of its data. Resetting a password signs the user out everywhere.</p>
+            </div>
+          )}
+
+          <ConfirmDialog
+            open={confirm === 'edit'}
+            onOpenChange={(o) => !o && setConfirm(null)}
+            title="Edit user"
+            description={
+              <div className="space-y-3">
+                <Field label="Full name"><Input value={form.fullName} onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))} maxLength={100} /></Field>
+                <Field label={detail.profile?.role === 'employer' ? 'Display name' : 'Username'}><Input value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} maxLength={50} autoComplete="off" /></Field>
+                {detail.profile?.role === 'employer' && (
+                  <Field label="Company name"><Input value={form.companyName} onChange={(e) => setForm((f) => ({ ...f, companyName: e.target.value }))} maxLength={100} /></Field>
+                )}
+                <Field label="Sign-in email"><Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} autoComplete="off" /></Field>
+              </div>
+            }
+            confirmLabel="Save changes"
+            onConfirm={async () => {
+              await updateUser({
+                userId: detail.id,
+                fullName: form.fullName,
+                username: form.username,
+                email: form.email,
+                ...(detail.profile?.role === 'employer' ? { companyName: form.companyName } : {}),
+              });
+              toast.success('User updated');
+            }}
+          />
+          <ConfirmDialog
+            open={confirm === 'password'}
+            onOpenChange={(o) => !o && setConfirm(null)}
+            title="Reset password"
+            description={
+              <div className="space-y-3">
+                <p>Set a new password for this user and share it with them securely. They are signed out everywhere and can change it in settings.</p>
+                <Field label="New password" hint="At least 8 characters.">
+                  <div className="flex gap-2">
+                    <Input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="off" />
+                    <Button type="button" variant="outline" className="pointer-events-auto" onClick={() => {
+                      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+                      const buf = new Uint32Array(12);
+                      crypto.getRandomValues(buf);
+                      setNewPassword(Array.from(buf, (n) => chars[n % chars.length]).join(''));
+                    }}>Generate</Button>
+                  </div>
+                </Field>
+              </div>
+            }
+            confirmLabel="Set password"
+            onConfirm={async () => {
+              if (newPassword.length < 8) throw new Error('Use at least 8 characters');
+              await resetPassword({ userId: detail.id, newPassword });
+              toast.success('Password updated. Share it with the user securely.');
+            }}
+          />
+          <ConfirmDialog
+            open={confirm === 'delete'}
+            onOpenChange={(o) => !o && setConfirm(null)}
+            title="Delete user"
+            description={
+              <div className="space-y-3">
+                <p>This permanently deletes <strong>{detail.email ?? 'this user'}</strong> and all their videos, applications and other data. It cannot be undone.</p>
+                <Field label="Type DELETE to confirm"><Input value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" /></Field>
+              </div>
+            }
+            confirmLabel="Delete permanently"
+            destructive
+            onConfirm={async () => {
+              if (typed !== 'DELETE') throw new Error('Type DELETE (in capitals) to confirm');
+              await deleteUser({ userId: detail.id, confirm: 'DELETE' });
+              toast.success('User deleted');
+              onClose();
+            }}
+          />
 
           <ConfirmDialog
             open={confirm === 'role'}
@@ -212,7 +316,7 @@ export default function Users() {
     <>
       <PageHeader
         title="Users"
-        description="Everyone with an account. Open a user to see their activity, change their role or suspend them."
+        description="Everyone with an account. Open a user to edit them, reset their password, change their role, suspend or delete them."
         actions={<Button variant="outline" onClick={() => setGrantOpen(true)} className="pointer-events-auto"><ShieldPlus className="mr-2 h-4 w-4" aria-hidden="true" />Grant admin</Button>}
       />
       {data?.capped && <p role="status" className="mb-3 rounded-xl bg-amber-100 px-4 py-2.5 text-sm text-amber-900">Showing the 1,000 most recent accounts.</p>}

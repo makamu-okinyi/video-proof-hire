@@ -38,7 +38,7 @@ export async function assertWithinPlan(
   const limit = plan?.limits[key];
   if (plan && limit !== undefined && limit !== null && currentCount >= limit) {
     throw new ConvexError(
-      `Your ${plan.name} plan allows up to ${limit} ${LABELS[key]}. Upgrade your plan to add more.`
+      `Your ${plan.name} plan allows up to ${limit} ${LABELS[key]}. Contact Donjo to raise your limit.`
     );
   }
 }

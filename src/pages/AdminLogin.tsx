@@ -1,7 +1,7 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery } from 'convex/react';
+import { useAction, useMutation, useQuery } from 'convex/react';
 import { Eye, EyeOff, Fingerprint, Loader2, Lock, ShieldCheck } from 'lucide-react';
 import { api } from '../../convex/_generated/api';
 import { useAuth } from '@/context/AuthContext';
@@ -38,9 +38,14 @@ export default function AdminLogin() {
   const { login, logout, signInWithWebAuthn, isAuthenticated, isLoading } = useAuth();
   const recordAdminSignIn = useMutation(api.admin.recordAdminSignIn);
   const isAdmin = useQuery(api.admin.amIAdmin, isAuthenticated ? {} : 'skip');
+  const loginStep = useMutation(api.firstLogin.loginStep);
+  const completeFirstLogin = useAction(api.firstLogin.completeFirstLogin);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [step, setStep] = useState<'email' | 'secret'>('email');
+  const [mode, setMode] = useState<'password' | 'activate'>('password');
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState<Method | null>(null);
   const [notice] = useState<string | null>(() => peekNotice());
@@ -99,16 +104,52 @@ export default function AdminLogin() {
     e.preventDefault();
     if (busy) return;
     setError(null);
-    if (!email.trim() || !password) {
+    const address = email.trim().toLowerCase();
+    if (step === 'email') {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(address)) {
+        setError('Enter a valid email address.');
+        return;
+      }
+      setBusy('password');
+      try {
+        setMode((await loginStep({ email: address })) === 'activate' ? 'activate' : 'password');
+        setStep('secret');
+      } catch {
+        setError('Too many attempts. Please wait a few minutes and try again.');
+      }
+      setBusy(null);
+      return;
+    }
+    if (!password) {
       setError(GENERIC_FAILURE);
+      return;
+    }
+    if (mode === 'activate' && (password.length < 8 || password !== confirm)) {
+      setError('Use at least 8 characters, and make sure both passwords match.');
       return;
     }
     setBusy('password');
     pendingMethod.current = 'password';
     handled.current = false;
-    const { error: err } = await login(email.trim(), password);
+    if (mode === 'activate') {
+      try {
+        await completeFirstLogin({ email: address, password });
+      } catch {
+        fail(GENERIC_FAILURE);
+        return;
+      }
+    }
+    const { error: err } = await login(address, password);
     if (err) fail(GENERIC_FAILURE);
     // On success the effect above takes over once the session is live.
+  };
+
+  const backToEmail = () => {
+    setStep('email');
+    setMode('password');
+    setPassword('');
+    setConfirm('');
+    setError(null);
   };
 
   const handlePasskeySignIn = async () => {
@@ -162,19 +203,25 @@ export default function AdminLogin() {
                 autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={busy !== null}
+                disabled={busy !== null || step === 'secret'}
                 className={inputClass}
               />
             </div>
+            {step === 'secret' && (
+            <>
+            {mode === 'activate' && (
+              <p className="text-sm text-slate-400">First time here. Create the password you will use to sign in.</p>
+            )}
             <div className="space-y-1.5">
               <label htmlFor="admin-password" className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Password
+                {mode === 'activate' ? 'Create your password' : 'Password'}
               </label>
               <div className="relative">
                 <input
                   id="admin-password"
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
+                  autoFocus
+                  autoComplete={mode === 'activate' ? 'new-password' : 'current-password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={busy !== null}
@@ -190,6 +237,24 @@ export default function AdminLogin() {
                 </button>
               </div>
             </div>
+            {mode === 'activate' && (
+              <div className="space-y-1.5">
+                <label htmlFor="admin-confirm" className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                  Confirm password
+                </label>
+                <input
+                  id="admin-confirm"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  disabled={busy !== null}
+                  className={inputClass}
+                />
+              </div>
+            )}
+            </>
+            )}
 
             <button
               type="submit"
@@ -197,10 +262,18 @@ export default function AdminLogin() {
               className="flex h-12 w-full items-center justify-center gap-2 !rounded-xl bg-amber-500 text-sm font-semibold text-slate-950 transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {busy === 'password' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-              {busy === 'password' ? 'Verifying...' : 'Sign in'}
+              {busy === 'password' ? 'Verifying...' : step === 'email' ? 'Continue' : mode === 'activate' ? 'Create password and sign in' : 'Sign in'}
             </button>
           </form>
 
+          {step === 'secret' && (
+            <button type="button" onClick={backToEmail} className="mt-5 block w-full text-center text-xs text-slate-400 underline underline-offset-4 hover:text-slate-200">
+              Use a different email
+            </button>
+          )}
+
+          {step === 'email' && (
+          <>
           <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-slate-500">
             <span className="h-px flex-1 bg-slate-800" /> or <span className="h-px flex-1 bg-slate-800" />
           </div>
@@ -217,6 +290,8 @@ export default function AdminLogin() {
           </button>
           {!passkeysOk && (
             <p className="mt-2 text-center text-xs text-slate-500">Passkeys are not supported in this browser.</p>
+          )}
+          </>
           )}
         </div>
 

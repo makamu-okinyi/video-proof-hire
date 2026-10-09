@@ -162,7 +162,7 @@ export function DataTable<T>({
       )}
 
       {/* Desktop / tablet table */}
-      <div className="hidden overflow-hidden rounded-2xl border border-border md:block">
+      <div className="hidden overflow-hidden rounded-lg border border-border bg-card md:block">
         <div className="max-h-[70vh] overflow-auto">
           <table className="w-full border-collapse text-sm">
             <caption className="sr-only">{caption}</caption>
@@ -267,10 +267,10 @@ export function DataTable<T>({
 
       {/* Phone cards */}
       <ul className="space-y-3 md:hidden" aria-label={caption}>
-        {loading && Array.from({ length: 3 }).map((_, i) => <li key={i}><Skeleton className="h-28 w-full rounded-2xl" /></li>)}
+        {loading && Array.from({ length: 3 }).map((_, i) => <li key={i}><Skeleton className="h-28 w-full rounded-lg" /></li>)}
         {!loading &&
           visible.map((r) => (
-            <li key={rowKey(r)} className="neo-subtle rounded-2xl p-4">
+            <li key={rowKey(r)} className="rounded-lg border border-border bg-card p-4">
               <div className="flex items-start gap-3">
                 {selectable && (
                   <input

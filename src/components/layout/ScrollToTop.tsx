@@ -7,7 +7,7 @@ import { useLocation } from "react-router-dom";
  * React Router v6 does not do this on its own, so clicking a nav/bottom-nav
  * link while scrolled down on the previous page left the new page wherever
  * the old scroll position happened to be. Keyed on pathname only (not
- * search) so in-page deep links like /feed?video=<id> don't get reset.
+ * search) so in-page deep links like /watch/<id> don't get reset.
  */
 export function ScrollToTop() {
   const { pathname } = useLocation();

@@ -10,6 +10,7 @@ export default defineSchema({
     username: v.optional(v.string()),
     userType: v.optional(v.string()), // talent | employer | founder | investor | judge | admin
     skillCategory: v.optional(v.string()),
+    field: v.optional(v.string()), // specific field, e.g. "Nursing"; skillCategory is its broad group
     isVerified: v.optional(v.boolean()),
     bio: v.optional(v.string()),
     skills: v.optional(v.array(v.string())),
@@ -32,6 +33,9 @@ export default defineSchema({
     notifyMarketing: v.optional(v.boolean()),
     twoFactorEnabled: v.optional(v.boolean()),
     passkeyNudgeDismissedAt: v.optional(v.number()),
+    feedbackPromptedAt: v.optional(v.number()),
+    feedbackGivenAt: v.optional(v.number()),
+    feedbackOptOut: v.optional(v.boolean()), // "never ask me again"
     // Location (optional, encouraged). county is one of the 47 Kenyan counties, or unset
     // with country != "Kenya" for people outside Kenya.
     county: v.optional(v.string()),
@@ -46,7 +50,8 @@ export default defineSchema({
     termsVersion: v.optional(v.string()),
   })
     .index("by_userId", ["userId"])
-    .index("by_slug", ["slug"]),
+    .index("by_slug", ["slug"])
+    .index("by_username", ["username"]),
 
   // WebAuthn passkeys (one row per registered credential). `publicKey` is the
   // base64url-encoded COSE public key; `counter` is the authenticator signature counter.
@@ -85,6 +90,20 @@ export default defineSchema({
   })
     .index("by_userId", ["userId"])
     .index("by_at", ["at"]),
+
+  // First-login password setup: an armed email may set its password once, without the old one.
+  passwordSetups: defineTable({
+    email: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  }).index("by_email", ["email"]),
+
+  // Fixed-window rate limiting for unauthenticated endpoints.
+  rateLimits: defineTable({
+    key: v.string(),
+    windowStart: v.number(),
+    count: v.number(),
+  }).index("by_key", ["key"]),
 
   videos: defineTable({
     userId: v.string(),
@@ -167,6 +186,23 @@ export default defineSchema({
     .index("by_jobId", ["jobId"])
     .index("by_applicantId", ["applicantId"])
     .index("by_jobId_applicantId", ["jobId", "applicantId"]),
+
+  // Structured reviewer input on an application (1 to 5 per criterion, plus an optional note).
+  applicationAssessments: defineTable({
+    applicationId: v.id("jobApplications"),
+    reviewerId: v.string(),
+    scores: v.object({
+      communication: v.number(),
+      technical: v.number(),
+      problemSolving: v.number(),
+      roleFit: v.number(),
+      presentation: v.number(),
+    }),
+    note: v.optional(v.string()),
+    updatedAt: v.number(),
+  })
+    .index("by_applicationId", ["applicationId"])
+    .index("by_application_reviewer", ["applicationId", "reviewerId"]),
 
   challenges: defineTable({
     employerId: v.string(),
@@ -354,9 +390,38 @@ export default defineSchema({
       seats: v.optional(v.number()),
     }),
     features: v.array(v.string()),
+    // Optional promotion shown with the plan until endsAt (display only; limits above are what is enforced).
+    offer: v.optional(v.object({ label: v.string(), priceDisplay: v.optional(v.string()), endsAt: v.optional(v.number()) })),
     isActive: v.boolean(),
     order: v.number(),
   }).index("by_slug", ["slug"]),
+
+  // Member ratings and comments. Nothing is public until an admin approves it AND the member allowed it.
+  feedback: defineTable({
+    userId: v.string(),
+    rating: v.number(),
+    comment: v.optional(v.string()),
+    allowPublic: v.boolean(),
+    displayName: v.string(),
+    role: v.string(),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    createdAt: v.number(),
+    handledAt: v.optional(v.number()),
+  })
+    .index("by_status", ["status"])
+    .index("by_userId", ["userId"]),
+
+  // Employer requests to move to another plan; handled by admins.
+  planRequests: defineTable({
+    userId: v.string(),
+    planSlug: v.string(),
+    note: v.optional(v.string()),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("declined"), v.literal("cancelled")),
+    createdAt: v.number(),
+    handledAt: v.optional(v.number()),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_status", ["status"]),
 
   // Small key/value store for admin-tunable settings.
   appSettings: defineTable({

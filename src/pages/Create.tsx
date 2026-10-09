@@ -3,14 +3,12 @@ import { useState, useEffect, useRef, type ElementType } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   X, Video, Upload, RotateCcw, Play,
-  Check, ChevronDown, Globe, Users, SlidersHorizontal,
+  ChevronDown, Globe, Lock, SlidersHorizontal,
   Camera, AlertCircle, Loader2, Mic, MicOff, Volume2, VolumeX,
   Code2, Zap, Hammer, Wrench, Flame, Palette, TrendingUp, Heart, HardHat, Car, ChefHat, Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { skillsList } from '@/lib/skills';
 import { cn } from '@/lib/utils';
 import { useCamera } from '@/hooks/useCamera';
 import { useFileUpload } from '@/hooks/useFileUpload';
@@ -21,17 +19,8 @@ import { api } from '../../convex/_generated/api';
 import { toast } from 'sonner';
 
 type Step = 'record' | 'preview' | 'details';
-type Visibility = 'public' | 'recruiters';
+type Visibility = 'public' | 'private';
 type VideoSource = 'camera' | 'upload';
-
-const contentCategories = [
-  'Project Demo',
-  'Technical Walkthrough', 
-  'Design Process',
-  'Case Study',
-  'Skills Showcase',
-  'Introduction',
-];
 
 const skillCategories: { value: string; label: string; Icon: ElementType }[] = [
   { value: 'coding', label: 'Coding & Software', Icon: Code2 },
@@ -96,12 +85,8 @@ export default function Create() {
   
   // Details
   const [caption, setCaption] = useState('');
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  const [contentCategory, setContentCategory] = useState('');
   const [skillCategory, setSkillCategory] = useState('');
   const [visibility, setVisibility] = useState<Visibility>('public');
-  const [showSkillPicker, setShowSkillPicker] = useState(false);
-  const [showContentCategoryPicker, setShowContentCategoryPicker] = useState(false);
   const [showSkillCategoryPicker, setShowSkillCategoryPicker] = useState(false);
 
   // Redirect if not authenticated or if employer
@@ -146,14 +131,6 @@ export default function Create() {
       toast.error(uploadError);
     }
   }, [cameraError, uploadError]);
-
-  const toggleSkill = (skill: string) => {
-    if (selectedSkills.includes(skill)) {
-      setSelectedSkills(prev => prev.filter(s => s !== skill));
-    } else if (selectedSkills.length < 5) {
-      setSelectedSkills(prev => [...prev, skill]);
-    }
-  };
 
   const handleStartRecording = () => {
     startRecording();
@@ -215,7 +192,7 @@ export default function Create() {
         title: caption,
         description: caption,
         thumbnailUrl: undefined,
-        isPrivate: visibility === 'recruiters',
+        isPrivate: visibility === 'private',
         skillCategory: skillCategory || 'other',
         storageId: storageId ?? undefined,
       });
@@ -526,50 +503,6 @@ export default function Create() {
           </div>
         </div>
 
-        {/* Skills */}
-        <div className="space-y-3">
-          <button 
-            onClick={() => setShowSkillPicker(!showSkillPicker)}
-            className="w-full flex items-center justify-between py-3 border-b border-border"
-          >
-            <span className="font-medium">Skills</span>
-            <div className="flex items-center gap-2">
-              {selectedSkills.length > 0 ? (
-                <span className="text-sm text-muted-foreground">{selectedSkills.length} selected</span>
-              ) : (
-                <span className="text-sm text-muted-foreground">Add skills</span>
-              )}
-              <ChevronDown className={cn("h-4 w-4 transition-transform", showSkillPicker && "rotate-180")} />
-            </div>
-          </button>
-          
-          {showSkillPicker && (
-            <div className="flex flex-wrap gap-2 py-2 animate-fade-in">
-              {skillsList.map((skill) => (
-                <Badge
-                  key={skill}
-                  variant={selectedSkills.includes(skill) ? "default" : "secondary"}
-                  className="cursor-pointer"
-                  onClick={() => toggleSkill(skill)}
-                >
-                  {skill}
-                  {selectedSkills.includes(skill) && <Check className="h-3 w-3 ml-1" />}
-                </Badge>
-              ))}
-            </div>
-          )}
-          
-          {selectedSkills.length > 0 && !showSkillPicker && (
-            <div className="flex flex-wrap gap-2">
-              {selectedSkills.map((skill) => (
-                <Badge key={skill} variant="default">
-                  {skill}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Skill Category (Trade/Profession) */}
         <div className="space-y-3">
           <button 
@@ -609,41 +542,6 @@ export default function Create() {
           )}
         </div>
 
-        {/* Content Category */}
-        <div className="space-y-3">
-          <button 
-            onClick={() => setShowContentCategoryPicker(!showContentCategoryPicker)}
-            className="w-full flex items-center justify-between py-3 border-b border-border"
-          >
-            <span className="font-medium">Content Type</span>
-            <div className="flex items-center gap-2">
-              {contentCategory ? (
-                <span className="text-sm">{contentCategory}</span>
-              ) : (
-                <span className="text-sm text-muted-foreground">Select type</span>
-              )}
-              <ChevronDown className={cn("h-4 w-4 transition-transform", showContentCategoryPicker && "rotate-180")} />
-            </div>
-          </button>
-          
-          {showContentCategoryPicker && (
-            <div className="space-y-1 animate-fade-in">
-              {contentCategories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => { setContentCategory(cat); setShowContentCategoryPicker(false); }}
-                  className={cn(
-                    "w-full text-left px-4 py-3 rounded-xl transition-colors",
-                    contentCategory === cat ? "bg-coral/10 text-coral" : "hover:bg-secondary"
-                  )}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Visibility */}
         <div className="space-y-3">
           <span className="font-medium">Visibility</span>
@@ -658,20 +556,20 @@ export default function Create() {
               <Globe className={cn("h-5 w-5", visibility === 'public' ? "text-coral" : "text-muted-foreground")} />
               <div className="text-left">
                 <p className="font-medium text-sm">Public</p>
-                <p className="text-xs text-muted-foreground">Anyone can see</p>
+                <p className="text-xs text-muted-foreground">Shown on your public profile</p>
               </div>
             </button>
             <button
-              onClick={() => setVisibility('recruiters')}
+              onClick={() => setVisibility('private')}
               className={cn(
                 "flex-1 flex items-center gap-3 p-4 rounded-xl border-2 transition-all",
-                visibility === 'recruiters' ? "border-coral bg-coral/5" : "border-border"
+                visibility === 'private' ? "border-coral bg-coral/5" : "border-border"
               )}
             >
-              <Users className={cn("h-5 w-5", visibility === 'recruiters' ? "text-coral" : "text-muted-foreground")} />
+              <Lock className={cn("h-5 w-5", visibility === 'private' ? "text-coral" : "text-muted-foreground")} />
               <div className="text-left">
-                <p className="font-medium text-sm">Recruiters</p>
-                <p className="text-xs text-muted-foreground">Employers only</p>
+                <p className="font-medium text-sm">Private</p>
+                <p className="text-xs text-muted-foreground">Only you can see it</p>
               </div>
             </button>
           </div>

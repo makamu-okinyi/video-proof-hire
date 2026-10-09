@@ -322,7 +322,6 @@ export default function FounderWizard() {
             <div className="neo-subtle rounded-2xl p-5 text-center">
               <Users className="h-10 w-10 text-primary mx-auto mb-3" />
               <p className="font-semibold text-charcoal">You're the Lead Founder</p>
-              <p className="text-cool-grey text-sm mt-1">Invite co-founders later.</p>
             </div>
             <Field label="Your title" required><Input value={formData.founderTitle} onChange={e => updateFormData({ founderTitle: e.target.value })} placeholder="CEO & Co-Founder" /></Field>
             <Field label="Business model" optional><Input value={formData.businessModel} onChange={e => updateFormData({ businessModel: e.target.value })} placeholder="SaaS, Marketplace, etc." /></Field>

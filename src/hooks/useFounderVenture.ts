@@ -6,6 +6,7 @@ export interface FounderVenture {
   name: string;
   stage: string;
   review_status: string;
+  review_reason: string | null;
   pitch_video_url: string | null;
   pitch_deck_count: number;
   created_at: string;
@@ -17,6 +18,7 @@ function toFounderVenture(v: {
   name: string;
   stage: string;
   reviewStatus: string;
+  reviewReason?: string | null;
   pitchVideoUrl?: string | null;
   pitchDeck?: { _id: string } | null;
 }): FounderVenture {
@@ -25,6 +27,7 @@ function toFounderVenture(v: {
     name: v.name,
     stage: v.stage,
     review_status: v.reviewStatus,
+    review_reason: v.reviewReason ?? null,
     pitch_video_url: v.pitchVideoUrl ?? null,
     pitch_deck_count: v.pitchDeck ? 1 : 0,
     created_at: new Date(v._creationTime).toISOString(),

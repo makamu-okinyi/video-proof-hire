@@ -10,6 +10,7 @@ interface Profile {
   username?: string | null;
   user_type?: string;
   skill_category?: string;
+  field?: string | null;
   is_verified?: boolean;
   bio?: string | null;
   skills?: string[] | null;
@@ -32,6 +33,8 @@ interface AuthContextType {
   profile: Profile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /** Signed in, but no profile row exists yet (setup was interrupted). The user must finish onboarding. */
+  profileMissing: boolean;
   login: (email: string, password: string) => Promise<{ error: Error | null }>;
   signup: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<{ error: Error | null }>;
   signInWithOAuth: (provider: string, redirectTo?: string) => Promise<{ error: Error | null; url?: string | null }>;
@@ -100,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             username: convexProfile.username,
             user_type: convexProfile.userType,
             skill_category: convexProfile.skillCategory,
+            field: convexProfile.field,
             is_verified: convexProfile.isVerified,
             bio: convexProfile.bio,
             skills: convexProfile.skills,
@@ -114,7 +118,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      await signIn("password", { email, password, flow: "signIn" });
+      const typed = email.trim();
+      try {
+        // New accounts are stored lowercase, so try that first.
+        await signIn("password", { email: typed.toLowerCase(), password, flow: "signIn" });
+      } catch (first) {
+        // Accounts created before emails were normalised keep their original capitalisation.
+        if (typed !== typed.toLowerCase() && /InvalidAccountId/i.test(first instanceof Error ? first.message : "")) {
+          await signIn("password", { email: typed, password, flow: "signIn" });
+        } else {
+          throw first;
+        }
+      }
       return { error: null };
     } catch (err) {
       return { error: err instanceof Error ? err : new Error(String(err)) };
@@ -128,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ) => {
     try {
       await signIn("password", {
-        email,
+        email: email.trim().toLowerCase(),
         password,
         flow: "signUp",
         name: (metadata?.username as string) || undefined,
@@ -155,7 +170,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const optionsJSON = await getAuthenticationOptions({ email: opts?.email?.trim() || undefined });
       const assertion = await startAuthentication({ optionsJSON });
-      await signIn("passkey", { response: JSON.stringify(assertion) });
+      const result = await signIn("passkey", { response: JSON.stringify(assertion) });
+      // authorize() returns null for any failed verification, which signIn reports as signingIn: false.
+      if (result && result.signingIn === false) {
+        return { error: new Error("We could not match that passkey to an account. Try again, or use your password.") };
+      }
       return { error: null };
     } catch (err) {
       return { error: new Error(describePasskeyError(err, "signin")) };
@@ -188,6 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await upsertProfile({
       username: data.username ?? undefined,
       skillCategory: data.skill_category ?? undefined,
+      field: data.field ?? undefined,
       bio: data.bio ?? undefined,
       skills: data.skills ?? undefined,
       avatar: data.avatar ?? undefined,
@@ -210,6 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         isAuthenticated,
         isLoading,
+        profileMissing: isAuthenticated && convexProfile === null,
         login,
         signup,
         signInWithOAuth,

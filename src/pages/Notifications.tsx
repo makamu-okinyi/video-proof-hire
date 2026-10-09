@@ -1,5 +1,5 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { Bell, CheckCircle, Briefcase, Rocket, MessageCircle, ChevronRight } from 'lucide-react';
+import { Bell, CheckCircle, Briefcase, Rocket, MessageCircle, ChevronRight, Trophy } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { NeoCard } from '@/components/ui/neo-card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ const typeIcons: Record<string, React.ElementType> = {
   pitch_shortlisted: Rocket,
   pitch_rejected: Rocket,
   application: Briefcase,
+  challenge_winner: Trophy,
   message: MessageCircle,
   like: Bell,
   comment: Bell,
@@ -28,6 +29,7 @@ const typeColors: Record<string, string> = {
   job_rejected: 'text-amber-500 bg-amber-500/10',
   pitch_shortlisted: 'text-green-500 bg-green-500/10',
   pitch_rejected: 'text-amber-500 bg-amber-500/10',
+  challenge_winner: 'text-green-500 bg-green-500/10',
 };
 
 export default function Notifications() {
@@ -46,7 +48,7 @@ export default function Notifications() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-charcoal">Notifications</h1>
-            <p className="text-cool-grey text-sm">Job and pitch review updates</p>
+            <p className="text-cool-grey text-sm">New applicants, messages and review decisions</p>
           </div>
           {unreadCount > 0 && (
             <Button variant="outline" size="sm" onClick={() => markAllRead()} className="neo-extruded border-none">

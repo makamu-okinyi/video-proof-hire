@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Settings, Edit2, Share2,
-  Eye, Bookmark, LogOut, ChevronRight,
-  BadgeCheck, Lock, Globe, Play, RefreshCw, User
+  LogOut, ChevronRight,
+  BadgeCheck, Lock, Globe, Play, User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,13 +24,11 @@ type ConvexVideo = {
   description?: string;
   videoUrl: string;
   thumbnailUrl?: string;
-  views: number;
-  likes: number;
   isPrivate?: boolean;
   skillCategory?: string;
 };
 
-type Tab = 'private' | 'public' | 'saved';
+type Tab = 'private' | 'public';
 
 export default function Profile() {
   useDocumentTitle('My profile');
@@ -39,10 +37,8 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState<Tab>('public');
 
   const myVideos = useQuery(api.videos.getMyVideos, isAuthenticated ? {} : 'skip');
-  const savedVideos = useQuery(api.videos.getSavedVideos, activeTab === 'saved' && isAuthenticated ? {} : 'skip');
 
   const loading = myVideos === undefined;
-  const loadingSaved = savedVideos === undefined && activeTab === 'saved';
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -51,21 +47,12 @@ export default function Profile() {
   }, [authLoading, isAuthenticated, navigate]);
 
   const videos: ConvexVideo[] = (myVideos ?? []) as ConvexVideo[];
-  const saved: ConvexVideo[] = (savedVideos ?? []) as ConvexVideo[];
 
   const publicVideos = videos.filter(v => !v.isPrivate);
   const privateVideos = videos.filter(v => v.isPrivate);
 
   const stats = {
-    views: videos.reduce((acc, v) => acc + (v.views || 0), 0),
-    likes: videos.reduce((acc, v) => acc + (v.likes || 0), 0),
     videos: videos.length,
-  };
-
-  const formatNumber = (num: number): string => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toString();
   };
 
   const handleLogout = async () => {
@@ -74,7 +61,7 @@ export default function Profile() {
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
+    navigator.clipboard.writeText(`${window.location.origin}/user/${user.id}`);
     toast({
       title: "Profile link copied!",
       description: "Share your profile with employers",
@@ -82,7 +69,7 @@ export default function Profile() {
   };
 
   const handleVideoClick = (videoId: string) => {
-    navigate(`/feed?video=${videoId}`);
+    navigate(`/watch/${videoId}`);
   };
 
   if (!user) {
@@ -125,10 +112,6 @@ export default function Profile() {
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <Play className="h-8 w-8 text-white" fill="white" />
               </div>
-              <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs">
-                <Eye className="h-3 w-3" />
-                {formatNumber(video.views || 0)}
-              </div>
               {video.isPrivate && (
                 <div className="absolute top-2 right-2">
                   <Lock className="h-3 w-3 text-white" />
@@ -164,13 +147,10 @@ export default function Profile() {
             @{profile?.username || (user?.user_metadata?.full_name as string | undefined)?.replace(/\s+/g, '').toLowerCase() || 'user'}
           </h1>
             <div className="flex items-center gap-2">
-              <button onClick={() => {}} className="neo-subtle p-2 rounded-xl hover:neo-pressed transition-all" title="Up to date">
-                <RefreshCw className="h-5 w-5 text-cool-grey" />
-              </button>
               <button onClick={handleShare} className="neo-subtle p-2 rounded-xl hover:neo-pressed transition-all">
                 <Share2 className="h-5 w-5 text-cool-grey" />
               </button>
-              <button onClick={() => navigate('/employer/settings')} className="neo-subtle p-2 rounded-xl hover:neo-pressed transition-all">
+              <button onClick={() => navigate(profile?.user_type === 'employer' ? '/employer/settings' : '/settings/account')} aria-label="Settings" className="neo-subtle p-2 rounded-xl hover:neo-pressed transition-all">
                 <Settings className="h-5 w-5 text-cool-grey" />
               </button>
             </div>
@@ -200,18 +180,10 @@ export default function Profile() {
 
             {/* Stats */}
             <div className="flex-1">
-              <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 gap-4 mb-4">
                 <div className="neo-subtle p-4 rounded-2xl text-center">
                   <p className="text-2xl font-bold text-charcoal">{stats.videos}</p>
                   <p className="text-xs text-cool-grey">Videos</p>
-                </div>
-                <div className="neo-subtle p-4 rounded-2xl text-center">
-                  <p className="text-2xl font-bold text-charcoal">{formatNumber(stats.views)}</p>
-                  <p className="text-xs text-cool-grey">Views</p>
-                </div>
-                <div className="neo-subtle p-4 rounded-2xl text-center">
-                  <p className="text-2xl font-bold text-charcoal">{formatNumber(stats.likes)}</p>
-                  <p className="text-xs text-cool-grey">Likes</p>
                 </div>
               </div>
 
@@ -272,16 +244,6 @@ export default function Profile() {
             <Lock className="h-4 w-4" />
             <span className="text-sm font-medium">Private</span>
           </button>
-          <button
-            onClick={() => setActiveTab('saved')}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl transition-all",
-              activeTab === 'saved' ? "neo-pressed text-charcoal" : "neo-flat text-cool-grey"
-            )}
-          >
-            <Bookmark className="h-4 w-4" />
-            <span className="text-sm font-medium">Saved</span>
-          </button>
         </div>
 
         {/* Content */}
@@ -298,52 +260,6 @@ export default function Profile() {
             <Lock className="h-12 w-12 text-cool-grey mx-auto" />
           )}
 
-          {activeTab === 'saved' && (
-            loadingSaved ? (
-              <div className="py-16 text-center">
-                <p className="text-cool-grey animate-pulse">Loading saved videos...</p>
-              </div>
-            ) : saved.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {saved.map((video) => (
-                  <div
-                    key={video._id}
-                    onClick={() => handleVideoClick(video._id)}
-                    className="aspect-[9/16] relative neo-extruded rounded-2xl overflow-hidden group cursor-pointer"
-                  >
-                    {video.thumbnailUrl ? (
-                      <img
-                        src={video.thumbnailUrl}
-                        alt={video.title || 'Video'}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <video
-                        src={video.videoUrl}
-                        className="w-full h-full object-cover"
-                        muted
-                        playsInline
-                        preload="metadata"
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Play className="h-8 w-8 text-white" fill="white" />
-                    </div>
-                    <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs">
-                      <Eye className="h-3 w-3" />
-                      {formatNumber(video.views || 0)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-16 text-center neo-subtle rounded-3xl">
-                <Bookmark className="h-12 w-12 text-cool-grey mx-auto mb-3" />
-                <p className="text-cool-grey">No saved videos yet</p>
-                <p className="text-sm text-cool-grey mt-1">Videos you save will appear here</p>
-              </div>
-            )
-          )}
         </div>
 
         {/* Logout Section */}

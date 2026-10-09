@@ -27,6 +27,7 @@ interface JobPosting {
   skills_required: string[] | null;
   salary_min: number | null;
   salary_max: number | null;
+  video_prompt?: string | null;
   created_at: string;
 }
 
@@ -66,6 +67,7 @@ export default function Jobs() {
     skills_required: j.skillsRequired ?? null,
     salary_min: j.salaryMin ?? null,
     salary_max: j.salaryMax ?? null,
+    video_prompt: j.videoPrompt ?? null,
     created_at: new Date(j._creationTime).toISOString(),
   }));
 
